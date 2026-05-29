@@ -1,0 +1,171 @@
+import React, { useEffect, useState } from 'react'
+import { supabase, LEVELS, getNextLevel } from '../lib/supabase'
+import { useAuth } from '../hooks/useAuth'
+import TopBar from '../components/TopBar'
+import BottomNav from '../components/BottomNav'
+
+export default function ProfilePage() {
+  const { member, signOut } = useAuth()
+  const [logs, setLogs] = useState([])
+  const [weekLogins, setWeekLogins] = useState([])
+
+  useEffect(() => { if (member) fetchData() }, [member])
+
+  async function fetchData() {
+    const { data: logData } = await supabase.from('point_logs')
+      .select('*').eq('member_id', member.id)
+      .order('created_at', { ascending: false }).limit(10)
+    setLogs(logData || [])
+
+    const days = []
+    for (let i = 6; i >= 0; i--) {
+      const d = new Date(Date.now() - i * 86400000)
+      days.push(d.toISOString().split('T')[0])
+    }
+    const { data: loginData } = await supabase.from('daily_logins')
+      .select('login_date').eq('member_id', member.id).in('login_date', days)
+    const loginDates = new Set((loginData || []).map(l => l.login_date))
+    setWeekLogins(days.map(d => ({ date: d, done: loginDates.has(d) })))
+  }
+
+  if (!member) return null
+
+  const nextLevel = getNextLevel(member.points)
+  const currentLevelMin = LEVELS.slice().reverse().find(l => member.points >= l.min)?.min || 0
+  const levelProgress = nextLevel ? Math.round((member.points - currentLevelMin) / (nextLevel.min - currentLevelMin) * 100) : 100
+  const today = new Date().toISOString().split('T')[0]
+  const dayNames = ['一', '二', '三', '四', '五', '六', '日']
+  const daysUntilFullStreak = 7 - (member.login_streak % 7)
+
+  const logIcons = { login: '📅', streak_bonus: '🎯', purchase: '🛍️', manual: '✏️', level_up: '⬆️' }
+  const logColors = { login: '#EAF3DE', streak_bonus: '#FAEEDA', purchase: '#FAEEDA', manual: '#E6F1FB', level_up: '#E6F1FB' }
+
+  return (
+    <div style={{ maxWidth: 390, margin: '0 auto', background: '#fff', minHeight: '100vh', display: 'flex', flexDirection: 'column' }}>
+      <TopBar right={
+        <span style={{ fontSize: 20, cursor: 'pointer' }} onClick={signOut} title="登出">⚙️</span>
+      } />
+
+      <div style={{ flex: 1, overflowY: 'auto' }}>
+        {/* 個人資訊 */}
+        <div style={{ padding: '24px 20px 20px', borderBottom: '0.5px solid #e5e5e5', display: 'flex', alignItems: 'center', gap: 14 }}>
+          <div style={{ width: 60, height: 60, borderRadius: '50%', background: '#FAEEDA', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 22, fontWeight: 600, color: '#633806', border: '2px solid #FAC775', flexShrink: 0 }}>
+            {member.display_name?.[0]?.toUpperCase()}
+          </div>
+          <div>
+            <div style={{ fontSize: 18, fontWeight: 500, color: '#111' }}>{member.display_name}</div>
+            <div style={{ fontSize: 12, color: '#999', marginTop: 2 }}>會員編號 #{String(member.member_no).padStart(4, '0')}</div>
+            <div style={{ display: 'inline-flex', alignItems: 'center', gap: 4, background: '#E6F1FB', color: '#0C447C', fontSize: 12, padding: '4px 10px', borderRadius: 20, marginTop: 6 }}>
+              ⭐ {member.level}會員
+            </div>
+          </div>
+        </div>
+
+        {/* 等級進度 */}
+        <div style={{ padding: '20px 20px 0' }}>
+          <div style={{ fontSize: 14, fontWeight: 500, color: '#111', display: 'flex', alignItems: 'center', gap: 6, marginBottom: 12 }}>🏅 等級進度</div>
+          <div style={{ border: '0.5px solid #e5e5e5', borderRadius: 12, padding: 14, marginBottom: 12 }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 10 }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+                <span style={{ fontSize: 12, background: '#E6F1FB', color: '#0C447C', padding: '3px 8px', borderRadius: 20 }}>{member.level}</span>
+                <span style={{ fontSize: 13, color: '#aaa' }}>→</span>
+                {nextLevel && <span style={{ fontSize: 12, background: '#f5f5f5', color: '#888', padding: '3px 8px', borderRadius: 20, border: '0.5px solid #e5e5e5' }}>{nextLevel.name}</span>}
+              </div>
+              {nextLevel && <span style={{ fontSize: 11, color: '#999' }}>還差 {(nextLevel.min - member.points).toLocaleString()} 點</span>}
+            </div>
+            <div style={{ height: 10, background: '#f5f5f5', borderRadius: 99, overflow: 'hidden', marginBottom: 5 }}>
+              <div style={{ height: '100%', width: `${levelProgress}%`, background: '#378ADD', borderRadius: 99 }} />
+            </div>
+            <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 11, color: '#aaa' }}>
+              <span>{member.points?.toLocaleString()} 點</span>
+              <span>{levelProgress}%</span>
+            </div>
+          </div>
+
+          {/* 等級路線 */}
+          <div style={{ border: '0.5px solid #e5e5e5', borderRadius: 12, overflow: 'hidden', marginBottom: 20 }}>
+            {LEVELS.map((l, i) => {
+              const isDone = member.points >= l.min
+              const isCurrent = member.level === l.name
+              return (
+                <div key={l.name} style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '10px 14px', borderBottom: i < LEVELS.length - 1 ? '0.5px solid #f0f0f0' : 'none', background: isCurrent ? '#EBF4FF' : 'transparent', opacity: isDone || isCurrent ? 1 : 0.5 }}>
+                  <div style={{ width: 10, height: 10, borderRadius: '50%', flexShrink: 0, background: isDone && !isCurrent ? '#639922' : isCurrent ? '#378ADD' : '#ddd' }} />
+                  <div style={{ flex: 1, fontSize: 13, fontWeight: 500, color: isCurrent ? '#0C447C' : '#111' }}>{l.name}</div>
+                  <div style={{ fontSize: 11, color: isCurrent ? '#185FA5' : '#999' }}>{i === 0 ? '初始會員' : `${l.min.toLocaleString()} 點`}</div>
+                  {isDone && !isCurrent && <span style={{ fontSize: 14, color: '#639922' }}>✓</span>}
+                  {isCurrent && <span style={{ fontSize: 11, background: '#E6F1FB', color: '#0C447C', padding: '2px 7px', borderRadius: 20 }}>目前</span>}
+                </div>
+              )
+            })}
+          </div>
+        </div>
+
+        {/* 數據 */}
+        <div style={{ padding: '0 20px 20px' }}>
+          <div style={{ fontSize: 14, fontWeight: 500, color: '#111', display: 'flex', alignItems: 'center', gap: 6, marginBottom: 12 }}>📊 我的數據</div>
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2,1fr)', gap: 8 }}>
+            {[
+              { num: member.points?.toLocaleString(), label: '累積積分', sub: '' },
+              { num: `$${member.total_spent?.toLocaleString()}`, label: '累積消費', sub: '' },
+              { num: member.login_streak, label: '連續登入天數', sub: '' },
+              { num: member.total_logins, label: '總登入天數', sub: '' },
+            ].map((s, i) => (
+              <div key={i} style={{ background: '#f8f8f8', borderRadius: 10, padding: 12 }}>
+                <div style={{ fontSize: 20, fontWeight: 500, color: '#111' }}>{s.num}</div>
+                <div style={{ fontSize: 11, color: '#999', marginTop: 3 }}>{s.label}</div>
+              </div>
+            ))}
+          </div>
+        </div>
+
+        {/* 本週簽到 */}
+        <div style={{ padding: '0 20px 20px' }}>
+          <div style={{ border: '0.5px solid #e5e5e5', borderRadius: 12, padding: 14 }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 12 }}>
+              <div style={{ fontSize: 13, fontWeight: 500, color: '#111' }}>本週簽到</div>
+              <span style={{ fontSize: 12, background: '#EAF3DE', color: '#27500A', padding: '3px 8px', borderRadius: 20 }}>連續 {member.login_streak} 天</span>
+            </div>
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(7,1fr)', gap: 5, marginBottom: 8 }}>
+              {weekLogins.map((d, i) => (
+                <div key={d.date} style={{
+                  aspectRatio: 1, borderRadius: 7, border: '0.5px solid #e5e5e5', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: 1, fontSize: 9,
+                  background: d.date === today ? '#E24B4A' : d.done ? '#FCEBEB' : '#fff',
+                  borderColor: d.date === today ? '#E24B4A' : d.done ? '#F09595' : '#e5e5e5',
+                  color: d.date === today ? 'white' : d.done ? '#791F1F' : '#aaa',
+                }}>
+                  <span style={{ fontSize: 12 }}>{d.done || d.date === today ? '✓' : '○'}</span>
+                  <span>{dayNames[i]}</span>
+                </div>
+              ))}
+            </div>
+            {daysUntilFullStreak <= 3 && (
+              <div style={{ fontSize: 11, color: '#888', display: 'flex', alignItems: 'center', gap: 4 }}>
+                🎁 再 {daysUntilFullStreak} 天全勤可獲得 +15 點全勤獎勵
+              </div>
+            )}
+          </div>
+        </div>
+
+        {/* 積分紀錄 */}
+        <div style={{ padding: '0 20px 28px' }}>
+          <div style={{ fontSize: 14, fontWeight: 500, color: '#111', display: 'flex', alignItems: 'center', gap: 6, marginBottom: 12 }}>🕐 積分紀錄</div>
+          {logs.map(log => (
+            <div key={log.id} style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '11px 0', borderBottom: '0.5px solid #f0f0f0' }}>
+              <div style={{ width: 34, height: 34, borderRadius: 8, background: logColors[log.type] || '#f5f5f5', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 16, flexShrink: 0 }}>
+                {logIcons[log.type] || '✏️'}
+              </div>
+              <div style={{ flex: 1 }}>
+                <div style={{ fontSize: 13, fontWeight: 500, color: '#111' }}>{log.note || log.type}</div>
+                <div style={{ fontSize: 11, color: '#999', marginTop: 1 }}>{new Date(log.created_at).toLocaleDateString('zh-TW')}</div>
+              </div>
+              <div style={{ fontSize: 13, fontWeight: 500, color: log.points > 0 ? '#3B6D11' : '#A32D2D' }}>
+                {log.points > 0 ? '+' : ''}{log.points}
+              </div>
+            </div>
+          ))}
+        </div>
+      </div>
+      <BottomNav />
+    </div>
+  )
+}
