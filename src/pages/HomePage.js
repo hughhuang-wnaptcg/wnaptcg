@@ -138,9 +138,14 @@ export default function HomePage() {
           <div style={{ padding: '0 20px 20px' }}>
             <div style={{ border: '0.5px solid #e5e5e5', borderRadius: 12, padding: 14 }}>
               <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 12 }}>
-                <div style={{ width: 40, height: 40, borderRadius: '50%', background: '#FAEEDA', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 15, fontWeight: 600, color: '#633806', border: '1.5px solid #FAC775' }}>
-                  {member.display_name?.[0]?.toUpperCase()}
-                </div>
+                {member.avatar_url ? (
+                  <img src={member.avatar_url} alt={member.display_name}
+                    style={{ width: 40, height: 40, borderRadius: '50%', objectFit: 'cover', border: '1.5px solid #FAC775', flexShrink: 0 }} />
+                ) : (
+                  <div style={{ width: 40, height: 40, borderRadius: '50%', background: '#FAEEDA', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 15, fontWeight: 600, color: '#633806', border: '1.5px solid #FAC775' }}>
+                    {member.display_name?.[0]?.toUpperCase()}
+                  </div>
+                )}
                 <div style={{ flex: 1 }}>
                   <div style={{ fontSize: 13, fontWeight: 500, color: '#111', marginBottom: 4 }}>{member.display_name}</div>
                   <div style={{ display: 'inline-flex', alignItems: 'center', gap: 4, background: '#FAEEDA', color: '#633806', fontSize: 11, padding: '3px 8px', borderRadius: 20 }}>
