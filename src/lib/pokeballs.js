@@ -83,3 +83,19 @@ export function PokeballIcon({ level, size = 24 }) {
   const sized = svg.replace('width="24"', `width="${size}"`).replace('height="24"', `height="${size}"`)
   return <span dangerouslySetInnerHTML={{ __html: sized }} style={{ display: 'inline-flex', alignItems: 'center' }} />
 }
+
+
+export function LevelBadge({ level, size = 'md' }) {
+  const sizes = {
+    sm: { fontSize: 10, iconSize: 12, padding: '2px 6px' },
+    md: { fontSize: 12, iconSize: 14, padding: '3px 8px' },
+    lg: { fontSize: 13, iconSize: 16, padding: '4px 10px' },
+  }
+  const s = sizes[size] || sizes.md
+  return (
+    <span style={{ display: 'inline-flex', alignItems: 'center', gap: 4, background: '#E6F1FB', color: '#0C447C', fontSize: s.fontSize, padding: s.padding, borderRadius: 20 }}>
+      <PokeballIcon level={level} size={s.iconSize} />
+      {level}
+    </span>
+  )
+}
