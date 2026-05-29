@@ -3,6 +3,7 @@ import { useNavigate } from 'react-router-dom'
 import { supabase, getLevel, LEVELS } from '../lib/supabase'
 import { useAuth } from '../hooks/useAuth'
 import TopBar from '../components/TopBar'
+import { PokeballIcon } from '../lib/pokeballs'
 import BottomNav from '../components/BottomNav'
 
 export default function HomePage() {
@@ -137,7 +138,7 @@ export default function HomePage() {
                 <div style={{ flex: 1 }}>
                   <div style={{ fontSize: 13, fontWeight: 500, color: '#111', marginBottom: 4 }}>{member.display_name}</div>
                   <div style={{ display: 'inline-flex', alignItems: 'center', gap: 4, background: '#FAEEDA', color: '#633806', fontSize: 11, padding: '3px 8px', borderRadius: 20 }}>
-                    ⭐ {member.level}會員
+                    <PokeballIcon level={member.level} size={16} /> {member.level}
                   </div>
                 </div>
                 {nextLevel && (
