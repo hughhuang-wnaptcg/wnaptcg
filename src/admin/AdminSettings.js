@@ -21,12 +21,20 @@ export default function AdminSettings() {
 
   async function handleSave() {
     setSaving(true)
-    for (const [key, value] of Object.entries(form)) {
-      await supabase.from('settings').upsert({ key, value: JSON.stringify(value), updated_at: new Date().toISOString() })
+    try {
+      if (modal === 'announcement') {
+        await supabase.from('settings').upsert({ key: 'announcement', value: JSON.stringify(form.announcement || ''), updated_at: new Date().toISOString() })
+        setAnnouncement(form.announcement || '')
+      } else {
+        for (const [key, value] of Object.entries(form)) {
+          await supabase.from('settings').upsert({ key, value: JSON.stringify(value), updated_at: new Date().toISOString() })
+        }
+      }
+      await fetchSettings()
+      setModal(null)
+    } catch(e) {
+      console.error(e)
     }
-    if (form.announcement !== undefined) setAnnouncement(form.announcement)
-    await fetchSettings()
-    setModal(null)
     setSaving(false)
   }
 
