@@ -32,7 +32,7 @@ export default function ChallengePage() {
     <div style={{ maxWidth: 390, margin: '0 auto', background: '#fff', minHeight: '100vh', display: 'flex', flexDirection: 'column' }}>
       <TopBar />
       <div style={{ flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center', flexDirection: 'column', gap: 8 }}>
-        <span style={{ fontSize: 40 }}>⚔️</span>
+        <i className="fa-solid fa-shield" style={{fontSize:40,color:"#E24B4A"}} aria-hidden="true"></i>
         <div style={{ fontSize: 14, color: '#aaa' }}>本月尚未設定挑戰</div>
       </div>
       <BottomNav />
@@ -61,11 +61,11 @@ export default function ChallengePage() {
       <div style={{ flex: 1, overflowY: 'auto', padding: '20px 20px 0' }}>
 
         {/* Boss卡片 */}
-        <div style={{ fontSize: 15, fontWeight: 500, color: '#111', display: 'flex', alignItems: 'center', gap: 7, marginBottom: 12 }}>⚔️ 本月挑戰</div>
+        <div style={{ fontSize: 15, fontWeight: 500, color: '#111', display: 'flex', alignItems: 'center', gap: 7, marginBottom: 12 }}><i className="fa-solid fa-shield" style={{color:"#E24B4A",marginRight:6}} aria-hidden="true"></i>本月挑戰</div>
         <div style={{ border: '0.5px solid #e5e5e5', borderRadius: 14, overflow: 'hidden', marginBottom: 20 }}>
           <div style={{ padding: 16, borderBottom: '0.5px solid #e5e5e5' }}>
             <div style={{ display: 'flex', alignItems: 'center', gap: 12, marginBottom: 14 }}>
-              <div style={{ width: 52, height: 52, borderRadius: '50%', background: '#FCEBEB', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 24, border: '0.5px solid #F09595' }}>⚔️</div>
+              <div style={{ width: 52, height: 52, borderRadius: '50%', background: '#FCEBEB', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 24, border: '0.5px solid #F09595' }}><i className="fa-solid fa-shield" style={{fontSize:24,color:"#E24B4A"}} aria-hidden="true"></i></div>
               <div style={{ flex: 1 }}>
                 <div style={{ fontSize: 16, fontWeight: 500, color: '#111' }}>{boss.name}</div>
                 <div style={{ fontSize: 12, color: '#999', marginTop: 2 }}>{boss.description || '本月挑戰'}</div>
@@ -105,12 +105,12 @@ export default function ChallengePage() {
         {boss.rewards?.length > 0 && (
           <div style={{ border: '0.5px solid #e5e5e5', borderRadius: 14, padding: 14, background: '#f8f8f8', marginBottom: 20 }}>
             <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 12 }}>
-              <div style={{ fontSize: 14, fontWeight: 500, color: '#111', display: 'flex', alignItems: 'center', gap: 6 }}>🎁 擊敗獎勵</div>
+              <div style={{ fontSize: 14, fontWeight: 500, color: '#111', display: 'flex', alignItems: 'center', gap: 6 }}><i className="fa-solid fa-gift" style={{color:"#BA7517",marginRight:6}} aria-hidden="true"></i>擊敗獎勵</div>
               <span style={{ fontSize: 11, background: '#FAEEDA', color: '#633806', padding: '3px 8px', borderRadius: 20 }}>依消費比例分配</span>
             </div>
             {boss.rewards.map((r, i) => (
               <div key={i} style={{ display: 'flex', alignItems: 'center', gap: 10, padding: 10, background: '#fff', borderRadius: 10, border: '0.5px solid #e5e5e5', marginBottom: 8 }}>
-                <div style={{ width: 36, height: 36, borderRadius: 8, background: '#FAEEDA', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 18 }}>🎁</div>
+                <div style={{ width: 36, height: 36, borderRadius: 8, background: '#FAEEDA', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 18 }}><i className="fa-solid fa-gift" style={{fontSize:18,color:"#BA7517"}} aria-hidden="true"></i></div>
                 <div>
                   <div style={{ fontSize: 13, fontWeight: 500, color: '#111' }}>{r.name}</div>
                   {r.desc && <div style={{ fontSize: 11, color: '#999', marginTop: 2 }}>{r.desc}</div>}
@@ -139,7 +139,7 @@ export default function ChallengePage() {
 
         {/* 排行榜 */}
         <div style={{ marginBottom: 28 }}>
-          <div style={{ fontSize: 14, fontWeight: 500, color: '#111', display: 'flex', alignItems: 'center', gap: 6, marginBottom: 10 }}>📊 貢獻排行</div>
+          <div style={{ fontSize: 14, fontWeight: 500, color: '#111', display: 'flex', alignItems: 'center', gap: 6, marginBottom: 10 }}><i className="fa-solid fa-ranking-star" style={{color:"#999",marginRight:6}} aria-hidden="true"></i>貢獻排行</div>
           {rankList.slice(0, 3).map((m, i) => (
             <div key={m.name} style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '10px 0', borderBottom: '0.5px solid #f0f0f0' }}>
               <div style={{ fontSize: 12, fontWeight: 500, color: i < 3 ? '#BA7517' : '#aaa', width: 20, textAlign: 'center' }}>{i + 1}</div>
