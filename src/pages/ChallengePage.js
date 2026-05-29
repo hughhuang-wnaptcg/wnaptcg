@@ -2,6 +2,7 @@ import React, { useEffect, useState } from 'react'
 import { supabase } from '../lib/supabase'
 import { useAuth } from '../hooks/useAuth'
 import TopBar from '../components/TopBar'
+import { PokeballIcon, LevelBadge } from '../lib/pokeballs'
 import BottomNav from '../components/BottomNav'
 
 export default function ChallengePage() {
@@ -145,7 +146,7 @@ export default function ChallengePage() {
               <div style={{ width: 32, height: 32, borderRadius: '50%', background: '#FAEEDA', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 12, fontWeight: 600, color: '#633806' }}>{m.name[0]}</div>
               <div style={{ flex: 1 }}>
                 <div style={{ fontSize: 13, fontWeight: 500, color: '#111' }}>{m.name}</div>
-                <div style={{ fontSize: 11, color: '#999' }}>{m.level}會員</div>
+                <div style={{ fontSize: 11, color: '#999' }}><LevelBadge level={m.level} size='sm' /></div>
               </div>
               <div style={{ textAlign: 'right' }}>
                 <div style={{ fontSize: 13, fontWeight: 500, color: '#111' }}>${m.amount.toLocaleString()}</div>
@@ -160,7 +161,7 @@ export default function ChallengePage() {
               <div style={{ width: 32, height: 32, borderRadius: '50%', background: '#FAEEDA', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 12, fontWeight: 600, color: '#633806', border: '1.5px solid #378ADD' }}>{member.display_name[0]}</div>
               <div style={{ flex: 1 }}>
                 <div style={{ fontSize: 13, fontWeight: 500, color: '#0C447C' }}>{member.display_name}（我）</div>
-                <div style={{ fontSize: 11, color: '#999' }}>{member.level}會員</div>
+                <div style={{ fontSize: 11, color: '#999' }}><LevelBadge level={member.level} size='sm' /></div>
               </div>
               <div style={{ textAlign: 'right' }}>
                 <div style={{ fontSize: 13, fontWeight: 500, color: '#111' }}>${myAmount.toLocaleString()}</div>
