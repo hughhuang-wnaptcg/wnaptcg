@@ -70,19 +70,7 @@ export default function HomePage() {
           <p style={{ fontSize: 13, color: '#888', lineHeight: 1.7 }}>加入會員，累積積分、見證每次開箱的歷史時刻。</p>
         </div>
 
-        {/* Stats */}
-        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3,1fr)', borderBottom: '0.5px solid #e5e5e5' }}>
-          {[
-            { num: stats.memberCount, label: '會員人數' },
-            { num: stats.cardCount, label: '開箱紀錄' },
-            { num: `${bossProgress}%`, label: 'Boss血量' },
-          ].map((s, i) => (
-            <div key={i} style={{ padding: '16px 12px', textAlign: 'center', borderRight: i < 2 ? '0.5px solid #e5e5e5' : 'none' }}>
-              <div style={{ fontSize: 20, fontWeight: 500, color: '#111' }}>{s.num}</div>
-              <div style={{ fontSize: 11, color: '#999', marginTop: 2 }}>{s.label}</div>
-            </div>
-          ))}
-        </div>
+
 
         {/* 戰績牆預覽 */}
         <div style={{ padding: '22px 20px 0' }}>
