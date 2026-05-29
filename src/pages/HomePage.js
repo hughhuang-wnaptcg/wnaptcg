@@ -76,14 +76,14 @@ export default function HomePage() {
         {/* 戰績牆預覽 */}
         <div style={{ padding: '22px 20px 0' }}>
           <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 14 }}>
-            <div style={{ fontSize: 15, fontWeight: 500, color: '#111', display: 'flex', alignItems: 'center', gap: 7 }}>🏆 戰績牆</div>
+            <div style={{ fontSize: 15, fontWeight: 500, color: '#111', display: 'flex', alignItems: 'center', gap: 7 }}><i className="fa-solid fa-trophy" style={{color:"#E24B4A",marginRight:6}} aria-hidden="true"></i>戰績牆</div>
             <span style={{ fontSize: 12, color: '#999', cursor: 'pointer' }} onClick={() => navigate('/wall')}>全部 →</span>
           </div>
           <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3,1fr)', gap: 8, marginBottom: 20 }}>
             {recentCards.map(card => (
               <div key={card.id} onClick={() => navigate('/wall')} style={{ border: '0.5px solid #e5e5e5', borderRadius: 10, overflow: 'hidden', cursor: 'pointer' }}>
                 <div style={{ aspectRatio: '3/4', background: '#f5f5f5', display: 'flex', alignItems: 'center', justifyContent: 'center', position: 'relative' }}>
-                  {card.image_url ? <img src={card.image_url} alt={card.name} style={{ width: '100%', height: '100%', objectFit: 'cover' }} /> : <span style={{ fontSize: 28, color: '#ddd' }}>🎴</span>}
+                  {card.image_url ? <img src={card.image_url} alt={card.name} style={{ width: '100%', height: '100%', objectFit: 'cover' }} /> : <span style={{ fontSize: 28, color: '#ddd' }}><i className="fa-solid fa-id-card" style={{fontSize:28,color:"#ddd"}} aria-hidden="true"></i></span>}
                   <span style={{ position: 'absolute', top: 8, left: 8, fontSize: 9, fontWeight: 500, padding: '2px 6px', borderRadius: 20, background: '#FCEBEB', color: '#791F1F' }}>{card.rarity}</span>
                 </div>
                 <div style={{ padding: '8px 8px 10px' }}>
@@ -99,12 +99,12 @@ export default function HomePage() {
         {boss && (
           <div style={{ padding: '0 20px 20px' }}>
             <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 12 }}>
-              <div style={{ fontSize: 15, fontWeight: 500, color: '#111' }}>⚔️ 共同挑戰</div>
+              <div style={{ fontSize: 15, fontWeight: 500, color: '#111' }}><i className="fa-solid fa-shield" style={{color:"#E24B4A",marginRight:6}} aria-hidden="true"></i>共同挑戰</div>
               <span style={{ fontSize: 12, color: '#999', cursor: 'pointer' }} onClick={() => navigate('/challenge')}>詳情 →</span>
             </div>
             <div style={{ border: '0.5px solid #e5e5e5', borderRadius: 12, padding: 14, background: '#f8f8f8' }}>
               <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 12 }}>
-                <div style={{ width: 40, height: 40, borderRadius: '50%', background: '#FCEBEB', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 18, border: '0.5px solid #F09595' }}>⚔️</div>
+                <div style={{ width: 40, height: 40, borderRadius: '50%', background: '#FCEBEB', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 18, border: '0.5px solid #F09595' }}><i className="fa-solid fa-shield" style={{fontSize:18,color:"#E24B4A"}} aria-hidden="true"></i></div>
                 <div style={{ flex: 1 }}>
                   <div style={{ fontSize: 14, fontWeight: 500, color: '#111' }}>{boss.name}</div>
                   <div style={{ fontSize: 11, color: '#999' }}>每月 {boss.reset_day} 日重置</div>
@@ -175,7 +175,7 @@ export default function HomePage() {
         {weekLogins.length > 0 && (
           <div style={{ padding: '0 20px 28px' }}>
             <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 12 }}>
-              <div style={{ fontSize: 14, fontWeight: 500, color: '#111' }}>📅 本週簽到</div>
+              <div style={{ fontSize: 14, fontWeight: 500, color: '#111' }}><i className="fa-solid fa-calendar-check" style={{color:"#E24B4A",marginRight:6}} aria-hidden="true"></i>本週簽到</div>
               <span style={{ fontSize: 11, background: '#EAF3DE', color: '#27500A', padding: '3px 8px', borderRadius: 20 }}>+50 點全勤加成</span>
             </div>
             <div style={{ display: 'grid', gridTemplateColumns: 'repeat(7,1fr)', gap: 5 }}>
@@ -188,7 +188,7 @@ export default function HomePage() {
                   borderColor: d.date === today ? '#E24B4A' : d.done ? '#F09595' : '#e5e5e5',
                   color: d.date === today ? 'white' : d.done ? '#791F1F' : '#999',
                 }}>
-                  <span style={{ fontSize: 12 }}>{d.done || d.date === today ? '✓' : '○'}</span>
+                  <span style={{ fontSize: 12 }}>{d.done || d.date === today ? <i className="fa-solid fa-check" aria-hidden="true"></i> : <i className="fa-regular fa-circle" aria-hidden="true"></i>}</span>
                   <span>{dayNames[i]}</span>
                 </div>
               ))}
