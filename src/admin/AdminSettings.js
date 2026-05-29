@@ -91,25 +91,10 @@ export default function AdminSettings() {
 
         {/* 通知設定 */}
         <div style={{ background: '#fff', border: '0.5px solid #e5e5e5', borderRadius: 10, padding: 16 }}>
-          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 14 }}>
-            <div style={{ fontSize: 13, fontWeight: 500, color: '#111' }}>🔔 通知設定</div>
+          <div style={{ fontSize: 13, fontWeight: 500, color: '#111', marginBottom: 10 }}>🔔 通知設定</div>
+          <div style={{ fontSize: 13, color: '#aaa', background: '#f8f8f8', borderRadius: 8, padding: '12px 14px' }}>
+            通知功能即將推出，敬請期待。
           </div>
-          {[
-            { label: '升級通知', desc: '會員升級時發送通知', on: true },
-            { label: 'Boss 重置通知', desc: '每月重置前提醒會員', on: true },
-            { label: '全勤提醒', desc: '差 1 天全勤時提醒', on: true },
-            { label: '新會員通知', desc: '新會員加入時通知管理員', on: false },
-          ].map(n => (
-            <div key={n.label} style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '9px 0', borderBottom: '0.5px solid #f0f0f0' }}>
-              <div>
-                <div style={{ fontSize: 12, fontWeight: 500, color: '#111' }}>{n.label}</div>
-                <div style={{ fontSize: 11, color: '#aaa', marginTop: 1 }}>{n.desc}</div>
-              </div>
-              <div style={{ width: 36, height: 20, borderRadius: 10, background: n.on ? '#E24B4A' : '#ddd', position: 'relative', cursor: 'pointer', flexShrink: 0 }}>
-                <div style={{ position: 'absolute', top: 2, width: 16, height: 16, borderRadius: '50%', background: 'white', right: n.on ? 2 : 'auto', left: n.on ? 'auto' : 2 }} />
-              </div>
-            </div>
-          ))}
         </div>
 
         {/* 帳號安全 */}
