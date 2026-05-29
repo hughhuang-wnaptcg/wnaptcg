@@ -2,7 +2,7 @@ import React, { useEffect, useState } from 'react'
 import { supabase, LEVELS, getNextLevel } from '../lib/supabase'
 import { useAuth } from '../hooks/useAuth'
 import TopBar from '../components/TopBar'
-import { PokeballIcon } from '../lib/pokeballs'
+import { PokeballIcon, LevelBadge } from '../lib/pokeballs'
 import BottomNav from '../components/BottomNav'
 
 export default function ProfilePage() {
@@ -83,9 +83,9 @@ export default function ProfilePage() {
           <div style={{ border: '0.5px solid #e5e5e5', borderRadius: 12, padding: 14, marginBottom: 12 }}>
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 10 }}>
               <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
-                <span style={{ fontSize: 12, background: '#E6F1FB', color: '#0C447C', padding: '3px 8px', borderRadius: 20 }}>{member.level}</span>
+                <LevelBadge level={member.level} size='md' />
                 <span style={{ fontSize: 13, color: '#aaa' }}>→</span>
-                {nextLevel && <span style={{ fontSize: 12, background: '#f5f5f5', color: '#888', padding: '3px 8px', borderRadius: 20, border: '0.5px solid #e5e5e5' }}>{nextLevel.name}</span>}
+                {nextLevel && <LevelBadge level={nextLevel.name} size='md' />}
               </div>
               {nextLevel && <span style={{ fontSize: 11, color: '#999' }}>還差 {(nextLevel.min - member.points).toLocaleString()} 點</span>}
             </div>
