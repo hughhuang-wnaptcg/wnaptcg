@@ -10,6 +10,7 @@ export default function AdminCards() {
   const [form, setForm] = useState({ name: '', rarity: 'UR', series: '', episode: '', image_url: '', ownerIds: [] })
   const [uploading, setUploading] = useState(false)
   const [saving, setSaving] = useState(false)
+  const [preview, setPreview] = useState(null)
   const fileRef = useRef()
 
   useEffect(() => { fetchData() }, [])
@@ -26,13 +27,22 @@ export default function AdminCards() {
   async function handleUpload(e) {
     const file = e.target.files[0]
     if (!file) return
+    // 先顯示預覽
+    const reader = new FileReader()
+    reader.onload = (ev) => setPreview(ev.target.result)
+    reader.readAsDataURL(file)
+
     setUploading(true)
-    const ext = file.name.split('.').pop()
-    const path = `cards/${Date.now()}.${ext}`
-    const { error } = await supabase.storage.from('card-images').upload(path, file)
-    if (!error) {
+    try {
+      const ext = file.name.split('.').pop()
+      const path = `cards/${Date.now()}.${ext}`
+      const { error: uploadError } = await supabase.storage.from('card-images').upload(path, file, { cacheControl: '3600', upsert: false })
+      if (uploadError) throw uploadError
       const { data } = supabase.storage.from('card-images').getPublicUrl(path)
       setForm(f => ({ ...f, image_url: data.publicUrl }))
+    } catch (err) {
+      alert('圖片上傳失敗：' + err.message)
+      setPreview(null)
     }
     setUploading(false)
   }
@@ -40,20 +50,25 @@ export default function AdminCards() {
   async function handleSave() {
     if (!form.name || !form.series) return
     setSaving(true)
-    if (modal === 'new') {
-      const { data: newCard } = await supabase.from('cards').insert({ name: form.name, rarity: form.rarity, series: form.series, episode: form.episode, image_url: form.image_url }).select().single()
-      if (newCard && form.ownerIds.length > 0) {
-        await supabase.from('card_owners').insert(form.ownerIds.map(id => ({ card_id: newCard.id, member_id: id })))
+    try {
+      if (modal === 'new') {
+        const { data: newCard } = await supabase.from('cards').insert({ name: form.name, rarity: form.rarity, series: form.series, episode: form.episode, image_url: form.image_url }).select().single()
+        if (newCard && form.ownerIds.length > 0) {
+          await supabase.from('card_owners').insert(form.ownerIds.map(id => ({ card_id: newCard.id, member_id: id })))
+        }
+      } else {
+        await supabase.from('cards').update({ name: form.name, rarity: form.rarity, series: form.series, episode: form.episode, image_url: form.image_url }).eq('id', modal.id)
+        await supabase.from('card_owners').delete().eq('card_id', modal.id)
+        if (form.ownerIds.length > 0) {
+          await supabase.from('card_owners').insert(form.ownerIds.map(id => ({ card_id: modal.id, member_id: id })))
+        }
       }
-    } else {
-      await supabase.from('cards').update({ name: form.name, rarity: form.rarity, series: form.series, episode: form.episode, image_url: form.image_url }).eq('id', modal.id)
-      await supabase.from('card_owners').delete().eq('card_id', modal.id)
-      if (form.ownerIds.length > 0) {
-        await supabase.from('card_owners').insert(form.ownerIds.map(id => ({ card_id: modal.id, member_id: id })))
-      }
+      await fetchData()
+      setModal(null)
+      setPreview(null)
+    } catch (err) {
+      alert('儲存失敗：' + err.message)
     }
-    await fetchData()
-    setModal(null)
     setSaving(false)
   }
 
@@ -65,11 +80,13 @@ export default function AdminCards() {
 
   function openNew() {
     setForm({ name: '', rarity: 'UR', series: '', episode: '', image_url: '', ownerIds: [] })
+    setPreview(null)
     setModal('new')
   }
 
   function openEdit(card) {
     setForm({ name: card.name, rarity: card.rarity, series: card.series, episode: card.episode || '', image_url: card.image_url || '', ownerIds: card.card_owners?.map(o => o.member_id) || [] })
+    setPreview(card.image_url || null)
     setModal(card)
   }
 
@@ -130,20 +147,21 @@ export default function AdminCards() {
         </table>
       </div>
 
-      {/* 新增/編輯彈出視窗 */}
       {modal && (
         <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.45)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 100 }}>
           <div style={{ background: '#fff', border: '0.5px solid #e5e5e5', borderRadius: 12, width: 360, padding: 20, maxHeight: '90vh', overflowY: 'auto' }}>
             <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 4 }}>
               <div style={{ fontSize: 15, fontWeight: 500, color: '#111' }}>{modal === 'new' ? '新增卡牌' : '編輯卡牌'}</div>
-              <span style={{ fontSize: 18, cursor: 'pointer', color: '#aaa' }} onClick={() => setModal(null)}>✕</span>
+              <span style={{ fontSize: 18, cursor: 'pointer', color: '#aaa' }} onClick={() => { setModal(null); setPreview(null) }}>✕</span>
             </div>
             <div style={{ fontSize: 12, color: '#999', marginBottom: 16 }}>填寫資訊後儲存</div>
 
-            {/* 圖片上傳 */}
-            <div onClick={() => fileRef.current?.click()} style={{ border: '0.5px dashed #ddd', borderRadius: 8, padding: 16, textAlign: 'center', cursor: 'pointer', background: '#f8f8f8', marginBottom: 14 }}>
-              {form.image_url ? (
-                <img src={form.image_url} alt="" style={{ height: 80, objectFit: 'contain', borderRadius: 6 }} />
+            <input ref={fileRef} type="file" accept="image/*" onChange={handleUpload} style={{ display: 'none' }} />
+
+            <div onClick={() => !uploading && fileRef.current?.click()}
+              style={{ border: '0.5px dashed #ddd', borderRadius: 8, padding: 16, textAlign: 'center', cursor: uploading ? 'not-allowed' : 'pointer', background: '#f8f8f8', marginBottom: 14, minHeight: 80, display: 'flex', alignItems: 'center', justifyContent: 'center', flexDirection: 'column' }}>
+              {preview ? (
+                <img src={preview} alt="" style={{ maxHeight: 120, objectFit: 'contain', borderRadius: 6 }} />
               ) : (
                 <>
                   <div style={{ fontSize: 24, color: '#aaa', marginBottom: 4 }}>📷</div>
@@ -152,7 +170,12 @@ export default function AdminCards() {
                 </>
               )}
             </div>
-            <input ref={fileRef} type="file" accept="image/*" onChange={handleUpload} style={{ display: 'none' }} />
+            {preview && !uploading && (
+              <div style={{ textAlign: 'center', marginBottom: 10 }}>
+                <span onClick={() => fileRef.current?.click()} style={{ fontSize: 12, color: '#E24B4A', cursor: 'pointer' }}>重新上傳</span>
+              </div>
+            )}
+            {uploading && <div style={{ textAlign: 'center', fontSize: 12, color: '#999', marginBottom: 10 }}>上傳中，請稍候...</div>}
 
             <div style={{ marginBottom: 12 }}>
               <label style={{ fontSize: 11, color: '#999', display: 'block', marginBottom: 4 }}>卡牌名稱</label>
@@ -198,10 +221,10 @@ export default function AdminCards() {
               </select>
             </div>
             <div style={{ display: 'flex', gap: 8 }}>
-              <button onClick={() => setModal(null)} style={{ flex: 1, padding: 9, border: '0.5px solid #ddd', borderRadius: 8, fontSize: 13, color: '#666', background: 'transparent', cursor: 'pointer' }}>取消</button>
-              <button onClick={handleSave} disabled={saving}
-                style={{ flex: 1, padding: 9, background: saving ? '#ccc' : '#E24B4A', border: 'none', borderRadius: 8, fontSize: 13, fontWeight: 500, color: 'white', cursor: saving ? 'not-allowed' : 'pointer' }}>
-                {saving ? '儲存中...' : '儲存卡牌'}
+              <button onClick={() => { setModal(null); setPreview(null) }} style={{ flex: 1, padding: 9, border: '0.5px solid #ddd', borderRadius: 8, fontSize: 13, color: '#666', background: 'transparent', cursor: 'pointer' }}>取消</button>
+              <button onClick={handleSave} disabled={saving || uploading}
+                style={{ flex: 1, padding: 9, background: saving || uploading ? '#ccc' : '#E24B4A', border: 'none', borderRadius: 8, fontSize: 13, fontWeight: 500, color: 'white', cursor: saving || uploading ? 'not-allowed' : 'pointer' }}>
+                {saving ? '儲存中...' : uploading ? '上傳中...' : '儲存卡牌'}
               </button>
             </div>
           </div>
