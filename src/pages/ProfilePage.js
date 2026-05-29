@@ -60,9 +60,14 @@ export default function ProfilePage() {
 
       <div style={{ flex: 1, overflowY: 'auto' }}>
         <div style={{ padding: '24px 20px 20px', borderBottom: '0.5px solid #e5e5e5', display: 'flex', alignItems: 'center', gap: 14 }}>
-          <div style={{ width: 60, height: 60, borderRadius: '50%', background: '#FAEEDA', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 22, fontWeight: 600, color: '#633806', border: '2px solid #FAC775', flexShrink: 0 }}>
-            {member.display_name?.[0]?.toUpperCase()}
-          </div>
+          {member.avatar_url ? (
+            <img src={member.avatar_url} alt={member.display_name}
+              style={{ width: 60, height: 60, borderRadius: '50%', objectFit: 'cover', border: '2px solid #FAC775', flexShrink: 0 }} />
+          ) : (
+            <div style={{ width: 60, height: 60, borderRadius: '50%', background: '#FAEEDA', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 22, fontWeight: 600, color: '#633806', border: '2px solid #FAC775', flexShrink: 0 }}>
+              {member.display_name?.[0]?.toUpperCase()}
+            </div>
+          )}
           <div>
             <div style={{ fontSize: 18, fontWeight: 500, color: '#111' }}>{member.display_name}</div>
             <div style={{ fontSize: 12, color: '#999', marginTop: 2 }}>會員編號 #{String(member.member_no || '0').padStart(4, '0')}</div>
