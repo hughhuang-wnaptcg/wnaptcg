@@ -1,6 +1,7 @@
 import React, { useEffect, useState } from 'react'
 import { supabase, RARITY_COLORS } from '../lib/supabase'
 import TopBar from '../components/TopBar'
+import { PokeballIcon, LevelBadge } from '../lib/pokeballs'
 import BottomNav from '../components/BottomNav'
 
 export default function WallPage() {
@@ -87,7 +88,7 @@ export default function WallPage() {
                 </div>
                 <div>
                   <div style={{ fontSize: 14, fontWeight: 500, color: '#111' }}>{o.members?.display_name}</div>
-                  <div style={{ fontSize: 12, color: '#999' }}>{o.members?.level}會員</div>
+                  <div style={{ fontSize: 12, color: '#999' }}><LevelBadge level={o.members?.level} size='sm' /></div>
                 </div>
                 {selected.episode && (
                   <div style={{ marginLeft: 'auto', textAlign: 'right' }}>
