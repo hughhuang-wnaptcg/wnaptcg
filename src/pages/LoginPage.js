@@ -20,7 +20,16 @@ export default function LoginPage() {
         const { data, error: signUpError } = await supabase.auth.signUp({ email, password })
         if (signUpError) throw signUpError
         if (data.user) {
-          await supabase.from('members').insert({ id: data.user.id, email, display_name: name || email.split('@')[0] })
+          const displayName = name.trim() || email.split('@')[0]
+          // 先檢查是否已存在
+          const { data: existing } = await supabase.from('members').select('id').eq('id', data.user.id).single()
+          if (existing) {
+            // 已存在就更新暱稱
+            await supabase.from('members').update({ display_name: displayName }).eq('id', data.user.id)
+          } else {
+            // 不存在就新增
+            await supabase.from('members').insert({ id: data.user.id, email, display_name: displayName })
+          }
           navigate('/')
         }
       } else {
@@ -46,11 +55,7 @@ export default function LoginPage() {
     sub: { fontSize: 13, color: '#888', lineHeight: 1.6 },
     body: { padding: '28px 24px' },
     input: { width: '100%', padding: '10px 12px', border: '0.5px solid #ddd', borderRadius: 8, fontSize: 14, color: '#111', marginBottom: 10, outline: 'none' },
-    btnLine: { width: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 10, background: '#06C755', color: 'white', border: 'none', borderRadius: 10, padding: 14, fontSize: 15, fontWeight: 600, cursor: 'pointer', marginBottom: 12 },
-    btnEmail: { width: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8, background: '#fff', color: '#111', border: '0.5px solid #ddd', borderRadius: 10, padding: 12, fontSize: 14, fontWeight: 500, cursor: 'pointer', marginTop: 14 },
-    divider: { display: 'flex', alignItems: 'center', gap: 10, margin: '16px 0' },
-    divLine: { flex: 1, height: 0.5, background: '#e5e5e5' },
-    divText: { fontSize: 12, color: '#aaa' },
+    btnEmail: { width: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8, background: '#E24B4A', color: 'white', border: 'none', borderRadius: 10, padding: 12, fontSize: 14, fontWeight: 500, cursor: 'pointer', marginTop: 4 },
     error: { background: '#FCEBEB', color: '#A32D2D', padding: '8px 12px', borderRadius: 8, fontSize: 13, marginBottom: 12 },
     label: { fontSize: 12, color: '#888', marginBottom: 4, display: 'block' },
     perks: { padding: '0 24px 28px' },
@@ -78,17 +83,17 @@ export default function LoginPage() {
       <div style={s.body}>
         {error && <div style={s.error}>{error}</div>}
 
-        <div style={s.divider}>
-          <div style={s.divLine} />
-          <div style={s.divText}>{isRegister ? '註冊新帳號' : '使用 Email 登入'}</div>
-          <div style={s.divLine} />
+        <div style={{ display: 'flex', alignItems: 'center', gap: 10, margin: '0 0 16px' }}>
+          <div style={{ flex: 1, height: 0.5, background: '#e5e5e5' }} />
+          <div style={{ fontSize: 12, color: '#aaa' }}>{isRegister ? '註冊新帳號' : '使用 Email 登入'}</div>
+          <div style={{ flex: 1, height: 0.5, background: '#e5e5e5' }} />
         </div>
 
         <form onSubmit={handleEmailAuth}>
           {isRegister && (
             <div>
               <label style={s.label}>暱稱</label>
-              <input style={s.input} value={name} onChange={e => setName(e.target.value)} placeholder="你的暱稱" />
+              <input style={s.input} value={name} onChange={e => setName(e.target.value)} placeholder="你的暱稱（登入後顯示用）" />
             </div>
           )}
           <div>
@@ -99,7 +104,7 @@ export default function LoginPage() {
             <label style={s.label}>密碼</label>
             <input style={s.input} type="password" value={password} onChange={e => setPassword(e.target.value)} placeholder="••••••••" required />
           </div>
-          <button style={{ ...s.btnEmail, background: '#E24B4A', color: 'white', border: 'none', marginTop: 4 }} type="submit" disabled={loading}>
+          <button style={s.btnEmail} type="submit" disabled={loading}>
             {loading ? '處理中...' : isRegister ? '立即註冊' : 'Email 登入'}
           </button>
         </form>
