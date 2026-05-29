@@ -2,6 +2,7 @@ import React, { useEffect, useState } from 'react'
 import { supabase, LEVELS, getNextLevel } from '../lib/supabase'
 import { useAuth } from '../hooks/useAuth'
 import TopBar from '../components/TopBar'
+import { PokeballIcon } from '../lib/pokeballs'
 import BottomNav from '../components/BottomNav'
 
 export default function ProfilePage() {
@@ -72,7 +73,7 @@ export default function ProfilePage() {
             <div style={{ fontSize: 18, fontWeight: 500, color: '#111' }}>{member.display_name}</div>
             <div style={{ fontSize: 12, color: '#999', marginTop: 2 }}>會員編號 #{String(member.member_no || '0').padStart(4, '0')}</div>
             <div style={{ display: 'inline-flex', alignItems: 'center', gap: 4, background: '#E6F1FB', color: '#0C447C', fontSize: 12, padding: '4px 10px', borderRadius: 20, marginTop: 6 }}>
-              ⭐ {member.level}會員
+              <PokeballIcon level={member.level} size={16} /> {member.level}
             </div>
           </div>
         </div>
@@ -107,7 +108,7 @@ export default function ProfilePage() {
                   <div style={{ flex: 1, fontSize: 13, fontWeight: 500, color: isCurrent ? '#0C447C' : '#111' }}>{l.name}</div>
                   <div style={{ fontSize: 11, color: isCurrent ? '#185FA5' : '#999' }}>{i === 0 ? '初始會員' : `${l.min.toLocaleString()} 點`}</div>
                   {isDone && !isCurrent && <span style={{ fontSize: 14, color: '#639922' }}>✓</span>}
-                  {isCurrent && <span style={{ fontSize: 11, background: '#E6F1FB', color: '#0C447C', padding: '2px 7px', borderRadius: 20 }}>目前</span>}
+                  {isCurrent && <span style={{ fontSize: 11, background: '#E6F1FB', color: '#0C447C', padding: '2px 7px', borderRadius: 20, display: 'inline-flex', alignItems: 'center', gap: 3 }}><PokeballIcon level={l.name} size={12} /> 目前</span>}
                 </div>
               )
             })}
