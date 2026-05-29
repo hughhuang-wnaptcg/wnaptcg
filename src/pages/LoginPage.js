@@ -1,6 +1,8 @@
-import React, { useState } from 'react'
+import React, { useState, useEffect } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { supabase } from '../lib/supabase'
+
+const LIFF_ID = '2010232634-k2C4gSOg'
 
 export default function LoginPage() {
   const [email, setEmail] = useState('')
@@ -8,8 +10,82 @@ export default function LoginPage() {
   const [isRegister, setIsRegister] = useState(false)
   const [name, setName] = useState('')
   const [loading, setLoading] = useState(false)
+  const [lineLoading, setLineLoading] = useState(false)
   const [error, setError] = useState('')
   const navigate = useNavigate()
+
+  useEffect(() => {
+    // 載入 LIFF SDK
+    const script = document.createElement('script')
+    script.src = 'https://static.line-scdn.net/liff/edge/2/sdk.js'
+    script.async = true
+    document.head.appendChild(script)
+    return () => document.head.removeChild(script)
+  }, [])
+
+  async function handleLineLogin() {
+    setLineLoading(true)
+    setError('')
+    try {
+      const liff = window.liff
+      if (!liff) throw new Error('LINE SDK 尚未載入，請稍後再試')
+
+      await liff.init({ liffId: LIFF_ID })
+
+      if (!liff.isLoggedIn()) {
+        liff.login()
+        return
+      }
+
+      const profile = await liff.getProfile()
+      const lineId = profile.userId
+      const displayName = profile.displayName
+      const pictureUrl = profile.pictureUrl
+
+      // 用 LINE ID 當 email 格式建立帳號
+      const fakeEmail = `line_${lineId}@wnaptcg.line`
+      const fakePassword = `line_${lineId}_pwd_wnaptcg`
+
+      // 嘗試登入
+      const { error: signInError } = await supabase.auth.signInWithPassword({
+        email: fakeEmail,
+        password: fakePassword,
+      })
+
+      if (signInError) {
+        // 帳號不存在，建立新帳號
+        const { data, error: signUpError } = await supabase.auth.signUp({
+          email: fakeEmail,
+          password: fakePassword,
+        })
+        if (signUpError) throw signUpError
+        if (data.user) {
+          await supabase.from('members').upsert({
+            id: data.user.id,
+            email: fakeEmail,
+            display_name: displayName,
+            avatar_url: pictureUrl,
+            line_id: lineId,
+          }, { onConflict: 'id' })
+        }
+      } else {
+        // 已存在，更新顯示名稱和頭像
+        const { data: { user } } = await supabase.auth.getUser()
+        if (user) {
+          await supabase.from('members').update({
+            display_name: displayName,
+            avatar_url: pictureUrl,
+          }).eq('id', user.id)
+        }
+      }
+
+      navigate('/')
+    } catch (err) {
+      console.error(err)
+      setError('LINE 登入失敗：' + err.message)
+    }
+    setLineLoading(false)
+  }
 
   async function handleEmailAuth(e) {
     e.preventDefault()
@@ -21,13 +97,10 @@ export default function LoginPage() {
         if (signUpError) throw signUpError
         if (data.user) {
           const displayName = name.trim() || email.split('@')[0]
-          // 先檢查是否已存在
           const { data: existing } = await supabase.from('members').select('id').eq('id', data.user.id).single()
           if (existing) {
-            // 已存在就更新暱稱
             await supabase.from('members').update({ display_name: displayName }).eq('id', data.user.id)
           } else {
-            // 不存在就新增
             await supabase.from('members').insert({ id: data.user.id, email, display_name: displayName })
           }
           navigate('/')
@@ -46,47 +119,43 @@ export default function LoginPage() {
   const s = {
     wrap: { minHeight: '100vh', background: '#fff', display: 'flex', flexDirection: 'column', maxWidth: 390, margin: '0 auto' },
     top: { padding: '48px 32px 32px', textAlign: 'center', borderBottom: '0.5px solid #e5e5e5' },
-    logoTop: { fontSize: 22, fontWeight: 600, letterSpacing: '0.08em', color: '#111' },
-    logoDivider: { display: 'flex', alignItems: 'center', gap: 8, margin: '4px auto', width: 180 },
-    logoLine: { flex: 1, height: 0.5, background: '#ccc' },
-    logoX: { fontSize: 13, color: '#999' },
-    logoBot: { fontSize: 12, color: '#999', letterSpacing: '0.14em' },
-    title: { fontSize: 20, fontWeight: 500, color: '#111', marginTop: 32, marginBottom: 8 },
-    sub: { fontSize: 13, color: '#888', lineHeight: 1.6 },
     body: { padding: '28px 24px' },
     input: { width: '100%', padding: '10px 12px', border: '0.5px solid #ddd', borderRadius: 8, fontSize: 14, color: '#111', marginBottom: 10, outline: 'none' },
+    btnLine: { width: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 10, background: '#06C755', color: 'white', border: 'none', borderRadius: 10, padding: 14, fontSize: 15, fontWeight: 600, cursor: lineLoading ? 'not-allowed' : 'pointer', marginBottom: 12, opacity: lineLoading ? 0.7 : 1 },
     btnEmail: { width: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8, background: '#E24B4A', color: 'white', border: 'none', borderRadius: 10, padding: 12, fontSize: 14, fontWeight: 500, cursor: 'pointer', marginTop: 4 },
     error: { background: '#FCEBEB', color: '#A32D2D', padding: '8px 12px', borderRadius: 8, fontSize: 13, marginBottom: 12 },
     label: { fontSize: 12, color: '#888', marginBottom: 4, display: 'block' },
-    perks: { padding: '0 24px 28px' },
-    perksTitle: { fontSize: 12, color: '#aaa', textAlign: 'center', marginBottom: 12 },
-    perksGrid: { display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 8 },
-    perkItem: { display: 'flex', alignItems: 'center', gap: 8, padding: 10, background: '#f8f8f8', borderRadius: 8 },
-    perkIcon: { width: 28, height: 28, borderRadius: 6, background: '#fff', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 14, border: '0.5px solid #e5e5e5' },
-    perkText: { fontSize: 11, color: '#666', lineHeight: 1.4 },
-    footer: { padding: '0 24px 28px', textAlign: 'center' },
-    footerNote: { fontSize: 11, color: '#aaa', lineHeight: 1.7 },
+    divider: { display: 'flex', alignItems: 'center', gap: 10, margin: '16px 0' },
+    divLine: { flex: 1, height: 0.5, background: '#e5e5e5' },
+    divText: { fontSize: 12, color: '#aaa' },
   }
 
   return (
     <div style={s.wrap}>
       <div style={s.top}>
-        <div style={s.logoTop}>W/NA PTCG</div>
-        <div style={s.logoDivider}>
-          <div style={s.logoLine} /><div style={s.logoX}>X</div><div style={s.logoLine} />
+        <div style={{ fontSize: 22, fontWeight: 600, letterSpacing: '0.08em', color: '#111' }}>W/NA PTCG</div>
+        <div style={{ display: 'flex', alignItems: 'center', gap: 8, margin: '4px auto', width: 180 }}>
+          <div style={{ flex: 1, height: 0.5, background: '#ccc' }} />
+          <div style={{ fontSize: 13, color: '#999' }}>X</div>
+          <div style={{ flex: 1, height: 0.5, background: '#ccc' }} />
         </div>
-        <div style={s.logoBot}>HUGO COLLECTIONS</div>
-        <div style={s.title}>會員專屬俱樂部</div>
-        <div style={s.sub}>登入後即可累積積分、查看戰績牆<br />一起挑戰本月 Boss</div>
+        <div style={{ fontSize: 12, color: '#999', letterSpacing: '0.14em' }}>HUGO COLLECTIONS</div>
+        <div style={{ fontSize: 20, fontWeight: 500, color: '#111', marginTop: 32, marginBottom: 8 }}>會員專屬俱樂部</div>
+        <div style={{ fontSize: 13, color: '#888', lineHeight: 1.6 }}>登入後即可累積積分、查看戰績牆<br />一起挑戰本月 Boss</div>
       </div>
 
       <div style={s.body}>
         {error && <div style={s.error}>{error}</div>}
 
-        <div style={{ display: 'flex', alignItems: 'center', gap: 10, margin: '0 0 16px' }}>
-          <div style={{ flex: 1, height: 0.5, background: '#e5e5e5' }} />
-          <div style={{ fontSize: 12, color: '#aaa' }}>{isRegister ? '註冊新帳號' : '使用 Email 登入'}</div>
-          <div style={{ flex: 1, height: 0.5, background: '#e5e5e5' }} />
+        <button style={s.btnLine} onClick={handleLineLogin} disabled={lineLoading}>
+          <span style={{ fontSize: 20 }}>💬</span>
+          {lineLoading ? 'LINE 登入中...' : '使用 LINE 登入'}
+        </button>
+
+        <div style={s.divider}>
+          <div style={s.divLine} />
+          <div style={s.divText}>{isRegister ? '或註冊新帳號' : '或使用 Email 登入'}</div>
+          <div style={s.divLine} />
         </div>
 
         <form onSubmit={handleEmailAuth}>
@@ -118,20 +187,20 @@ export default function LoginPage() {
         </div>
       </div>
 
-      <div style={s.perks}>
-        <div style={s.perksTitle}>加入會員享有</div>
-        <div style={s.perksGrid}>
+      <div style={{ padding: '0 24px 28px' }}>
+        <div style={{ fontSize: 12, color: '#aaa', textAlign: 'center', marginBottom: 12 }}>加入會員享有</div>
+        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 8 }}>
           {[['🏆', '戰績牆開箱紀錄'], ['⭐', '積分升級制度'], ['⚔️', '共同挑戰 Boss'], ['🎁', '每月專屬獎勵']].map(([icon, text]) => (
-            <div key={text} style={s.perkItem}>
-              <div style={s.perkIcon}>{icon}</div>
-              <div style={s.perkText}>{text}</div>
+            <div key={text} style={{ display: 'flex', alignItems: 'center', gap: 8, padding: 10, background: '#f8f8f8', borderRadius: 8 }}>
+              <div style={{ width: 28, height: 28, borderRadius: 6, background: '#fff', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 14, border: '0.5px solid #e5e5e5' }}>{icon}</div>
+              <div style={{ fontSize: 11, color: '#666', lineHeight: 1.4 }}>{text}</div>
             </div>
           ))}
         </div>
       </div>
 
-      <div style={s.footer}>
-        <div style={s.footerNote}>登入即代表你同意我們的服務條款與隱私權政策</div>
+      <div style={{ padding: '0 24px 28px', textAlign: 'center' }}>
+        <div style={{ fontSize: 11, color: '#aaa', lineHeight: 1.7 }}>登入即代表你同意我們的服務條款與隱私權政策</div>
       </div>
     </div>
   )
