@@ -3,6 +3,7 @@ import { useAuth } from '../hooks/useAuth'
 
 export default function TopBar({ right }) {
   const { member } = useAuth()
+
   return (
     <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '14px 20px', borderBottom: '0.5px solid #e5e5e5', background: '#fff', position: 'sticky', top: 0, zIndex: 10 }}>
       <div style={{ display: 'flex', flexDirection: 'column', gap: 1 }}>
@@ -17,9 +18,17 @@ export default function TopBar({ right }) {
       <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
         {right}
         {member && (
-          <div style={{ width: 30, height: 30, borderRadius: '50%', background: '#FAEEDA', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 12, fontWeight: 600, color: '#633806', border: '0.5px solid #FAC775', cursor: 'pointer' }}>
-            {member.display_name?.[0]?.toUpperCase() || 'U'}
-          </div>
+          member.avatar_url ? (
+            <img
+              src={member.avatar_url}
+              alt={member.display_name}
+              style={{ width: 30, height: 30, borderRadius: '50%', objectFit: 'cover', border: '0.5px solid #FAC775', cursor: 'pointer' }}
+            />
+          ) : (
+            <div style={{ width: 30, height: 30, borderRadius: '50%', background: '#FAEEDA', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 12, fontWeight: 600, color: '#633806', border: '0.5px solid #FAC775', cursor: 'pointer' }}>
+              {member.display_name?.[0]?.toUpperCase() || 'U'}
+            </div>
+          )
         )}
       </div>
     </div>
