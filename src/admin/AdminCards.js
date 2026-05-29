@@ -52,12 +52,12 @@ export default function AdminCards() {
     setSaving(true)
     try {
       if (modal === 'new') {
-        const { data: newCard } = await supabase.from('cards').insert({ name: form.name, rarity: form.rarity, series: form.series, episode: form.episode, image_url: form.image_url }).select().single()
+        const { data: newCard } = await supabase.from('cards').insert({ name: form.name, rarity: form.rarity, series: form.series, image_url: form.image_url }).select().single()
         if (newCard && form.ownerIds.length > 0) {
           await supabase.from('card_owners').insert(form.ownerIds.map(id => ({ card_id: newCard.id, member_id: id })))
         }
       } else {
-        await supabase.from('cards').update({ name: form.name, rarity: form.rarity, series: form.series, episode: form.episode, image_url: form.image_url }).eq('id', modal.id)
+        await supabase.from('cards').update({ name: form.name, rarity: form.rarity, series: form.series, image_url: form.image_url }).eq('id', modal.id)
         await supabase.from('card_owners').delete().eq('card_id', modal.id)
         if (form.ownerIds.length > 0) {
           await supabase.from('card_owners').insert(form.ownerIds.map(id => ({ card_id: modal.id, member_id: id })))
@@ -79,13 +79,13 @@ export default function AdminCards() {
   }
 
   function openNew() {
-    setForm({ name: '', rarity: 'UR', series: '', episode: '', image_url: '', ownerIds: [] })
+    setForm({ name: '', rarity: 'UR', series: '', image_url: '', ownerIds: [] })
     setPreview(null)
     setModal('new')
   }
 
   function openEdit(card) {
-    setForm({ name: card.name, rarity: card.rarity, series: card.series, episode: card.episode || '', image_url: card.image_url || '', ownerIds: card.card_owners?.map(o => o.member_id) || [] })
+    setForm({ name: card.name, rarity: card.rarity, series: card.series, image_url: card.image_url || '', ownerIds: card.card_owners?.map(o => o.member_id) || [] })
     setPreview(card.image_url || null)
     setModal(card)
   }
@@ -103,7 +103,7 @@ export default function AdminCards() {
         <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: 13 }}>
           <thead>
             <tr style={{ borderBottom: '0.5px solid #e5e5e5', background: '#f8f8f8' }}>
-              {['卡牌', '稀有度', '系列', '開卡會員', '直播場次', '新增日期', '操作'].map(h => (
+              {['卡牌', '稀有度', '系列', '開卡會員', '新增日期', '操作'].map(h => (
                 <th key={h} style={{ padding: '10px 14px', textAlign: 'left', fontSize: 11, fontWeight: 500, color: '#999' }}>{h}</th>
               ))}
             </tr>
@@ -134,7 +134,6 @@ export default function AdminCards() {
                       ))}
                     </div>
                   </td>
-                  <td style={{ padding: '10px 14px', color: '#999' }}>{card.episode || '-'}</td>
                   <td style={{ padding: '10px 14px', color: '#999' }}>{new Date(card.created_at).toLocaleDateString('zh-TW')}</td>
                   <td style={{ padding: '10px 14px' }}>
                     <button onClick={() => openEdit(card)} style={{ display: 'inline-flex', alignItems: 'center', gap: 3, padding: '4px 8px', border: '0.5px solid #ddd', borderRadius: 6, fontSize: 11, color: '#666', background: 'transparent', cursor: 'pointer', marginRight: 4 }}>✏️ 編輯</button>
@@ -190,11 +189,7 @@ export default function AdminCards() {
                   {RARITIES.map(r => <option key={r}>{r}</option>)}
                 </select>
               </div>
-              <div>
-                <label style={{ fontSize: 11, color: '#999', display: 'block', marginBottom: 4 }}>直播場次</label>
-                <input value={form.episode} onChange={e => setForm({ ...form, episode: e.target.value })} placeholder="EP.47"
-                  style={{ width: '100%', padding: '8px 10px', border: '0.5px solid #ddd', borderRadius: 7, fontSize: 13, color: '#111', outline: 'none' }} />
-              </div>
+
             </div>
             <div style={{ marginBottom: 12 }}>
               <label style={{ fontSize: 11, color: '#999', display: 'block', marginBottom: 4 }}>系列名稱</label>
