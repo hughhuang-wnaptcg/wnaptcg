@@ -3,6 +3,7 @@ import { supabase } from '../lib/supabase'
 
 export default function AdminBoss() {
   const [boss, setBoss] = useState(null)
+  const [allBosses, setAllBosses] = useState([])
   const [purchases, setPurchases] = useState([])
   const [members, setMembers] = useState([])
   const [modal, setModal] = useState(null)
@@ -14,11 +15,13 @@ export default function AdminBoss() {
   useEffect(() => { fetchData() }, [])
 
   async function fetchData() {
-    const [{ data: bossData }, { data: membersData }] = await Promise.all([
+    const [{ data: bossData }, { data: allData }, { data: membersData }] = await Promise.all([
       supabase.from('boss_challenges').select('*').eq('is_active', true).single(),
+      supabase.from('boss_challenges').select('*').order('created_at', { ascending: false }),
       supabase.from('members').select('id, display_name').order('display_name'),
     ])
     setBoss(bossData)
+    setAllBosses(allData || [])
     setMembers(membersData || [])
     if (bossData) {
       const { data: pData } = await supabase.from('boss_purchases')
@@ -49,7 +52,6 @@ export default function AdminBoss() {
     const amount = parseInt(purchaseForm.amount)
     await supabase.from('boss_purchases').insert({ boss_id: boss.id, member_id: purchaseForm.member_id, amount, note: purchaseForm.note, purchase_date: purchaseForm.purchase_date })
     await supabase.from('boss_challenges').update({ current_amount: (boss.current_amount || 0) + amount }).eq('id', boss.id)
-    // 同步更新會員消費
     const { data: m } = await supabase.from('members').select('total_spent, points').eq('id', purchaseForm.member_id).single()
     if (m) {
       const { getLevel } = await import('../lib/supabase')
@@ -70,6 +72,19 @@ export default function AdminBoss() {
     await fetchData()
   }
 
+  async function handleDeleteBoss(b) {
+    if (!window.confirm(`確定刪除「${b.name}」？此操作無法復原，所有相關消費紀錄也會一併刪除。`)) return
+    await supabase.from('boss_purchases').delete().eq('boss_id', b.id)
+    await supabase.from('boss_challenges').delete().eq('id', b.id)
+    await fetchData()
+  }
+
+  async function handleSetActive(b) {
+    await supabase.from('boss_challenges').update({ is_active: false }).neq('id', b.id)
+    await supabase.from('boss_challenges').update({ is_active: true }).eq('id', b.id)
+    await fetchData()
+  }
+
   const progress = boss ? Math.round((boss.current_amount / boss.target_amount) * 100) : 0
 
   return (
@@ -78,11 +93,13 @@ export default function AdminBoss() {
         <div style={{ fontSize: 20, fontWeight: 500, color: '#111' }}>Boss 管理</div>
         <div style={{ display: 'flex', gap: 8 }}>
           <button onClick={() => setModal('boss')} style={{ display: 'flex', alignItems: 'center', gap: 6, background: 'transparent', color: '#666', border: '0.5px solid #ddd', borderRadius: 8, padding: '8px 14px', fontSize: 13, cursor: 'pointer' }}>
-            ⚙️ 編輯 Boss 設定
+            ⚙️ {boss ? '編輯 Boss 設定' : '建立 Boss 挑戰'}
           </button>
-          <button onClick={() => setModal('purchase')} style={{ display: 'flex', alignItems: 'center', gap: 6, background: '#E24B4A', color: 'white', border: 'none', borderRadius: 8, padding: '8px 14px', fontSize: 13, fontWeight: 500, cursor: 'pointer' }}>
-            ＋ 新增消費紀錄
-          </button>
+          {boss && (
+            <button onClick={() => setModal('purchase')} style={{ display: 'flex', alignItems: 'center', gap: 6, background: '#E24B4A', color: 'white', border: 'none', borderRadius: 8, padding: '8px 14px', fontSize: 13, fontWeight: 500, cursor: 'pointer' }}>
+              ＋ 新增消費紀錄
+            </button>
+          )}
         </div>
       </div>
 
@@ -96,7 +113,7 @@ export default function AdminBoss() {
                 <div style={{ fontSize: 15, fontWeight: 500, color: '#111' }}>{boss.name}</div>
                 <div style={{ fontSize: 11, color: '#999', marginTop: 2 }}>{boss.description || '本月挑戰'} · 重置日每月 {boss.reset_day} 號</div>
               </div>
-              <span style={{ display: 'inline-flex', alignItems: 'center', gap: 4, fontSize: 11, padding: '3px 9px', borderRadius: 20, background: '#EAF3DE', color: '#27500A' }}>✓ 進行中</span>
+              <span style={{ fontSize: 11, padding: '3px 9px', borderRadius: 20, background: '#EAF3DE', color: '#27500A' }}>✓ 進行中</span>
             </div>
             <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 11, color: '#999', marginBottom: 4 }}>
               <span>進度</span><span style={{ color: '#A32D2D', fontWeight: 500 }}>${boss.current_amount?.toLocaleString()} / ${boss.target_amount?.toLocaleString()} · {progress}%</span>
@@ -114,7 +131,7 @@ export default function AdminBoss() {
             </div>
           </div>
 
-          <div style={{ background: '#fff', border: '0.5px solid #e5e5e5', borderRadius: 10, overflow: 'hidden' }}>
+          <div style={{ background: '#fff', border: '0.5px solid #e5e5e5', borderRadius: 10, overflow: 'hidden', marginBottom: 20 }}>
             <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: 13 }}>
               <thead>
                 <tr style={{ borderBottom: '0.5px solid #e5e5e5', background: '#f8f8f8' }}>
@@ -145,10 +162,47 @@ export default function AdminBoss() {
           </div>
         </>
       ) : (
-        <div style={{ background: '#fff', border: '0.5px solid #e5e5e5', borderRadius: 10, padding: 40, textAlign: 'center' }}>
+        <div style={{ background: '#fff', border: '0.5px solid #e5e5e5', borderRadius: 10, padding: 40, textAlign: 'center', marginBottom: 20 }}>
           <div style={{ fontSize: 40, marginBottom: 8 }}>⚔️</div>
           <div style={{ fontSize: 14, color: '#aaa', marginBottom: 16 }}>尚未設定本月 Boss</div>
           <button onClick={() => setModal('boss')} style={{ background: '#E24B4A', color: 'white', border: 'none', borderRadius: 8, padding: '10px 20px', fontSize: 14, cursor: 'pointer' }}>建立 Boss 挑戰</button>
+        </div>
+      )}
+
+      {/* 歷史紀錄 */}
+      {allBosses.length > 0 && (
+        <div style={{ background: '#fff', border: '0.5px solid #e5e5e5', borderRadius: 10, overflow: 'hidden' }}>
+          <div style={{ padding: '12px 16px', fontSize: 13, fontWeight: 500, color: '#111', borderBottom: '0.5px solid #e5e5e5' }}>📋 所有挑戰紀錄</div>
+          <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: 13 }}>
+            <thead>
+              <tr style={{ background: '#f8f8f8', borderBottom: '0.5px solid #e5e5e5' }}>
+                {['名稱', '目標', '累積', '月份', '狀態', '操作'].map(h => (
+                  <th key={h} style={{ padding: '9px 14px', textAlign: 'left', fontSize: 11, fontWeight: 500, color: '#999' }}>{h}</th>
+                ))}
+              </tr>
+            </thead>
+            <tbody>
+              {allBosses.map(b => (
+                <tr key={b.id} style={{ borderBottom: '0.5px solid #f0f0f0' }}>
+                  <td style={{ padding: '10px 14px', fontWeight: 500, color: '#111' }}>{b.name}</td>
+                  <td style={{ padding: '10px 14px', color: '#666' }}>${b.target_amount?.toLocaleString()}</td>
+                  <td style={{ padding: '10px 14px', color: '#666' }}>${b.current_amount?.toLocaleString()}</td>
+                  <td style={{ padding: '10px 14px', color: '#999' }}>{b.month}</td>
+                  <td style={{ padding: '10px 14px' }}>
+                    {b.is_active
+                      ? <span style={{ fontSize: 11, background: '#EAF3DE', color: '#27500A', padding: '2px 8px', borderRadius: 20 }}>進行中</span>
+                      : <span style={{ fontSize: 11, background: '#f5f5f5', color: '#999', padding: '2px 8px', borderRadius: 20 }}>已結束</span>}
+                  </td>
+                  <td style={{ padding: '10px 14px', display: 'flex', gap: 6 }}>
+                    {!b.is_active && (
+                      <button onClick={() => handleSetActive(b)} style={{ padding: '4px 8px', border: '0.5px solid #ddd', borderRadius: 6, fontSize: 11, color: '#666', background: 'transparent', cursor: 'pointer' }}>設為進行中</button>
+                    )}
+                    <button onClick={() => handleDeleteBoss(b)} style={{ padding: '4px 8px', border: '0.5px solid #F09595', borderRadius: 6, fontSize: 11, color: '#A32D2D', background: 'transparent', cursor: 'pointer' }}>🗑️ 刪除</button>
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
         </div>
       )}
 
@@ -161,14 +215,14 @@ export default function AdminBoss() {
               <span style={{ fontSize: 18, cursor: 'pointer', color: '#aaa' }} onClick={() => setModal(null)}>✕</span>
             </div>
             <div style={{ fontSize: 12, color: '#999', marginBottom: 16 }}>手動輸入會員本月消費</div>
-            {[
-              { label: '會員', el: <select value={purchaseForm.member_id} onChange={e => setPurchaseForm({ ...purchaseForm, member_id: e.target.value })} style={{ width: '100%', padding: '8px 10px', border: '0.5px solid #ddd', borderRadius: 7, fontSize: 13, background: '#fff', color: '#111' }}><option value="">選擇會員...</option>{members.map(m => <option key={m.id} value={m.id}>{m.display_name}</option>)}</select> },
-            ].map(f => (
-              <div key={f.label} style={{ marginBottom: 12 }}>
-                <label style={{ fontSize: 11, color: '#999', display: 'block', marginBottom: 4 }}>{f.label}</label>
-                {f.el}
-              </div>
-            ))}
+            <div style={{ marginBottom: 12 }}>
+              <label style={{ fontSize: 11, color: '#999', display: 'block', marginBottom: 4 }}>會員</label>
+              <select value={purchaseForm.member_id} onChange={e => setPurchaseForm({ ...purchaseForm, member_id: e.target.value })}
+                style={{ width: '100%', padding: '8px 10px', border: '0.5px solid #ddd', borderRadius: 7, fontSize: 13, background: '#fff', color: '#111' }}>
+                <option value="">選擇會員...</option>
+                {members.map(m => <option key={m.id} value={m.id}>{m.display_name}</option>)}
+              </select>
+            </div>
             <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 8, marginBottom: 12 }}>
               <div>
                 <label style={{ fontSize: 11, color: '#999', display: 'block', marginBottom: 4 }}>消費金額（元）</label>
