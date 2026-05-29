@@ -5,9 +5,12 @@ import TopBar from '../components/TopBar'
 import BottomNav from '../components/BottomNav'
 
 export default function ProfilePage() {
-  const { member, signOut } = useAuth()
+  const { member, setMember, signOut } = useAuth()
   const [logs, setLogs] = useState([])
   const [weekLogins, setWeekLogins] = useState([])
+  const [showSettings, setShowSettings] = useState(false)
+  const [editName, setEditName] = useState('')
+  const [saving, setSaving] = useState(false)
 
   useEffect(() => { if (member) fetchData() }, [member])
 
@@ -28,6 +31,15 @@ export default function ProfilePage() {
     setWeekLogins(days.map(d => ({ date: d, done: loginDates.has(d) })))
   }
 
+  async function handleSaveName() {
+    if (!editName.trim()) return
+    setSaving(true)
+    await supabase.from('members').update({ display_name: editName.trim() }).eq('id', member.id)
+    setMember({ ...member, display_name: editName.trim() })
+    setSaving(false)
+    setShowSettings(false)
+  }
+
   if (!member) return null
 
   const nextLevel = getNextLevel(member.points)
@@ -43,25 +55,23 @@ export default function ProfilePage() {
   return (
     <div style={{ maxWidth: 390, margin: '0 auto', background: '#fff', minHeight: '100vh', display: 'flex', flexDirection: 'column' }}>
       <TopBar right={
-        <span style={{ fontSize: 20, cursor: 'pointer' }} onClick={signOut} title="登出">⚙️</span>
+        <span style={{ fontSize: 20, cursor: 'pointer' }} onClick={() => { setEditName(member.display_name || ''); setShowSettings(true) }}>⚙️</span>
       } />
 
       <div style={{ flex: 1, overflowY: 'auto' }}>
-        {/* 個人資訊 */}
         <div style={{ padding: '24px 20px 20px', borderBottom: '0.5px solid #e5e5e5', display: 'flex', alignItems: 'center', gap: 14 }}>
           <div style={{ width: 60, height: 60, borderRadius: '50%', background: '#FAEEDA', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 22, fontWeight: 600, color: '#633806', border: '2px solid #FAC775', flexShrink: 0 }}>
             {member.display_name?.[0]?.toUpperCase()}
           </div>
           <div>
             <div style={{ fontSize: 18, fontWeight: 500, color: '#111' }}>{member.display_name}</div>
-            <div style={{ fontSize: 12, color: '#999', marginTop: 2 }}>會員編號 #{String(member.member_no).padStart(4, '0')}</div>
+            <div style={{ fontSize: 12, color: '#999', marginTop: 2 }}>會員編號 #{String(member.member_no || '0').padStart(4, '0')}</div>
             <div style={{ display: 'inline-flex', alignItems: 'center', gap: 4, background: '#E6F1FB', color: '#0C447C', fontSize: 12, padding: '4px 10px', borderRadius: 20, marginTop: 6 }}>
               ⭐ {member.level}會員
             </div>
           </div>
         </div>
 
-        {/* 等級進度 */}
         <div style={{ padding: '20px 20px 0' }}>
           <div style={{ fontSize: 14, fontWeight: 500, color: '#111', display: 'flex', alignItems: 'center', gap: 6, marginBottom: 12 }}>🏅 等級進度</div>
           <div style={{ border: '0.5px solid #e5e5e5', borderRadius: 12, padding: 14, marginBottom: 12 }}>
@@ -82,7 +92,6 @@ export default function ProfilePage() {
             </div>
           </div>
 
-          {/* 等級路線 */}
           <div style={{ border: '0.5px solid #e5e5e5', borderRadius: 12, overflow: 'hidden', marginBottom: 20 }}>
             {LEVELS.map((l, i) => {
               const isDone = member.points >= l.min
@@ -100,15 +109,14 @@ export default function ProfilePage() {
           </div>
         </div>
 
-        {/* 數據 */}
         <div style={{ padding: '0 20px 20px' }}>
-          <div style={{ fontSize: 14, fontWeight: 500, color: '#111', display: 'flex', alignItems: 'center', gap: 6, marginBottom: 12 }}>📊 我的數據</div>
+          <div style={{ fontSize: 14, fontWeight: 500, color: '#111', marginBottom: 12 }}>📊 我的數據</div>
           <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2,1fr)', gap: 8 }}>
             {[
-              { num: member.points?.toLocaleString(), label: '累積積分', sub: '' },
-              { num: `$${member.total_spent?.toLocaleString()}`, label: '累積消費', sub: '' },
-              { num: member.login_streak, label: '連續登入天數', sub: '' },
-              { num: member.total_logins, label: '總登入天數', sub: '' },
+              { num: member.points?.toLocaleString(), label: '累積積分' },
+              { num: `$${member.total_spent?.toLocaleString()}`, label: '累積消費' },
+              { num: member.login_streak, label: '連續登入天數' },
+              { num: member.total_logins, label: '總登入天數' },
             ].map((s, i) => (
               <div key={i} style={{ background: '#f8f8f8', borderRadius: 10, padding: 12 }}>
                 <div style={{ fontSize: 20, fontWeight: 500, color: '#111' }}>{s.num}</div>
@@ -118,7 +126,6 @@ export default function ProfilePage() {
           </div>
         </div>
 
-        {/* 本週簽到 */}
         <div style={{ padding: '0 20px 20px' }}>
           <div style={{ border: '0.5px solid #e5e5e5', borderRadius: 12, padding: 14 }}>
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 12 }}>
@@ -139,16 +146,13 @@ export default function ProfilePage() {
               ))}
             </div>
             {daysUntilFullStreak <= 3 && (
-              <div style={{ fontSize: 11, color: '#888', display: 'flex', alignItems: 'center', gap: 4 }}>
-                🎁 再 {daysUntilFullStreak} 天全勤可獲得 +15 點全勤獎勵
-              </div>
+              <div style={{ fontSize: 11, color: '#888' }}>🎁 再 {daysUntilFullStreak} 天全勤可獲得 +15 點</div>
             )}
           </div>
         </div>
 
-        {/* 積分紀錄 */}
         <div style={{ padding: '0 20px 28px' }}>
-          <div style={{ fontSize: 14, fontWeight: 500, color: '#111', display: 'flex', alignItems: 'center', gap: 6, marginBottom: 12 }}>🕐 積分紀錄</div>
+          <div style={{ fontSize: 14, fontWeight: 500, color: '#111', marginBottom: 12 }}>🕐 積分紀錄</div>
           {logs.map(log => (
             <div key={log.id} style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '11px 0', borderBottom: '0.5px solid #f0f0f0' }}>
               <div style={{ width: 34, height: 34, borderRadius: 8, background: logColors[log.type] || '#f5f5f5', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 16, flexShrink: 0 }}>
@@ -165,6 +169,42 @@ export default function ProfilePage() {
           ))}
         </div>
       </div>
+
+      {/* 設定彈出視窗 */}
+      {showSettings && (
+        <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.45)', display: 'flex', alignItems: 'flex-end', justifyContent: 'center', zIndex: 100 }}>
+          <div style={{ background: '#fff', borderRadius: '16px 16px 0 0', width: '100%', maxWidth: 390, padding: 20 }}>
+            <div style={{ width: 36, height: 4, borderRadius: 2, background: '#e0e0e0', margin: '0 auto 16px' }} />
+            <div style={{ fontSize: 16, fontWeight: 500, color: '#111', marginBottom: 16 }}>設定</div>
+
+            <div style={{ marginBottom: 16 }}>
+              <label style={{ fontSize: 12, color: '#999', display: 'block', marginBottom: 6 }}>暱稱</label>
+              <input
+                value={editName}
+                onChange={e => setEditName(e.target.value)}
+                placeholder="輸入你的暱稱"
+                style={{ width: '100%', padding: '10px 12px', border: '0.5px solid #ddd', borderRadius: 8, fontSize: 14, color: '#111', outline: 'none' }}
+              />
+            </div>
+
+            <button onClick={handleSaveName} disabled={saving}
+              style={{ width: '100%', padding: 12, background: saving ? '#ccc' : '#E24B4A', border: 'none', borderRadius: 10, fontSize: 14, fontWeight: 500, color: 'white', cursor: 'pointer', marginBottom: 10 }}>
+              {saving ? '儲存中...' : '儲存暱稱'}
+            </button>
+
+            <button onClick={signOut}
+              style={{ width: '100%', padding: 12, background: '#fff', border: '0.5px solid #e5e5e5', borderRadius: 10, fontSize: 14, color: '#999', cursor: 'pointer', marginBottom: 10 }}>
+              登出
+            </button>
+
+            <button onClick={() => setShowSettings(false)}
+              style={{ width: '100%', padding: 12, background: '#f5f5f5', border: 'none', borderRadius: 10, fontSize: 14, color: '#666', cursor: 'pointer' }}>
+              取消
+            </button>
+          </div>
+        </div>
+      )}
+
       <BottomNav />
     </div>
   )
