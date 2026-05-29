@@ -90,12 +90,6 @@ export default function WallPage() {
                   <div style={{ fontSize: 14, fontWeight: 500, color: '#111' }}>{o.members?.display_name}</div>
                   <div style={{ fontSize: 12, color: '#999' }}><LevelBadge level={o.members?.level} size='sm' /></div>
                 </div>
-                {selected.episode && (
-                  <div style={{ marginLeft: 'auto', textAlign: 'right' }}>
-                    <div style={{ fontSize: 12, color: '#999' }}>直播場次</div>
-                    <div style={{ fontSize: 13, fontWeight: 500, color: '#111' }}>{selected.episode}</div>
-                  </div>
-                )}
               </div>
             ))}
           </div>
