@@ -50,13 +50,13 @@ export default function ProfilePage() {
   const dayNames = ['一', '二', '三', '四', '五', '六', '日']
   const daysUntilFullStreak = 7 - (member.login_streak % 7)
 
-  const logIcons = { login: '📅', streak_bonus: '🎯', purchase: '🛍️', manual: '✏️', level_up: '⬆️' }
+  const logIcons = { login: 'fa-calendar-day', streak_bonus: 'fa-fire', purchase: 'fa-bag-shopping', manual: 'fa-pen', level_up: 'fa-arrow-up' }
   const logColors = { login: '#EAF3DE', streak_bonus: '#FAEEDA', purchase: '#FAEEDA', manual: '#E6F1FB', level_up: '#E6F1FB' }
 
   return (
     <div style={{ maxWidth: 390, margin: '0 auto', background: '#fff', minHeight: '100vh', display: 'flex', flexDirection: 'column' }}>
       <TopBar right={
-        <span style={{ fontSize: 20, cursor: 'pointer' }} onClick={() => { setEditName(member.display_name || ''); setShowSettings(true) }}>⚙️</span>
+        <span style={{ fontSize: 20, cursor: 'pointer' }} onClick={() => { setEditName(member.display_name || ''); setShowSettings(true) }}><i className="fa-solid fa-gear" style={{fontSize:18}} aria-hidden="true"></i></span>
       } />
 
       <div style={{ flex: 1, overflowY: 'auto' }}>
@@ -79,7 +79,7 @@ export default function ProfilePage() {
         </div>
 
         <div style={{ padding: '20px 20px 0' }}>
-          <div style={{ fontSize: 14, fontWeight: 500, color: '#111', display: 'flex', alignItems: 'center', gap: 6, marginBottom: 12 }}>🏅 等級進度</div>
+          <div style={{ fontSize: 14, fontWeight: 500, color: '#111', display: 'flex', alignItems: 'center', gap: 6, marginBottom: 12 }}><i className="fa-solid fa-medal" style={{color:"#E24B4A",marginRight:6}} aria-hidden="true"></i>等級進度</div>
           <div style={{ border: '0.5px solid #e5e5e5', borderRadius: 12, padding: 14, marginBottom: 12 }}>
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 10 }}>
               <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
@@ -107,7 +107,7 @@ export default function ProfilePage() {
                   <div style={{ width: 10, height: 10, borderRadius: '50%', flexShrink: 0, background: isDone && !isCurrent ? '#639922' : isCurrent ? '#378ADD' : '#ddd' }} />
                   <div style={{ flex: 1, fontSize: 13, fontWeight: 500, color: isCurrent ? '#0C447C' : '#111' }}>{l.name}</div>
                   <div style={{ fontSize: 11, color: isCurrent ? '#185FA5' : '#999' }}>{i === 0 ? '初始會員' : `${l.min.toLocaleString()} 點`}</div>
-                  {isDone && !isCurrent && <span style={{ fontSize: 14, color: '#639922' }}>✓</span>}
+                  {isDone && !isCurrent && <i className="fa-solid fa-check" style={{fontSize:13,color:'#639922'}} aria-hidden="true"></i>}
                   {isCurrent && <span style={{ fontSize: 11, background: '#E6F1FB', color: '#0C447C', padding: '2px 7px', borderRadius: 20, display: 'inline-flex', alignItems: 'center', gap: 3 }}><PokeballIcon level={l.name} size={12} /> 目前</span>}
                 </div>
               )
@@ -116,7 +116,7 @@ export default function ProfilePage() {
         </div>
 
         <div style={{ padding: '0 20px 20px' }}>
-          <div style={{ fontSize: 14, fontWeight: 500, color: '#111', marginBottom: 12 }}>📊 我的數據</div>
+          <div style={{ fontSize: 14, fontWeight: 500, color: '#111', marginBottom: 12 }}><i className="fa-solid fa-chart-bar" style={{color:"#E24B4A",marginRight:6}} aria-hidden="true"></i>我的數據</div>
           <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2,1fr)', gap: 8 }}>
             {[
               { num: member.points?.toLocaleString(), label: '累積積分' },
@@ -146,23 +146,23 @@ export default function ProfilePage() {
                   borderColor: d.date === today ? '#E24B4A' : d.done ? '#F09595' : '#e5e5e5',
                   color: d.date === today ? 'white' : d.done ? '#791F1F' : '#aaa',
                 }}>
-                  <span style={{ fontSize: 12 }}>{d.done || d.date === today ? '✓' : '○'}</span>
+                  <span style={{ fontSize: 12 }}>{d.done || d.date === today ? <i className="fa-solid fa-check" aria-hidden="true"></i> : <i className="fa-regular fa-circle" aria-hidden="true"></i>}</span>
                   <span>{dayNames[i]}</span>
                 </div>
               ))}
             </div>
             {daysUntilFullStreak <= 3 && (
-              <div style={{ fontSize: 11, color: '#888' }}>🎁 再 {daysUntilFullStreak} 天全勤可獲得 +15 點</div>
+              <div style={{ fontSize: 11, color: '#888' }}><i className="fa-solid fa-gift" style={{marginRight:4}} aria-hidden="true"></i>再 {daysUntilFullStreak} 天全勤可獲得 +15 點</div>
             )}
           </div>
         </div>
 
         <div style={{ padding: '0 20px 28px' }}>
-          <div style={{ fontSize: 14, fontWeight: 500, color: '#111', marginBottom: 12 }}>🕐 積分紀錄</div>
+          <div style={{ fontSize: 14, fontWeight: 500, color: '#111', marginBottom: 12 }}><i className="fa-solid fa-clock-rotate-left" style={{color:"#E24B4A",marginRight:6}} aria-hidden="true"></i>積分紀錄</div>
           {logs.map(log => (
             <div key={log.id} style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '11px 0', borderBottom: '0.5px solid #f0f0f0' }}>
               <div style={{ width: 34, height: 34, borderRadius: 8, background: logColors[log.type] || '#f5f5f5', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 16, flexShrink: 0 }}>
-                {logIcons[log.type] || '✏️'}
+                <i className={`fa-solid ${logIcons[log.type] || "fa-pen"}`} style={{fontSize:16,color:"#666"}} aria-hidden="true"></i>
               </div>
               <div style={{ flex: 1 }}>
                 <div style={{ fontSize: 13, fontWeight: 500, color: '#111' }}>{log.note || log.type}</div>
