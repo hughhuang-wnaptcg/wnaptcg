@@ -23,11 +23,11 @@ export default function WallPage() {
 
   return (
     <div style={{ maxWidth: 390, margin: '0 auto', background: '#fff', minHeight: '100vh', display: 'flex', flexDirection: 'column' }}>
-      <TopBar right={<span style={{ fontSize: 20, cursor: 'pointer' }}>🔍</span>} />
+      <TopBar right={<i className="fa-solid fa-magnifying-glass" style={{fontSize:18,color:"#999",cursor:"pointer"}} aria-hidden="true"></i>} />
 
       <div style={{ flex: 1, overflowY: 'auto' }}>
         <div style={{ padding: '18px 20px 14px' }}>
-          <div style={{ fontSize: 20, fontWeight: 500, color: '#111', display: 'flex', alignItems: 'center', gap: 8, marginBottom: 4 }}>🏆 戰績牆</div>
+          <div style={{ fontSize: 20, fontWeight: 500, color: '#111', display: 'flex', alignItems: 'center', gap: 8, marginBottom: 4 }}><i className="fa-solid fa-trophy" style={{color:"#E24B4A",marginRight:6}} aria-hidden="true"></i>戰績牆</div>
           <div style={{ fontSize: 13, color: '#999' }}>歷史開箱高光時刻 · 共 {cards.length} 張</div>
         </div>
 
@@ -43,7 +43,7 @@ export default function WallPage() {
                   <div style={{ aspectRatio: '3/4', background: '#f5f5f5', display: 'flex', alignItems: 'center', justifyContent: 'center', position: 'relative' }}>
                     {card.image_url
                       ? <img src={card.image_url} alt={card.name} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
-                      : <span style={{ fontSize: 40, color: '#ddd' }}>🎴</span>}
+                      : <span style={{ fontSize: 40, color: '#ddd' }}><i className="fa-solid fa-id-card" aria-hidden="true"></i></span>}
                     <span style={{ position: 'absolute', top: 8, left: 8, fontSize: 9, fontWeight: 500, padding: '2px 6px', borderRadius: 20, background: rc.bg, color: rc.color }}>{card.rarity}</span>
                     {idx === 0 && <span style={{ position: 'absolute', top: 8, right: 8, fontSize: 9, fontWeight: 500, padding: '2px 6px', borderRadius: 20, background: '#E24B4A', color: 'white' }}>NEW</span>}
                   </div>
@@ -73,7 +73,7 @@ export default function WallPage() {
             <div style={{ width: '100%', aspectRatio: '3/4', maxWidth: 140, margin: '0 auto 16px', borderRadius: 10, background: '#f5f5f5', display: 'flex', alignItems: 'center', justifyContent: 'center', overflow: 'hidden' }}>
               {selected.image_url
                 ? <img src={selected.image_url} alt={selected.name} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
-                : <span style={{ fontSize: 48, color: '#ddd' }}>🎴</span>}
+                : <span style={{ fontSize: 48, color: '#ddd' }}><i className="fa-solid fa-id-card" aria-hidden="true"></i></span>}
             </div>
             <div style={{ display: 'flex', justifyContent: 'center', marginBottom: 8 }}>
               <span style={{ fontSize: 11, fontWeight: 500, padding: '3px 10px', borderRadius: 20, background: RARITY_COLORS[selected.rarity]?.bg || '#f5f5f5', color: RARITY_COLORS[selected.rarity]?.color || '#666' }}>{selected.rarity}</span>
