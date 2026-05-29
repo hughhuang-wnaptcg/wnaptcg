@@ -12,6 +12,7 @@ export default function HomePage() {
   const [boss, setBoss] = useState(null)
   const [recentCards, setRecentCards] = useState([])
   const [weekLogins, setWeekLogins] = useState([])
+  const [announcement, setAnnouncement] = useState("{announcement}")
 
   useEffect(() => {
     fetchData()
@@ -27,6 +28,9 @@ export default function HomePage() {
     setStats({ memberCount: memberCount || 0, cardCount: cardCount || 0 })
     setBoss(bossData)
     setRecentCards(cardsData || [])
+
+    const { data: announcementData } = await supabase.from("settings").select("value").eq("key", "announcement").single()
+    if (announcementData) setAnnouncement(JSON.parse(announcementData.value))
 
     if (member) {
       const days = []
@@ -58,7 +62,7 @@ export default function HomePage() {
         {/* Hero */}
         <div style={{ padding: '28px 20px 24px', borderBottom: '0.5px solid #e5e5e5' }}>
           <div style={{ display: 'inline-flex', alignItems: 'center', gap: 6, background: '#FCEBEB', color: '#A32D2D', fontSize: 12, padding: '4px 12px', borderRadius: 20, marginBottom: 14 }}>
-            🔥 本週新開稀有補充包
+            {announcement}
           </div>
           <h1 style={{ fontSize: 22, fontWeight: 500, color: '#111', lineHeight: 1.35, marginBottom: 8 }}>
             歡迎回來，<span style={{ color: '#E24B4A' }}>{member?.display_name || 'Trainer'}</span><br />今天要開什麼包？
