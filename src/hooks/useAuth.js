@@ -20,10 +20,21 @@ export function AuthProvider({ children }) {
   }, [])
 
   async function fetchMember(userId) {
-    const { data } = await supabase.from('members').select('*').eq('id', userId).single()
+    let { data } = await supabase.from('members').select('*').eq('id', userId).single()
+    if (!data) {
+      const { data: userData } = await supabase.auth.getUser()
+      const email = userData?.user?.email || ''
+      const { data: newMember } = await supabase.from('members').insert({
+        id: userId,
+        email,
+        display_name: email.split('@')[0],
+      }).select().single()
+      data = newMember
+    }
     if (data) {
       await handleDailyLogin(data)
-      setMember(data)
+      const { data: refreshed } = await supabase.from('members').select('*').eq('id', userId).single()
+      setMember(refreshed || data)
     }
     setLoading(false)
   }
