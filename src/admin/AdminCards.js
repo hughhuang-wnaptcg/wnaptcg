@@ -214,7 +214,14 @@ export default function AdminCards() {
                   )
                 })}
               </div>
-              <select onChange={e => { if (e.target.value && !form.ownerIds.includes(e.target.value)) setForm(f => ({ ...f, ownerIds: [...f.ownerIds, e.target.value] })); e.target.value = '' }}
+              <select
+                value=""
+                onChange={e => {
+                  const val = e.target.value
+                  if (val && !form.ownerIds.includes(val)) {
+                    setForm(f => ({ ...f, ownerIds: [...f.ownerIds, val] }))
+                  }
+                }}
                 style={{ width: '100%', padding: '8px 10px', border: '0.5px solid #ddd', borderRadius: 7, fontSize: 13, background: '#fff', color: '#111' }}>
                 <option value="">＋ 新增會員...</option>
                 {members.filter(m => !form.ownerIds.includes(m.id)).map(m => <option key={m.id} value={m.id}>{m.display_name}</option>)}
