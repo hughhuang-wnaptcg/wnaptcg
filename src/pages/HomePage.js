@@ -3,7 +3,7 @@ import { useNavigate } from 'react-router-dom'
 import { supabase, getLevel, LEVELS } from '../lib/supabase'
 import { useAuth } from '../hooks/useAuth'
 import TopBar from '../components/TopBar'
-import { PokeballIcon } from '../lib/pokeballs'
+import { PokeballIcon, LevelBadge } from '../lib/pokeballs'
 import BottomNav from '../components/BottomNav'
 
 export default function HomePage() {
