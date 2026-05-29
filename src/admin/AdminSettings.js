@@ -3,6 +3,7 @@ import { supabase } from '../lib/supabase'
 
 export default function AdminSettings() {
   const [settings, setSettings] = useState({ points_login: 5, points_streak_bonus: 15, points_purchase_ratio: 1 })
+  const [announcement, setAnnouncement] = useState("🔥 本週新開稀有補充包")
   const [modal, setModal] = useState(null)
   const [form, setForm] = useState({})
   const [saving, setSaving] = useState(false)
@@ -23,6 +24,7 @@ export default function AdminSettings() {
     for (const [key, value] of Object.entries(form)) {
       await supabase.from('settings').upsert({ key, value: JSON.stringify(value), updated_at: new Date().toISOString() })
     }
+    if (form.announcement !== undefined) setAnnouncement(form.announcement)
     await fetchSettings()
     setModal(null)
     setSaving(false)
@@ -30,6 +32,7 @@ export default function AdminSettings() {
 
   function openModal(type) {
     if (type === 'points') setForm({ points_login: settings.points_login, points_streak_bonus: settings.points_streak_bonus, points_purchase_ratio: settings.points_purchase_ratio })
+    if (type === 'announcement') setForm({ announcement })
     setModal(type)
   }
 
@@ -120,6 +123,15 @@ export default function AdminSettings() {
         </div>
       </div>
 
+      {/* 公告設定 */}
+      <div style={{ background: '#fff', border: '0.5px solid #e5e5e5', borderRadius: 10, padding: 16, marginTop: 12 }}>
+        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 14 }}>
+          <div style={{ fontSize: 13, fontWeight: 500, color: '#111' }}>📢 首頁公告</div>
+          <button onClick={() => { setForm({ announcement }); setModal('announcement') }} style={{ display: 'flex', alignItems: 'center', gap: 4, padding: '4px 10px', border: '0.5px solid #ddd', borderRadius: 6, fontSize: 11, color: '#666', background: 'transparent', cursor: 'pointer' }}>✏️ 編輯</button>
+        </div>
+        <div style={{ fontSize: 13, color: '#111', padding: '10px 12px', background: '#f8f8f8', borderRadius: 8 }}>{announcement || '（尚未設定公告）'}</div>
+      </div>
+
       {/* 編輯積分彈出視窗 */}
       {modal === 'points' && (
         <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.45)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 100 }}>
@@ -151,6 +163,30 @@ export default function AdminSettings() {
               <button onClick={handleSave} disabled={saving}
                 style={{ flex: 1, padding: 9, background: saving ? '#ccc' : '#E24B4A', border: 'none', borderRadius: 8, fontSize: 13, fontWeight: 500, color: 'white', cursor: saving ? 'not-allowed' : 'pointer' }}>
                 {saving ? '儲存中...' : '儲存設定'}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+      {/* 編輯公告彈出視窗 */}
+      {modal === 'announcement' && (
+        <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.45)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 100 }}>
+          <div style={{ background: '#fff', borderRadius: 12, width: 340, padding: 20 }}>
+            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 4 }}>
+              <div style={{ fontSize: 15, fontWeight: 500, color: '#111' }}>編輯首頁公告</div>
+              <span style={{ fontSize: 18, cursor: 'pointer', color: '#aaa' }} onClick={() => setModal(null)}>✕</span>
+            </div>
+            <div style={{ fontSize: 12, color: '#999', marginBottom: 16 }}>顯示在首頁頂部的公告文字</div>
+            <div style={{ marginBottom: 16 }}>
+              <label style={{ fontSize: 11, color: '#999', display: 'block', marginBottom: 4 }}>公告內容</label>
+              <input value={form.announcement || ''} onChange={e => setForm({ ...form, announcement: e.target.value })} placeholder="例：🔥 本週新開稀有補充包"
+                style={{ width: '100%', padding: '8px 10px', border: '0.5px solid #ddd', borderRadius: 7, fontSize: 13, color: '#111', outline: 'none' }} />
+            </div>
+            <div style={{ display: 'flex', gap: 8 }}>
+              <button onClick={() => setModal(null)} style={{ flex: 1, padding: 9, border: '0.5px solid #ddd', borderRadius: 8, fontSize: 13, color: '#666', background: 'transparent', cursor: 'pointer' }}>取消</button>
+              <button onClick={handleSave} disabled={saving}
+                style={{ flex: 1, padding: 9, background: saving ? '#ccc' : '#E24B4A', border: 'none', borderRadius: 8, fontSize: 13, fontWeight: 500, color: 'white', cursor: saving ? 'not-allowed' : 'pointer' }}>
+                {saving ? '儲存中...' : '儲存'}
               </button>
             </div>
           </div>
