@@ -2,7 +2,6 @@ import React, { useEffect, useState } from 'react'
 import { supabase, LEVELS, getNextLevel } from '../lib/supabase'
 import { useAuth } from '../hooks/useAuth'
 import { PokeballIcon, LevelBadge } from '../lib/pokeballs'
-import TopBar from '../components/TopBar'
 import BottomNav from '../components/BottomNav'
 
 export default function ProfilePage() {
@@ -67,10 +66,6 @@ export default function ProfilePage() {
 
   return (
     <div style={S.page}>
-      <TopBar right={
-        <i className="fa-solid fa-gear" style={{ fontSize: 16, color: '#BA7517', opacity: 0.7, cursor: 'pointer' }}
-          onClick={() => { setEditName(member.display_name || ''); setShowSettings(true) }}></i>
-      } />
 
       <div style={{ flex: 1, overflowY: 'auto' }}>
 
