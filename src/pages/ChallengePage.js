@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from 'react'
 import { supabase } from '../lib/supabase'
 import { useAuth } from '../hooks/useAuth'
-import { LevelBadge } from '../lib/pokeballs'
+import { LevelBadge, PokeballIcon } from '../lib/pokeballs'
 import TopBar from '../components/TopBar'
 import BottomNav from '../components/BottomNav'
 
@@ -37,9 +37,13 @@ export default function ChallengePage() {
   if (!boss) return (
     <div style={S.page}>
       <TopBar />
-      <div style={S.pageTitle}>
-        <div style={{ fontSize: 18, fontWeight: 500, color: '#111', display: 'flex', alignItems: 'center', gap: 8 }}>
-          <i className="fa-solid fa-shield" style={{ color: '#BA7517' }}></i>共同挑戰
+      <div style={{ background: 'linear-gradient(135deg,#fff 0%,#fdfaf4 60%,#faf4e8 100%)', padding: '18px 20px 16px', position: 'relative', overflow: 'hidden', borderBottom: '0.5px solid #f0e8d0' }}>
+        <div style={{ position: 'absolute', bottom: -6, left: -6, fontSize: 72, opacity: 0.05, color: '#BA7517', lineHeight: 1 }}>
+          <i className="fa-solid fa-shield" aria-hidden="true"></i>
+        </div>
+        <div style={{ fontSize: 9, color: '#BA7517', fontWeight: 600, opacity: 0.55, letterSpacing: '0.1em', marginBottom: 8 }}>W/NA PTCG × HUGO COLLECTIONS</div>
+        <div style={{ fontSize: 15, fontWeight: 500, color: '#1a1a1a', display: 'flex', alignItems: 'center', gap: 5 }}>
+          <i className="fa-solid fa-shield" style={{ fontSize: 13, color: '#BA7517' }} aria-hidden="true"></i>共同挑戰
         </div>
       </div>
       <div style={{ flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center', flexDirection: 'column', gap: 8 }}>
@@ -67,11 +71,23 @@ export default function ChallengePage() {
     <div style={S.page}>
       <TopBar />
 
-      <div style={S.pageTitle}>
-        <div style={{ fontSize: 18, fontWeight: 500, color: '#111', display: 'flex', alignItems: 'center', gap: 8, marginBottom: 3 }}>
-          <i className="fa-solid fa-shield" style={{ fontSize: 16, color: '#BA7517' }}></i>共同挑戰
+      <div style={{ background: 'linear-gradient(135deg,#fff 0%,#fdfaf4 60%,#faf4e8 100%)', padding: '18px 20px 16px', position: 'relative', overflow: 'hidden', borderBottom: '0.5px solid #f0e8d0' }}>
+        <div style={{ position: 'absolute', top: -40, right: -40, width: 130, height: 130, borderRadius: '50%', background: 'radial-gradient(circle,rgba(186,117,23,0.07) 0%,transparent 70%)' }} />
+        <div style={{ position: 'absolute', bottom: -6, left: -6, fontSize: 72, opacity: 0.05, color: '#BA7517', lineHeight: 1, pointerEvents: 'none' }}>
+          <i className="fa-solid fa-shield" aria-hidden="true"></i>
         </div>
-        <div style={{ fontSize: 12, color: '#bbb' }}>本月挑戰 · {rankList.length} 人參與</div>
+        {[[10,20],[25,62],[8,42]].map(([t,l],i) => (
+          <div key={i} style={{ position:'absolute', top:`${t}%`, left:`${l}%`, width:2, height:2, borderRadius:'50%', background:'#BA7517', opacity:0.4+i*0.1 }} />
+        ))}
+        <div style={{ position: 'absolute', top: 14, right: 14, display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 2 }}>
+          {member && <PokeballIcon level={member.level} size={24} />}
+          <span style={{ fontSize: 6, color: '#BA7517', fontWeight: 600 }}>{member?.level}</span>
+        </div>
+        <div style={{ fontSize: 9, color: '#BA7517', fontWeight: 600, opacity: 0.55, letterSpacing: '0.1em', marginBottom: 8 }}>W/NA PTCG × HUGO COLLECTIONS</div>
+        <div style={{ fontSize: 15, fontWeight: 500, color: '#1a1a1a', display: 'flex', alignItems: 'center', gap: 5, marginBottom: 3 }}>
+          <i className="fa-solid fa-shield" style={{ fontSize: 13, color: '#BA7517' }} aria-hidden="true"></i>共同挑戰
+        </div>
+        <div style={{ fontSize: 11, color: '#bbb' }}>本月挑戰 · {rankList.length} 人參與</div>
       </div>
 
       <div style={{ flex: 1, overflowY: 'auto', padding: '16px 20px 0' }}>
