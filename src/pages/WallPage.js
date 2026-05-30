@@ -2,7 +2,6 @@ import React, { useEffect, useState } from 'react'
 import { supabase, RARITY_COLORS } from '../lib/supabase'
 import { useAuth } from '../hooks/useAuth'
 import { LevelBadge, PokeballIcon } from '../lib/pokeballs'
-import TopBar from '../components/TopBar'
 import BottomNav from '../components/BottomNav'
 
 export default function WallPage() {
@@ -47,9 +46,6 @@ export default function WallPage() {
 
   return (
     <div style={S.page}>
-      <TopBar right={
-        <i className="fa-solid fa-magnifying-glass" style={{ fontSize: 16, color: '#BA7517', opacity: 0.6, cursor: 'pointer' }}></i>
-      } />
 
       {/* Hero */}
       <div style={S.hero}>
