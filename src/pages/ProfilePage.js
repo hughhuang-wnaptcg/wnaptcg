@@ -74,31 +74,37 @@ export default function ProfilePage() {
 
       <div style={{ flex: 1, overflowY: 'auto' }}>
 
-        {/* 頁面標題 */}
-        <div style={{ padding: '14px 20px 12px', borderBottom: '0.5px solid #f5f0e8' }}>
-          <div style={{ fontSize: 18, fontWeight: 500, color: '#111', display: 'flex', alignItems: 'center', gap: 8, marginBottom: 3 }}>
-            <i className="fa-solid fa-user" style={{ fontSize: 16, color: '#BA7517' }}></i>我的
+        {/* Hero */}
+        <div style={{ background: 'linear-gradient(135deg,#fff 0%,#fdfaf4 60%,#faf4e8 100%)', padding: '18px 20px 16px', position: 'relative', overflow: 'hidden', borderBottom: '0.5px solid #f0e8d0' }}>
+          <div style={{ position: 'absolute', top: -40, right: -40, width: 130, height: 130, borderRadius: '50%', background: 'radial-gradient(circle,rgba(186,117,23,0.07) 0%,transparent 70%)' }} />
+          <div style={{ position: 'absolute', bottom: -6, left: -6, fontSize: 72, opacity: 0.05, color: '#BA7517', lineHeight: 1, pointerEvents: 'none' }}>
+            <i className="fa-solid fa-user" aria-hidden="true"></i>
           </div>
-          <div style={{ fontSize: 12, color: '#bbb' }}>會員編號 #{String(member.member_no || '0').padStart(4, '0')}</div>
-        </div>
-
-        {/* 個人資訊 */}
-        <div style={{ padding: '18px 20px 0' }}>
-          <div style={{ display: 'flex', alignItems: 'center', gap: 14, padding: '0 0 18px', borderBottom: '0.5px solid #f5f0e8', marginBottom: 18 }}>
+          {[[10,20],[25,62],[8,42]].map(([t,l],i) => (
+            <div key={i} style={{ position:'absolute', top:`${t}%`, left:`${l}%`, width:2, height:2, borderRadius:'50%', background:'#BA7517', opacity:0.4+i*0.1 }} />
+          ))}
+          <div style={{ position: 'absolute', top: 14, right: 14, display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 2 }}>
             {member.avatar_url
-              ? <img src={member.avatar_url} alt="" style={{ width: 60, height: 60, borderRadius: '50%', objectFit: 'cover', border: '2px solid #FAC775', flexShrink: 0 }} />
-              : <div style={{ width: 60, height: 60, borderRadius: '50%', background: 'linear-gradient(135deg,#FAEEDA,#FFF3D0)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 22, fontWeight: 600, color: '#633806', border: '2px solid #FAC775', flexShrink: 0 }}>
+              ? <img src={member.avatar_url} alt="" style={{ width: 28, height: 28, borderRadius: '50%', objectFit: 'cover', border: '1.5px solid #FAC775' }} />
+              : <div style={{ width: 28, height: 28, borderRadius: '50%', background: 'linear-gradient(135deg,#FAEEDA,#FFF3D0)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 11, fontWeight: 600, color: '#633806', border: '1.5px solid #FAC775' }}>
                   {member.display_name?.[0]?.toUpperCase()}
                 </div>
             }
-            <div>
-              <div style={{ fontSize: 18, fontWeight: 500, color: '#111', marginBottom: 6 }}>{member.display_name}</div>
-              <div style={{ display: 'flex', alignItems: 'center', gap: 4 }}>
-                <PokeballIcon level={member.level} size={16} />
-                <span style={{ fontSize: 12, color: '#BA7517', fontWeight: 500 }}>{member.level}會員</span>
-              </div>
-            </div>
+            <span style={{ fontSize: 6, color: '#BA7517', fontWeight: 600 }}>{member?.level}</span>
           </div>
+          <div style={{ fontSize: 9, color: '#BA7517', fontWeight: 600, opacity: 0.55, letterSpacing: '0.1em', marginBottom: 8 }}>W/NA PTCG × HUGO COLLECTIONS</div>
+          <div style={{ fontSize: 15, fontWeight: 500, color: '#1a1a1a', display: 'flex', alignItems: 'center', gap: 5, marginBottom: 3 }}>
+            <i className="fa-solid fa-user" style={{ fontSize: 13, color: '#BA7517' }} aria-hidden="true"></i>
+            {member.display_name} 的主頁
+          </div>
+          <div style={{ fontSize: 11, color: '#bbb' }}>
+            <PokeballIcon level={member.level} size={12} />
+            <span style={{ marginLeft: 4 }}>{member.level}會員 · #{String(member.member_no || '0').padStart(4, '0')}</span>
+          </div>
+        </div>
+
+        <div style={{ padding: '18px 20px 0' }}>
+          <div style={{ marginBottom: 18 }}>
 
           {/* 等級進度 */}
           <div style={S.secTitle}>
