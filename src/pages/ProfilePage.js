@@ -104,7 +104,6 @@ export default function ProfilePage() {
         </div>
 
         <div style={{ padding: '18px 20px 0' }}>
-          <div style={{ marginBottom: 18 }}>
 
           {/* 等級進度 */}
           <div style={S.secTitle}>
