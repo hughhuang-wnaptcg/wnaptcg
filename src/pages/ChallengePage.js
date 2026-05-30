@@ -2,7 +2,6 @@ import React, { useEffect, useState } from 'react'
 import { supabase } from '../lib/supabase'
 import { useAuth } from '../hooks/useAuth'
 import { LevelBadge, PokeballIcon } from '../lib/pokeballs'
-import TopBar from '../components/TopBar'
 import BottomNav from '../components/BottomNav'
 
 export default function ChallengePage() {
@@ -36,7 +35,6 @@ export default function ChallengePage() {
 
   if (!boss) return (
     <div style={S.page}>
-      <TopBar />
       <div style={{ background: 'linear-gradient(135deg,#fff 0%,#fdfaf4 60%,#faf4e8 100%)', padding: '18px 20px 16px', position: 'relative', overflow: 'hidden', borderBottom: '0.5px solid #f0e8d0' }}>
         <div style={{ position: 'absolute', bottom: -6, left: -6, fontSize: 72, opacity: 0.05, color: '#BA7517', lineHeight: 1 }}>
           <i className="fa-solid fa-shield" aria-hidden="true"></i>
@@ -69,7 +67,6 @@ export default function ChallengePage() {
 
   return (
     <div style={S.page}>
-      <TopBar />
 
       <div style={{ background: 'linear-gradient(135deg,#fff 0%,#fdfaf4 60%,#faf4e8 100%)', padding: '18px 20px 16px', position: 'relative', overflow: 'hidden', borderBottom: '0.5px solid #f0e8d0' }}>
         <div style={{ position: 'absolute', top: -40, right: -40, width: 130, height: 130, borderRadius: '50%', background: 'radial-gradient(circle,rgba(186,117,23,0.07) 0%,transparent 70%)' }} />
