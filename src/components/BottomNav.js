@@ -15,14 +15,20 @@ export default function BottomNav() {
   return (
     <>
       <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css" />
-      <div style={{ display: 'flex', borderTop: '0.5px solid #e5e5e5', background: '#fff', position: 'sticky', bottom: 0 }}>
-        {NAV.map(n => (
-          <div key={n.path} onClick={() => navigate(n.path)}
-            style={{ flex: 1, display: 'flex', flexDirection: 'column', alignItems: 'center', padding: '10px 4px', gap: 3, cursor: 'pointer' }}>
-            <i className={n.icon} style={{ fontSize: 20, color: pathname === n.path ? '#E24B4A' : '#999' }}></i>
-            <span style={{ fontSize: 10, color: pathname === n.path ? '#E24B4A' : '#999' }}>{n.label}</span>
-          </div>
-        ))}
+      <div style={{ display: 'flex', borderTop: '0.5px solid #f5f0e8', background: '#fff', position: 'sticky', bottom: 0 }}>
+        {NAV.map(n => {
+          const active = pathname === n.path
+          return (
+            <div key={n.path} onClick={() => navigate(n.path)}
+              style={{ flex: 1, display: 'flex', flexDirection: 'column', alignItems: 'center', padding: '10px 4px', gap: 3, cursor: 'pointer', position: 'relative' }}>
+              {active && (
+                <div style={{ position: 'absolute', top: 0, left: '50%', transform: 'translateX(-50%)', width: 32, height: 2, background: 'linear-gradient(90deg,transparent,#BA7517,transparent)', borderRadius: '0 0 4px 4px' }} />
+              )}
+              <i className={n.icon} style={{ fontSize: 20, color: active ? '#BA7517' : '#ccc' }}></i>
+              <span style={{ fontSize: 10, color: active ? '#BA7517' : '#ccc' }}>{n.label}</span>
+            </div>
+          )
+        })}
       </div>
     </>
   )
