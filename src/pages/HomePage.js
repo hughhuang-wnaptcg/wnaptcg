@@ -274,7 +274,7 @@ export default function HomePage() {
                 <div style={S.secLeft}>
                   <i className="fa-solid fa-calendar-check" style={{ fontSize: 14, color: '#BA7517' }}></i>本週簽到
                 </div>
-                <span style={{ fontSize: 10, background: 'linear-gradient(135deg,#FAEEDA,#FFF3D0)', color: '#8B5A00', padding: '3px 8px', borderRadius: 20, border: '0.5px solid #FAC775' }}>+50 點全勤</span>
+                <span style={{ fontSize: 10, color: '#999' }}>連續7天簽到可額外+15分</span>
               </div>
               <div style={{ display: 'grid', gridTemplateColumns: 'repeat(7,1fr)', gap: 5 }}>
                 {weekLogins.map((d, i) => (
