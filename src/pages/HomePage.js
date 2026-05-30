@@ -13,6 +13,7 @@ export default function HomePage() {
   const [weekLogins, setWeekLogins] = useState([])
   const [announcement, setAnnouncement] = useState('')
   const [news, setNews] = useState(null)
+  const [newsModal, setNewsModal] = useState(false)
   const [todayPoints, setTodayPoints] = useState(0)
 
   useEffect(() => { fetchData() }, [member])
@@ -148,7 +149,7 @@ export default function HomePage() {
               <i className="fa-solid fa-newspaper" style={{ fontSize: 13, color: '#BA7517' }}></i>
               每日新聞
             </div>
-            <div style={S.newsCard}>
+            <div style={{...S.newsCard, cursor: news?.body ? 'pointer' : 'default'}} onClick={() => news?.body && setNewsModal(true)}>
               <div style={S.newsImg}>
                 {news.image_url
                   ? <img src={news.image_url} alt="news" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
@@ -288,6 +289,23 @@ export default function HomePage() {
           )}
         </div>
       </div>
+      {/* 新聞彈窗 */}
+      {newsModal && news && (
+        <div onClick={() => setNewsModal(false)} style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.4)', display: 'flex', alignItems: 'flex-end', justifyContent: 'center', zIndex: 100 }}>
+          <div onClick={e => e.stopPropagation()} style={{ background: '#fff', borderRadius: '16px 16px 0 0', width: '100%', maxWidth: 390, maxHeight: '85vh', overflowY: 'auto' }}>
+            <div style={{ width: 36, height: 4, borderRadius: 2, background: '#f0e8d0', margin: '12px auto 0' }} />
+            {news.image_url && (
+              <img src={news.image_url} alt="" style={{ width: '100%', maxHeight: 200, objectFit: 'cover' }} />
+            )}
+            <div style={{ padding: '16px 20px 32px' }}>
+              <div style={{ fontSize: 10, color: '#BA7517', fontWeight: 600, marginBottom: 6 }}>最新消息</div>
+              <div style={{ fontSize: 18, fontWeight: 500, color: '#111', lineHeight: 1.4, marginBottom: 8 }}>{news.title}</div>
+              <div style={{ fontSize: 11, color: '#bbb', marginBottom: 16 }}>{news.date}</div>
+              <div style={{ fontSize: 14, color: '#444', lineHeight: 1.8, whiteSpace: 'pre-wrap' }}>{news.body}</div>
+            </div>
+          </div>
+        </div>
+      )}
       <BottomNav />
     </div>
   )
