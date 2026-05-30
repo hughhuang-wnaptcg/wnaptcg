@@ -129,11 +129,26 @@ export default function HomePage() {
           )}
         </div>
 
-        {/* 公告 */}
+        {/* 公告 跑馬燈 */}
         {announcement && (
           <div style={S.announce}>
             <span style={S.announceBadge}>公告</span>
-            <span style={{ fontSize: 11, color: '#555', lineHeight: 1.4 }}>{announcement}</span>
+            <div style={{ flex: 1, overflow: 'hidden', position: 'relative' }}>
+              <style>{`
+                @keyframes marquee {
+                  0% { transform: translateX(100%); }
+                  100% { transform: translateX(-100%); }
+                }
+                .marquee-text {
+                  display: inline-block;
+                  white-space: nowrap;
+                  animation: marquee 12s linear infinite;
+                  fontSize: 11px;
+                  color: #555;
+                }
+              `}</style>
+              <span className="marquee-text">{announcement}</span>
+            </div>
           </div>
         )}
 
