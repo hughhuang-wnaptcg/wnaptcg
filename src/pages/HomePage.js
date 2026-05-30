@@ -3,7 +3,6 @@ import { useNavigate } from 'react-router-dom'
 import { supabase, LEVELS } from '../lib/supabase'
 import { useAuth } from '../hooks/useAuth'
 import { PokeballIcon } from '../lib/pokeballs'
-import TopBar from '../components/TopBar'
 import BottomNav from '../components/BottomNav'
 
 export default function HomePage() {
@@ -70,10 +69,10 @@ export default function HomePage() {
     goldLine1: { position: 'absolute', background: 'linear-gradient(90deg,transparent,#BA7517,transparent)', height: 0.5, opacity: 0.2, width: 100, top: '30%', left: -10 },
     goldLine2: { position: 'absolute', background: 'linear-gradient(90deg,transparent,#BA7517,transparent)', height: 0.5, opacity: 0.2, width: 80, top: '68%', right: -10 },
     levelBadge: { position: 'absolute', top: 18, right: 18, display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 3 },
-    logoSmall: { fontSize: 10, fontWeight: 600, color: '#BA7517', letterSpacing: '0.12em', opacity: 0.6, marginBottom: 10 },
-    greetLine: { fontSize: 11, color: '#BA7517', fontWeight: 600, letterSpacing: '0.06em', marginBottom: 6, display: 'flex', alignItems: 'center', gap: 5 },
-    heroTitle: { fontSize: 18, fontWeight: 500, color: '#1a1a1a', lineHeight: 1.35, marginBottom: 10 },
-    todayPts: { display: 'inline-flex', alignItems: 'center', gap: 5, background: 'linear-gradient(135deg,#FAEEDA,#FFF8EE)', border: '0.5px solid #FAC775', color: '#8B5A00', fontSize: 11, padding: '5px 12px', borderRadius: 20, boxShadow: '0 1px 6px rgba(186,117,23,0.1)' },
+    logoSmall: { fontSize: 9, fontWeight: 600, color: '#BA7517', letterSpacing: '0.1em', opacity: 0.45, marginBottom: 12 },
+    greetLine: { fontSize: 18, fontWeight: 500, color: '#1a1a1a', marginBottom: 4, lineHeight: 1.3 },
+    heroTitle: { fontSize: 18, fontWeight: 500, color: '#1a1a1a', lineHeight: 1.3, marginBottom: 12 },
+    todayPts: { display: 'inline-flex', alignItems: 'center', gap: 5, background: 'linear-gradient(135deg,#FAEEDA,#FFF8EE)', border: '0.5px solid #FAC775', color: '#8B5A00', fontSize: 10, padding: '3px 10px', borderRadius: 20 },
     announce: { background: '#fff', padding: '10px 20px', borderBottom: '0.5px solid #f5f0e8', display: 'flex', alignItems: 'center', gap: 8 },
     announceBadge: { fontSize: 9, fontWeight: 600, color: '#BA7517', background: 'linear-gradient(135deg,#FAEEDA,#FFF3D0)', border: '0.5px solid #FAC775', padding: '2px 8px', borderRadius: 20, whiteSpace: 'nowrap' },
     news: { background: '#fff', padding: '12px 20px', borderBottom: '0.5px solid #f5f0e8' },
@@ -100,30 +99,31 @@ export default function HomePage() {
 
   return (
     <div style={S.page}>
-      <TopBar />
       <div style={{ flex: 1, overflowY: 'auto' }}>
 
         {/* Hero */}
         <div style={S.hero}>
           <div style={S.glow1} /><div style={S.glow2} />
           <div style={S.goldLine1} /><div style={S.goldLine2} />
-          {/* 星星 */}
           {[[12,15],[8,55],[22,80],[35,25],[15,40],[6,70],[42,8],[30,90]].map(([t,l],i) => (
             <div key={i} style={{ position:'absolute', top:`${t}%`, left:`${l}%`, width: i%2===0?2:3, height: i%2===0?2:3, borderRadius:'50%', background:'#BA7517', opacity: 0.3+i*0.05 }} />
           ))}
+          {/* 背景時間圖示 */}
+          <div style={{ position:'absolute', bottom:-8, left:-8, fontSize:88, opacity:0.055, color:'#BA7517', lineHeight:1, pointerEvents:'none' }}>
+            <i className={`fa-solid ${greeting.icon}`}></i>
+          </div>
           <div style={S.levelBadge}>
             {member && <PokeballIcon level={member.level} size={34} />}
             <span style={{ fontSize: 8, color: '#BA7517', fontWeight: 600, letterSpacing: '0.06em' }}>{member?.level}</span>
           </div>
           <div style={S.logoSmall}>W/NA PTCG × HUGO COLLECTIONS</div>
           <div style={S.greetLine}>
-            <i className={`fa-solid ${greeting.icon}`} style={{ fontSize: 13 }}></i>
-            {greeting.text}，{member?.display_name || 'Trainer'}
+            {greeting.text}，<span style={{ color: '#BA7517' }}>{member?.display_name || 'Trainer'}</span>
           </div>
           <div style={S.heroTitle}>今天要開什麼包？</div>
           {todayPoints > 0 && (
             <div style={S.todayPts}>
-              <i className="fa-solid fa-star" style={{ fontSize: 12, color: '#BA7517' }}></i>
+              <i className="fa-solid fa-star" style={{ fontSize: 10, color: '#BA7517' }}></i>
               今日已獲得 <strong style={{ color: '#BA7517', margin: '0 2px' }}>+{todayPoints}</strong> 點
             </div>
           )}
@@ -132,22 +132,11 @@ export default function HomePage() {
         {/* 公告 跑馬燈 */}
         {announcement && (
           <div style={S.announce}>
-            <span style={S.announceBadge}>公告</span>
-            <div style={{ flex: 1, overflow: 'hidden', position: 'relative' }}>
-              <style>{`
-                @keyframes marquee {
-                  0% { transform: translateX(100%); }
-                  100% { transform: translateX(-100%); }
-                }
-                .marquee-text {
-                  display: inline-block;
-                  white-space: nowrap;
-                  animation: marquee 12s linear infinite;
-                  fontSize: 11px;
-                  color: #555;
-                }
-              `}</style>
-              <span className="marquee-text">{announcement}</span>
+            <style>{`@keyframes marquee{0%{transform:translateX(100%)}100%{transform:translateX(-100%)}}`}</style>
+            <span style={{ fontSize: 9, fontWeight: 600, color: '#BA7517', border: '0.5px solid #FAC775', padding: '2px 8px', borderRadius: 3, whiteSpace: 'nowrap', letterSpacing: '0.06em' }}>公告</span>
+            <div style={{ width: 1, height: 14, background: 'linear-gradient(180deg,transparent,#FAC775,transparent)', flexShrink: 0 }} />
+            <div style={{ flex: 1, overflow: 'hidden' }}>
+              <span style={{ display: 'inline-block', whiteSpace: 'nowrap', fontSize: 11, color: '#666', fontStyle: 'italic', animation: 'marquee 12s linear infinite' }}>{announcement}</span>
             </div>
           </div>
         )}
