@@ -3,11 +3,12 @@ import { supabase } from '../lib/supabase'
 
 const AuthContext = createContext(null)
 
+const LAST_LEVEL_KEY = 'wnaptcg_last_level'
+
 export function AuthProvider({ children }) {
   const [member, setMember] = useState(null)
   const [loading, setLoading] = useState(true)
   const [loginResult, setLoginResult] = useState(null)
-  // loginResult: { isNewMember, pointsEarned, bonusEarned, levelUp, newLevel, oldLevel }
 
   useEffect(() => {
     supabase.auth.getSession().then(({ data: { session } }) => {
@@ -24,6 +25,7 @@ export function AuthProvider({ children }) {
   async function fetchMember(userId) {
     let { data } = await supabase.from('members').select('*').eq('id', userId).single()
     let isNewMember = false
+
     if (!data) {
       isNewMember = true
       const { data: userData } = await supabase.auth.getUser()
@@ -35,22 +37,57 @@ export function AuthProvider({ children }) {
       }).select().single()
       data = newMember
     }
+
     if (data) {
-      const result = await handleDailyLogin(data, isNewMember)
+      // ① 偵測等級變化（與 localStorage 比對）
+      const lastLevel = localStorage.getItem(LAST_LEVEL_KEY)
+      const levelUp = lastLevel && lastLevel !== data.level
+      const oldLevel = lastLevel || null
+
+      // ② 每日登入積分
+      const dailyResult = await handleDailyLogin(data, isNewMember)
+
+      // ③ 更新 localStorage 為最新等級
+      localStorage.setItem(LAST_LEVEL_KEY, data.level)
+
       const { data: refreshed } = await supabase.from('members').select('*').eq('id', userId).single()
-      setMember(refreshed || data)
-      if (result) setLoginResult(result)
+      const finalMember = refreshed || data
+      setMember(finalMember)
+
+      // ④ 組合 loginResult：每日登入 or 等級升級 or 新會員 任一有效就顯示
+      const hasLevelUp = levelUp || (dailyResult?.levelUp)
+      const effectiveOldLevel = dailyResult?.oldLevel || oldLevel
+      const effectiveNewLevel = dailyResult?.newLevel || finalMember.level
+
+      if (isNewMember || dailyResult?.pointsEarned > 0 || hasLevelUp) {
+        setLoginResult({
+          isNewMember,
+          pointsEarned: dailyResult?.pointsEarned || 0,
+          bonusEarned: dailyResult?.bonusEarned || 0,
+          levelUp: hasLevelUp,
+          oldLevel: effectiveOldLevel,
+          newLevel: effectiveNewLevel,
+          newStreak: dailyResult?.newStreak || finalMember.login_streak,
+        })
+      }
+
+      // ⑤ 若升級，更新 localStorage 為最新等級
+      if (hasLevelUp) {
+        localStorage.setItem(LAST_LEVEL_KEY, effectiveNewLevel)
+      }
     }
+
     setLoading(false)
   }
 
   async function handleDailyLogin(m, isNewMember) {
     const today = new Date().toISOString().split('T')[0]
-    // 已登入過今天，不重複給分，但若是新會員仍顯示引導
     if (m.last_login_date === today) {
+      // 今天已登入，但若是新會員仍要顯示引導
       if (isNewMember) return { isNewMember: true, pointsEarned: 0, bonusEarned: 0, levelUp: false }
       return null
     }
+
     const { error } = await supabase.from('daily_logins').insert({ member_id: m.id, login_date: today })
     if (error) return null
 
@@ -85,6 +122,8 @@ export function AuthProvider({ children }) {
     await supabase.auth.signOut()
     setMember(null)
     setLoginResult(null)
+    // 登出時清除等級記錄，下次登入重新偵測
+    localStorage.removeItem(LAST_LEVEL_KEY)
   }
 
   function clearLoginResult() {
