@@ -1,4 +1,4 @@
-import React from 'react'
+import React, { useState, useEffect } from 'react'
 import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom'
 import { useAuth } from './hooks/useAuth'
 import LoginPage from './pages/LoginPage'
@@ -12,16 +12,109 @@ import AdminMembers from './admin/AdminMembers'
 import AdminCards from './admin/AdminCards'
 import AdminBoss from './admin/AdminBoss'
 import AdminSettings from './admin/AdminSettings'
+import WelcomeOverlay from './components/WelcomeOverlay'
 
+// ── 白金風格 Skeleton Loading ─────────────────────────
+function AppLoader() {
+  return (
+    <div style={{ maxWidth: 390, margin: '0 auto', background: '#fff', minHeight: '100vh' }}>
+      <style>{`
+        @keyframes shimmer-load {
+          0% { background-position: -300px 0 }
+          100% { background-position: 300px 0 }
+        }
+        .sk { 
+          background: linear-gradient(90deg, #f5f0e8 25%, #faf4e8 50%, #f5f0e8 75%);
+          background-size: 600px 100%;
+          animation: shimmer-load 1.4s ease-in-out infinite;
+          border-radius: 6px;
+        }
+      `}</style>
+      {/* Hero skeleton */}
+      <div style={{ background: 'linear-gradient(135deg,#fff,#fdfaf4,#faf4e8)', padding: '18px 20px 20px', borderBottom: '0.5px solid #f0e8d0' }}>
+        <div className="sk" style={{ width: 120, height: 9, marginBottom: 14 }} />
+        <div className="sk" style={{ width: 180, height: 18, marginBottom: 6 }} />
+        <div className="sk" style={{ width: 140, height: 18, marginBottom: 14 }} />
+        <div className="sk" style={{ width: 90, height: 20, borderRadius: 20 }} />
+        {/* 右上角球種圓圈 */}
+        <div className="sk" style={{ position: 'absolute', top: 18, right: 18, width: 34, height: 34, borderRadius: '50%' }} />
+      </div>
+      {/* 公告 skeleton */}
+      <div style={{ padding: '10px 20px', borderBottom: '0.5px solid #f5f0e8', display: 'flex', gap: 8, alignItems: 'center' }}>
+        <div className="sk" style={{ width: 32, height: 16, borderRadius: 3 }} />
+        <div className="sk" style={{ flex: 1, height: 11 }} />
+      </div>
+      {/* 新聞 skeleton */}
+      <div style={{ padding: '14px 20px', borderBottom: '0.5px solid #f5f0e8' }}>
+        <div className="sk" style={{ width: 60, height: 11, marginBottom: 10 }} />
+        <div style={{ display: 'flex', gap: 0, border: '0.5px solid #f0e8d0', borderRadius: 8, overflow: 'hidden' }}>
+          <div className="sk" style={{ width: 80, height: 64, borderRadius: 0, flexShrink: 0 }} />
+          <div style={{ padding: '10px 12px', flex: 1, display: 'flex', flexDirection: 'column', gap: 6 }}>
+            <div className="sk" style={{ width: 50, height: 8 }} />
+            <div className="sk" style={{ width: '90%', height: 11 }} />
+            <div className="sk" style={{ width: '70%', height: 11 }} />
+            <div className="sk" style={{ width: 60, height: 8 }} />
+          </div>
+        </div>
+      </div>
+      {/* 戰績牆 skeleton */}
+      <div style={{ padding: '16px 20px 0' }}>
+        <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 12 }}>
+          <div className="sk" style={{ width: 70, height: 14 }} />
+          <div className="sk" style={{ width: 40, height: 12 }} />
+        </div>
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3,1fr)', gap: 8 }}>
+          {[0, 1, 2].map(i => (
+            <div key={i} style={{ border: '0.5px solid #f0e8d0', borderRadius: 10, overflow: 'hidden' }}>
+              <div className="sk" style={{ aspectRatio: '3/4', borderRadius: 0 }} />
+              <div style={{ padding: '7px 8px 9px' }}>
+                <div className="sk" style={{ width: '80%', height: 10, marginBottom: 4 }} />
+                <div className="sk" style={{ width: '60%', height: 9 }} />
+              </div>
+            </div>
+          ))}
+        </div>
+      </div>
+    </div>
+  )
+}
+
+// ── 帶過場動畫的 PrivateRoute ─────────────────────────
 function PrivateRoute({ children }) {
-  const { member, loading } = useAuth()
-  if (loading) return <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', height: '100vh', fontSize: 14, color: '#888' }}>載入中...</div>
-  return member ? children : <Navigate to="/login" replace />
+  const { member, loading, loginResult, clearLoginResult } = useAuth()
+  const [showWelcome, setShowWelcome] = useState(false)
+  const [welcomed, setWelcomed] = useState(false)
+
+  useEffect(() => {
+    if (!loading && member && loginResult && !welcomed) {
+      setShowWelcome(true)
+    }
+  }, [loading, member, loginResult, welcomed])
+
+  if (loading) return <AppLoader />
+  if (!member) return <Navigate to="/login" replace />
+
+  return (
+    <>
+      {showWelcome && (
+        <WelcomeOverlay
+          loginResult={loginResult}
+          member={member}
+          onDone={() => {
+            setShowWelcome(false)
+            setWelcomed(true)
+            clearLoginResult()
+          }}
+        />
+      )}
+      {children}
+    </>
+  )
 }
 
 function AdminRoute({ children }) {
   const { member, loading } = useAuth()
-  if (loading) return <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', height: '100vh', fontSize: 14, color: '#888' }}>載入中...</div>
+  if (loading) return <AppLoader />
   if (!member) return <Navigate to="/login" replace />
   if (!member.is_admin) return <Navigate to="/" replace />
   return children
