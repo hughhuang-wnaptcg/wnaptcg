@@ -4,6 +4,39 @@ import { useAuth } from '../hooks/useAuth'
 import { LevelBadge, PokeballIcon } from '../lib/pokeballs'
 import BottomNav from '../components/BottomNav'
 
+// ── 動畫血條 ─────────────────────────────────────────
+function AnimatedBar({ targetPct, color, height = 10, delay = 0 }) {
+  const [pct, setPct] = useState(0)
+  useEffect(() => {
+    const t = setTimeout(() => {
+      const start = performance.now()
+      const duration = 1200
+      const tick = (now) => {
+        const elapsed = now - start
+        const progress = Math.min(elapsed / duration, 1)
+        // easeOutCubic
+        const eased = 1 - Math.pow(1 - progress, 3)
+        setPct(Math.round(eased * targetPct))
+        if (progress < 1) requestAnimationFrame(tick)
+      }
+      requestAnimationFrame(tick)
+    }, delay)
+    return () => clearTimeout(t)
+  }, [targetPct, delay])
+
+  return (
+    <div style={{ height, background: '#f0e8d0', borderRadius: 99, overflow: 'hidden' }}>
+      <div style={{
+        height: '100%', width: `${pct}%`,
+        background: color,
+        borderRadius: 99,
+        transition: 'none',
+        boxShadow: pct > 0 ? `0 0 8px ${color.includes('red') ? 'rgba(228,75,74,0.4)' : 'rgba(55,138,221,0.4)'}` : 'none',
+      }} />
+    </div>
+  )
+}
+
 export default function ChallengePage() {
   const { member } = useAuth()
   const [boss, setBoss] = useState(null)
@@ -24,11 +57,14 @@ export default function ChallengePage() {
     setLoading(false)
   }
 
-  if (loading) return <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', height: '100vh', fontSize: 14, color: '#bbb' }}>載入中...</div>
+  if (loading) return (
+    <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', height: '100vh', fontSize: 14, color: '#bbb' }}>
+      載入中...
+    </div>
+  )
 
   const S = {
     page: { maxWidth: 390, margin: '0 auto', background: '#fff', minHeight: '100vh', display: 'flex', flexDirection: 'column' },
-    pageTitle: { padding: '14px 20px 12px', borderBottom: '0.5px solid #f5f0e8' },
     card: { border: '0.5px solid #f0e8d0', borderRadius: 12, padding: 14, background: '#fdfaf4', boxShadow: '0 1px 6px rgba(186,117,23,0.05)', marginBottom: 14 },
     secTitle: { fontSize: 13, fontWeight: 500, color: '#111', display: 'flex', alignItems: 'center', gap: 6, marginBottom: 12 },
   }
@@ -67,7 +103,7 @@ export default function ChallengePage() {
 
   return (
     <div style={S.page}>
-
+      {/* Header */}
       <div style={{ background: 'linear-gradient(135deg,#fff 0%,#fdfaf4 60%,#faf4e8 100%)', padding: '18px 20px 16px', position: 'relative', overflow: 'hidden', borderBottom: '0.5px solid #f0e8d0' }}>
         <div style={{ position: 'absolute', top: -40, right: -40, width: 130, height: 130, borderRadius: '50%', background: 'radial-gradient(circle,rgba(186,117,23,0.07) 0%,transparent 70%)' }} />
         <div style={{ position: 'absolute', bottom: -6, left: -6, fontSize: 72, opacity: 0.05, color: '#BA7517', lineHeight: 1, pointerEvents: 'none' }}>
@@ -89,27 +125,39 @@ export default function ChallengePage() {
 
       <div style={{ flex: 1, overflowY: 'auto', padding: '16px 20px 0' }}>
 
-        {/* Boss卡片 */}
+        {/* Boss 卡片 */}
         <div style={S.card}>
-          <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 12 }}>
-            <div style={{ width: 46, height: 46, borderRadius: '50%', background: '#FCEBEB', display: 'flex', alignItems: 'center', justifyContent: 'center', border: '0.5px solid #F09595' }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 14 }}>
+            <div style={{ width: 46, height: 46, borderRadius: '50%', background: '#FCEBEB', display: 'flex', alignItems: 'center', justifyContent: 'center', border: '0.5px solid #F09595', flexShrink: 0 }}>
               <i className="fa-solid fa-shield" style={{ fontSize: 20, color: '#E24B4A' }}></i>
             </div>
             <div style={{ flex: 1 }}>
               <div style={{ fontSize: 15, fontWeight: 500, color: '#111' }}>{boss.name}</div>
               <div style={{ fontSize: 11, color: '#999', marginTop: 2 }}>{boss.description || '本月挑戰'} · 每月{boss.reset_day}日重置</div>
             </div>
-            <div style={{ fontSize: 12, color: '#A32D2D', fontWeight: 600 }}>HP {100 - progress}%</div>
+            {/* HP 數字動畫 */}
+            <HpCounter targetHp={100 - progress} />
           </div>
-          <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 11, color: '#999', marginBottom: 5 }}>
+
+          <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 11, color: '#999', marginBottom: 6 }}>
             <span>${boss.current_amount?.toLocaleString()}</span>
             <span>目標 ${boss.target_amount?.toLocaleString()}</span>
           </div>
-          <div style={{ height: 10, background: '#f0e8d0', borderRadius: 99, overflow: 'hidden', marginBottom: 10 }}>
-            <div style={{ height: '100%', width: `${progress}%`, background: 'linear-gradient(90deg,#E24B4A,#EF9F27)', borderRadius: 99 }} />
-          </div>
-          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3,1fr)', gap: 6 }}>
-            {[{ num: rankList.length, label: '參與人數' }, { num: `$${boss.current_amount?.toLocaleString()}`, label: '累積消費' }, { num: `$${(boss.target_amount - boss.current_amount)?.toLocaleString()}`, label: '距目標' }].map((s, i) => (
+
+          {/* 動畫血條 */}
+          <AnimatedBar
+            targetPct={progress}
+            color="linear-gradient(90deg,#E24B4A,#EF9F27)"
+            height={10}
+            delay={300}
+          />
+
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3,1fr)', gap: 6, marginTop: 12 }}>
+            {[
+              { num: rankList.length, label: '參與人數' },
+              { num: `$${boss.current_amount?.toLocaleString()}`, label: '累積消費' },
+              { num: `$${(boss.target_amount - boss.current_amount)?.toLocaleString()}`, label: '距目標' },
+            ].map((s, i) => (
               <div key={i} style={{ background: '#f8f5f0', borderRadius: 8, padding: 8, textAlign: 'center' }}>
                 <div style={{ fontSize: 13, fontWeight: 500, color: '#111' }}>{s.num}</div>
                 <div style={{ fontSize: 10, color: '#999', marginTop: 2 }}>{s.label}</div>
@@ -142,14 +190,17 @@ export default function ChallengePage() {
         {/* 我的貢獻 */}
         {member && myAmount > 0 && (
           <div style={{ ...S.card, background: '#fff' }}>
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 8 }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 10 }}>
               <div style={S.secTitle}>我的貢獻度</div>
               {myRank > 0 && <span style={{ fontSize: 11, background: '#E6F1FB', color: '#0C447C', padding: '3px 8px', borderRadius: 20 }}>第 {myRank} 名</span>}
             </div>
-            <div style={{ height: 8, background: '#f0e8d0', borderRadius: 99, overflow: 'hidden', marginBottom: 5 }}>
-              <div style={{ height: '100%', width: `${myPct}%`, background: 'linear-gradient(90deg,#378ADD,#BA7517)', borderRadius: 99 }} />
-            </div>
-            <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 11, color: '#999' }}>
+            <AnimatedBar
+              targetPct={myPct}
+              color="linear-gradient(90deg,#378ADD,#BA7517)"
+              height={8}
+              delay={600}
+            />
+            <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 11, color: '#999', marginTop: 5 }}>
               <span>消費 ${myAmount.toLocaleString()} · 佔 {myPct}%</span>
               <span>預估獎勵 {myPct}%</span>
             </div>
@@ -181,6 +232,33 @@ export default function ChallengePage() {
         </div>
       </div>
       <BottomNav />
+    </div>
+  )
+}
+
+// HP 數字從 100 倒數動畫
+function HpCounter({ targetHp }) {
+  const [hp, setHp] = useState(100)
+  useEffect(() => {
+    const t = setTimeout(() => {
+      const start = performance.now()
+      const duration = 1200
+      const startHp = 100
+      const tick = (now) => {
+        const elapsed = now - start
+        const progress = Math.min(elapsed / duration, 1)
+        const eased = 1 - Math.pow(1 - progress, 3)
+        setHp(Math.round(startHp - eased * (startHp - targetHp)))
+        if (progress < 1) requestAnimationFrame(tick)
+      }
+      requestAnimationFrame(tick)
+    }, 300)
+    return () => clearTimeout(t)
+  }, [targetHp])
+
+  return (
+    <div style={{ fontSize: 13, color: hp > 50 ? '#A32D2D' : hp > 25 ? '#BA7517' : '#E24B4A', fontWeight: 700, transition: 'color 0.5s' }}>
+      HP {hp}%
     </div>
   )
 }
