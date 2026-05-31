@@ -5,10 +5,11 @@ import { playLevelUpSound, playPointsSound, vibrate, VIBRATE } from '../lib/hapt
 export default function WelcomeOverlay({ loginResult, member, onDone }) {
   const [phase, setPhase] = useState('enter')
   const [step, setStep] = useState(0)
+  const steps = buildSteps(loginResult)
 
+  // ── 步驟推進邏輯 ─────────────────────────────────────
   useEffect(() => {
     const t1 = setTimeout(() => setPhase('content'), 100)
-    const steps = buildSteps(loginResult)
     let current = 0
     const timers = [t1]
 
@@ -16,10 +17,6 @@ export default function WelcomeOverlay({ loginResult, member, onDone }) {
       current++
       if (current < steps.length) {
         setStep(current)
-        // 播放對應音效
-        const s = steps[current]
-        if (s.type === 'points') { playPointsSound(); vibrate(VIBRATE.success) }
-        if (s.type === 'levelup') { playLevelUpSound(); vibrate(VIBRATE.levelUp) }
         timers.push(setTimeout(advance, 2400))
       } else {
         timers.push(setTimeout(() => {
@@ -32,7 +29,20 @@ export default function WelcomeOverlay({ loginResult, member, onDone }) {
     return () => timers.forEach(clearTimeout)
   }, [])
 
-  const steps = buildSteps(loginResult)
+  // ── 每當 step 變化，根據當前畫面播放音效 ──────────────
+  useEffect(() => {
+    const current = steps[step]
+    if (!current) return
+    if (current.type === 'points') {
+      playPointsSound()
+      vibrate(VIBRATE.success)
+    }
+    if (current.type === 'levelup') {
+      playLevelUpSound()
+      vibrate(VIBRATE.levelUp)
+    }
+  }, [step])
+
   const current = steps[step] || steps[0]
 
   return (
@@ -51,7 +61,6 @@ export default function WelcomeOverlay({ loginResult, member, onDone }) {
         @keyframes slideUp { from{opacity:0;transform:translateY(18px)} to{opacity:1;transform:translateY(0)} }
         @keyframes sparkle { 0%,100%{opacity:0;transform:scale(0)} 50%{opacity:1;transform:scale(1)} }
         @keyframes float { 0%,100%{transform:translateY(0)} 50%{transform:translateY(-8px)} }
-        @keyframes countUp { from{opacity:0;transform:scale(0.7)} to{opacity:1;transform:scale(1)} }
         @keyframes numberPop {
           0%   { transform: scale(0.4) translateY(20px); opacity: 0; }
           50%  { transform: scale(1.25) translateY(-6px); opacity: 1; }
@@ -126,12 +135,11 @@ function WelcomeStep({ member, loginResult }) {
   )
 }
 
-// ─── 積分通知步驟（數字跳動強化版）────────────────────
+// ─── 積分通知步驟 ─────────────────────────────────────
 function PointsStep({ loginResult }) {
   const [displayPoints, setDisplayPoints] = useState(0)
   const target = loginResult?.pointsEarned || 0
 
-  // 數字從 0 滾動到目標值
   useEffect(() => {
     if (target <= 0) return
     const duration = 800
@@ -139,7 +147,6 @@ function PointsStep({ loginResult }) {
     const tick = (now) => {
       const elapsed = now - start
       const progress = Math.min(elapsed / duration, 1)
-      // easeOutExpo
       const eased = progress === 1 ? 1 : 1 - Math.pow(2, -10 * progress)
       setDisplayPoints(Math.round(eased * target))
       if (progress < 1) requestAnimationFrame(tick)
@@ -149,7 +156,6 @@ function PointsStep({ loginResult }) {
 
   return (
     <>
-      {/* 外圈脈衝 */}
       <div style={{position:'relative',marginBottom:20}}>
         <div style={{position:'absolute',inset:-12,borderRadius:'50%',border:'1.5px solid #FAC775',animation:'ringPulse 1.2s ease-out infinite'}}/>
         <div style={{position:'absolute',inset:-12,borderRadius:'50%',border:'1.5px solid #FAC775',animation:'ringPulse 1.2s 0.4s ease-out infinite'}}/>
@@ -157,12 +163,9 @@ function PointsStep({ loginResult }) {
           <i className="fa-solid fa-star" style={{fontSize:36,color:'#BA7517'}}></i>
         </div>
       </div>
-
       <div style={{fontSize:13,color:'#BA7517',fontWeight:600,letterSpacing:'0.08em',marginBottom:12,animation:'slideUp 0.4s 0.1s ease both'}}>
         今日登入獎勵
       </div>
-
-      {/* 跳動數字 */}
       <div style={{display:'flex',alignItems:'baseline',gap:6,marginBottom:loginResult?.bonusEarned>0?12:0}}>
         <span style={{
           fontSize:56,fontWeight:800,lineHeight:1,
@@ -175,14 +178,12 @@ function PointsStep({ loginResult }) {
         </span>
         <span style={{fontSize:20,color:'#BA7517',opacity:0.7,animation:'slideUp 0.4s 0.5s ease both'}}>點</span>
       </div>
-
       {loginResult?.bonusEarned > 0 && (
         <div style={{display:'flex',alignItems:'center',gap:6,background:'linear-gradient(135deg,#FAEEDA,#FFF3D0)',border:'0.5px solid #FAC775',borderRadius:20,padding:'6px 14px',marginBottom:6,animation:'slideUp 0.4s 0.5s ease both'}}>
           <i className="fa-solid fa-fire" style={{fontSize:13,color:'#E24B4A'}}></i>
           <span style={{fontSize:12,color:'#8B5A00',fontWeight:500}}>全勤獎勵 +{loginResult.bonusEarned} 點</span>
         </div>
       )}
-
       <div style={{fontSize:12,color:'#bbb',marginTop:8,animation:'slideUp 0.4s 0.6s ease both'}}>
         連續登入 {loginResult?.newStreak || 1} 天
       </div>
@@ -190,32 +191,28 @@ function PointsStep({ loginResult }) {
   )
 }
 
-// ─── 升級步驟（音效 + 震動已在父層觸發）─────────────
+// ─── 升級步驟 ─────────────────────────────────────────
 function LevelUpStep({ loginResult }) {
   return (
     <>
-      {/* 煙火粒子 */}
       {[0,60,120,180,240,300].map((deg,i)=>(
         <div key={i} style={{position:'absolute',top:'30%',left:'50%',width:7,height:7,borderRadius:'50%',
           background:['#BA7517','#E24B4A','#378ADD','#06C755','#FAC775','#534AB7'][i],
           transform:`rotate(${deg}deg) translateY(-60px)`,
           animation:`sparkle 0.9s ${i*0.08}s ease both`}}/>
       ))}
-      {/* 第二輪煙火 */}
       {[30,90,150,210,270,330].map((deg,i)=>(
         <div key={`b${i}`} style={{position:'absolute',top:'30%',left:'50%',width:5,height:5,borderRadius:'50%',
           background:['#FAC775','#BA7517','#E24B4A','#378ADD','#06C755','#534AB7'][i],
           transform:`rotate(${deg}deg) translateY(-40px)`,
           animation:`sparkle 0.9s ${0.15+i*0.08}s ease both`}}/>
       ))}
-
       <div style={{position:'relative',marginBottom:16}}>
         <div style={{position:'absolute',inset:-16,borderRadius:'50%',border:'2px solid #BA7517',animation:'ringPulse 1s ease-out infinite'}}/>
         <div style={{animation:'pop 0.7s cubic-bezier(0.34,1.56,0.64,1) both'}}>
           <PokeballIcon level={loginResult?.newLevel} size={80}/>
         </div>
       </div>
-
       <div style={{
         fontSize:13,fontWeight:700,letterSpacing:'0.1em',marginBottom:10,
         background:'linear-gradient(135deg,#BA7517,#FAC775,#BA7517)',
@@ -225,7 +222,6 @@ function LevelUpStep({ loginResult }) {
       }}>
         🎊 等級提升！
       </div>
-
       <div style={{fontSize:22,fontWeight:500,color:'#1a1a1a',marginBottom:6,animation:'slideUp 0.4s 0.3s ease both'}}>
         <span style={{color:'#999',textDecoration:'line-through',fontSize:15}}>{loginResult?.oldLevel}</span>
         <span style={{margin:'0 10px',color:'#BA7517'}}>→</span>
@@ -242,7 +238,7 @@ function LevelUpStep({ loginResult }) {
   )
 }
 
-// ─── 新會員引導步驟 ───────────────────────────────────
+// ─── 新會員引導 ───────────────────────────────────────
 function NewMemberStep({ member }) {
   const features = [
     { icon:'fa-trophy', text:'戰績牆', desc:'記錄你的開包高光' },
