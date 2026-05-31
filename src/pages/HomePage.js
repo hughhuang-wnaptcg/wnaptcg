@@ -1,9 +1,53 @@
-import React, { useEffect, useState } from 'react'
+import React, { useEffect, useState, useRef, useCallback } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { supabase, LEVELS } from '../lib/supabase'
 import { useAuth } from '../hooks/useAuth'
 import { PokeballIcon } from '../lib/pokeballs'
 import BottomNav from '../components/BottomNav'
+
+// ── Pull-to-refresh hook ──────────────────────────────
+function usePullToRefresh(onRefresh) {
+  const scrollRef = useRef(null)
+  const startY = useRef(0)
+  const pulling = useRef(false)
+  const [pullDistance, setPullDistance] = useState(0)
+  const [refreshing, setRefreshing] = useState(false)
+
+  const THRESHOLD = 72
+
+  const onTouchStart = useCallback((e) => {
+    const el = scrollRef.current
+    if (!el || el.scrollTop > 0) return
+    startY.current = e.touches[0].clientY
+    pulling.current = true
+  }, [])
+
+  const onTouchMove = useCallback((e) => {
+    if (!pulling.current || refreshing) return
+    const el = scrollRef.current
+    if (!el || el.scrollTop > 0) { pulling.current = false; setPullDistance(0); return }
+    const delta = e.touches[0].clientY - startY.current
+    if (delta > 0) {
+      e.preventDefault()
+      // 阻力效果：距離越大拉動越難
+      setPullDistance(Math.min(delta * 0.45, THRESHOLD + 20))
+    }
+  }, [refreshing])
+
+  const onTouchEnd = useCallback(async () => {
+    if (!pulling.current) return
+    pulling.current = false
+    if (pullDistance >= THRESHOLD) {
+      setRefreshing(true)
+      setPullDistance(THRESHOLD)
+      await onRefresh()
+      setRefreshing(false)
+    }
+    setPullDistance(0)
+  }, [pullDistance, onRefresh])
+
+  return { scrollRef, pullDistance, refreshing, onTouchStart, onTouchMove, onTouchEnd, THRESHOLD }
+}
 
 export default function HomePage() {
   const { member } = useAuth()
@@ -16,9 +60,7 @@ export default function HomePage() {
   const [newsModal, setNewsModal] = useState(false)
   const [todayPoints, setTodayPoints] = useState(0)
 
-  useEffect(() => { fetchData() }, [member])
-
-  async function fetchData() {
+  const fetchData = useCallback(async () => {
     const [{ data: bossData }, { data: cardsData }, { data: settingsData }] = await Promise.all([
       supabase.from('boss_challenges').select('*').eq('is_active', true).single(),
       supabase.from('cards').select('*, card_owners(member_id, members(display_name))').order('created_at', { ascending: false }).limit(3),
@@ -51,7 +93,11 @@ export default function HomePage() {
       const loginDates = new Set((weekData || []).map(l => l.login_date))
       setWeekLogins(days.map(d => ({ date: d, done: loginDates.has(d) })))
     }
-  }
+  }, [member])
+
+  useEffect(() => { fetchData() }, [fetchData])
+
+  const { scrollRef, pullDistance, refreshing, onTouchStart, onTouchMove, onTouchEnd, THRESHOLD } = usePullToRefresh(fetchData)
 
   const bossProgress = boss ? Math.round((boss.current_amount / boss.target_amount) * 100) : 0
   const nextLevel = LEVELS.find(l => l.min > (member?.points || 0))
@@ -61,6 +107,10 @@ export default function HomePage() {
   const dayNames = ['一', '二', '三', '四', '五', '六', '日']
   const hour = new Date().getHours()
   const greeting = hour >= 5 && hour < 12 ? { text: '早安', icon: 'fa-sun' } : hour >= 12 && hour < 18 ? { text: '午安', icon: 'fa-sun' } : { text: '晚安', icon: 'fa-moon' }
+
+  const isPulling = pullDistance > 0
+  const isReadyToRelease = pullDistance >= THRESHOLD
+  const spinAngle = Math.min(pullDistance / THRESHOLD * 360, 360)
 
   const S = {
     page: { maxWidth: 390, margin: '0 auto', background: '#fff', minHeight: '100vh', display: 'flex', flexDirection: 'column' },
@@ -75,7 +125,6 @@ export default function HomePage() {
     heroTitle: { fontSize: 18, fontWeight: 500, color: '#1a1a1a', lineHeight: 1.3, marginBottom: 12 },
     todayPts: { display: 'inline-flex', alignItems: 'center', gap: 5, background: 'linear-gradient(135deg,#FAEEDA,#FFF8EE)', border: '0.5px solid #FAC775', color: '#8B5A00', fontSize: 10, padding: '3px 10px', borderRadius: 20 },
     announce: { background: '#fff', padding: '10px 20px', borderBottom: '0.5px solid #f5f0e8', display: 'flex', alignItems: 'center', gap: 8 },
-    announceBadge: { fontSize: 9, fontWeight: 600, color: '#BA7517', background: 'linear-gradient(135deg,#FAEEDA,#FFF3D0)', border: '0.5px solid #FAC775', padding: '2px 8px', borderRadius: 20, whiteSpace: 'nowrap' },
     news: { background: '#fff', padding: '12px 20px', borderBottom: '0.5px solid #f5f0e8' },
     newsHeader: { fontSize: 11, fontWeight: 500, color: '#888', display: 'flex', alignItems: 'center', gap: 5, marginBottom: 8 },
     newsCard: { background: 'linear-gradient(135deg,#fdfaf4,#fff)', border: '0.5px solid #f0e8d0', borderRadius: 8, overflow: 'hidden', display: 'flex', boxShadow: '0 1px 6px rgba(186,117,23,0.05)' },
@@ -100,7 +149,62 @@ export default function HomePage() {
 
   return (
     <div style={S.page}>
-      <div style={{ flex: 1, overflowY: 'auto' }}>
+
+      {/* ── Pull-to-refresh 指示器 ── */}
+      <div style={{
+        position: 'relative',
+        overflow: 'hidden',
+        height: refreshing ? 56 : isPulling ? Math.max(pullDistance * 0.9, 0) : 0,
+        transition: isPulling ? 'none' : 'height 0.3s ease',
+        background: 'linear-gradient(135deg,#fdfaf4,#fff)',
+        display: 'flex', alignItems: 'center', justifyContent: 'center',
+        borderBottom: (isPulling || refreshing) ? '0.5px solid #f0e8d0' : 'none',
+      }}>
+        {/* 旋轉 pokeball 圖示 */}
+        <div style={{
+          width: 28, height: 28,
+          opacity: refreshing ? 1 : Math.min(pullDistance / THRESHOLD, 1),
+          transform: refreshing
+            ? 'scale(1)'
+            : `scale(${0.6 + Math.min(pullDistance / THRESHOLD, 1) * 0.4})`,
+          transition: refreshing ? 'none' : 'transform 0.1s',
+          display: 'flex', alignItems: 'center', justifyContent: 'center',
+        }}>
+          <svg viewBox="0 0 28 28" width="28" height="28">
+            {/* 上半 */}
+            <path d="M14 2 A12 12 0 0 1 26 14 L14 14 Z" fill={isReadyToRelease || refreshing ? '#E24B4A' : '#FAC775'} style={{ transition: 'fill 0.2s' }} />
+            <path d="M14 2 A12 12 0 0 0 2 14 L14 14 Z" fill={isReadyToRelease || refreshing ? '#E24B4A' : '#FAC775'} style={{ transition: 'fill 0.2s' }} />
+            {/* 下半 */}
+            <path d="M26 14 A12 12 0 0 1 14 26 L14 14 Z" fill="#f0f0f0" />
+            <path d="M2 14 A12 12 0 0 0 14 26 L14 14 Z" fill="#f0f0f0" />
+            {/* 中線 */}
+            <line x1="2" y1="14" x2="26" y2="14" stroke="#fff" strokeWidth="1.5" />
+            {/* 中心圓 */}
+            <circle cx="14" cy="14" r="4" fill="#fff" stroke={isReadyToRelease || refreshing ? '#E24B4A' : '#FAC775'} strokeWidth="1.5" style={{ transition: 'stroke 0.2s' }} />
+            <circle cx="14" cy="14" r="2" fill={isReadyToRelease || refreshing ? '#E24B4A' : '#FAC775'} style={{ transition: 'fill 0.2s' }} />
+            {/* 旋轉動畫（refreshing 時） */}
+            {refreshing && (
+              <animateTransform attributeName="transform" type="rotate" from="0 14 14" to="360 14 14" dur="0.8s" repeatCount="indefinite" />
+            )}
+          </svg>
+        </div>
+        {/* 文字提示 */}
+        <span style={{
+          fontSize: 11, color: '#BA7517', marginLeft: 8,
+          opacity: refreshing ? 1 : Math.min(pullDistance / THRESHOLD * 1.5, 1),
+          transition: 'opacity 0.1s',
+        }}>
+          {refreshing ? '更新中...' : isReadyToRelease ? '放開以更新' : '下拉更新'}
+        </span>
+      </div>
+
+      <div
+        ref={scrollRef}
+        style={{ flex: 1, overflowY: 'auto', WebkitOverflowScrolling: 'touch' }}
+        onTouchStart={onTouchStart}
+        onTouchMove={onTouchMove}
+        onTouchEnd={onTouchEnd}
+      >
 
         {/* Hero */}
         <div style={S.hero}>
@@ -109,7 +213,6 @@ export default function HomePage() {
           {[[12,15],[8,55],[22,80],[35,25],[15,40],[6,70],[42,8],[30,90]].map(([t,l],i) => (
             <div key={i} style={{ position:'absolute', top:`${t}%`, left:`${l}%`, width: i%2===0?2:3, height: i%2===0?2:3, borderRadius:'50%', background:'#BA7517', opacity: 0.3+i*0.05 }} />
           ))}
-          {/* 背景時間圖示 */}
           <div style={{ position:'absolute', bottom:-8, left:-8, fontSize:88, opacity:0.055, color:'#BA7517', lineHeight:1, pointerEvents:'none' }}>
             <i className={`fa-solid ${greeting.icon}`}></i>
           </div>
@@ -289,6 +392,7 @@ export default function HomePage() {
           )}
         </div>
       </div>
+
       {/* 新聞彈窗 */}
       {newsModal && news && (
         <div onClick={() => setNewsModal(false)} style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.4)', display: 'flex', alignItems: 'flex-end', justifyContent: 'center', zIndex: 100 }}>
@@ -306,6 +410,7 @@ export default function HomePage() {
           </div>
         </div>
       )}
+
       <BottomNav />
     </div>
   )
