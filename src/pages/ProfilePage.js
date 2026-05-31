@@ -3,12 +3,14 @@ import { supabase, LEVELS, getNextLevel } from '../lib/supabase'
 import { useAuth } from '../hooks/useAuth'
 import { PokeballIcon, LevelBadge } from '../lib/pokeballs'
 import BottomNav from '../components/BottomNav'
+import BenefitsPage from '../components/BenefitsPage'
 
 export default function ProfilePage() {
 const { member, setMember, signOut } = useAuth()
 const [logs, setLogs] = useState([])
 const [weekLogins, setWeekLogins] = useState([])
 const [showSettings, setShowSettings] = useState(false)
+const [showBenefits, setShowBenefits] = useState(false)
 const [editName, setEditName] = useState('')
 const [saving, setSaving] = useState(false)
 
@@ -93,7 +95,6 @@ return (
 </div>
 }
 <span style={{ fontSize: 6, color: '#BA7517', fontWeight: 600 }}>{member?.level}</span>
-{/* ★ 設定按鈕 */}
 <button
 onClick={openSettings}
 style={{ width: 26, height: 26, borderRadius: '50%', background: 'linear-gradient(135deg,#FAEEDA,#FFF3D0)', border: '0.5px solid #FAC775', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer', marginTop: 2 }}
@@ -153,6 +154,21 @@ return (
 </div>
 )
 })}
+</div>
+
+{/* 福利入口 */}
+<div
+onClick={() => setShowBenefits(true)}
+style={{ display: 'flex', alignItems: 'center', gap: 12, padding: '13px 14px', border: '0.5px solid #f0e8d0', borderRadius: 12, background: 'linear-gradient(135deg,#fdfaf4,#fff)', boxShadow: '0 1px 6px rgba(186,117,23,0.05)', marginBottom: 18, cursor: 'pointer' }}
+>
+<div style={{ width: 38, height: 38, borderRadius: 10, background: 'linear-gradient(135deg,#FAEEDA,#FFF3D0)', border: '0.5px solid rgba(186,117,23,0.2)', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
+<i className="fa-solid fa-gift" style={{ fontSize: 16, color: '#BA7517' }}></i>
+</div>
+<div style={{ flex: 1 }}>
+<div style={{ fontSize: 13, fontWeight: 500, color: '#111', marginBottom: 2 }}>會員等級福利</div>
+<div style={{ fontSize: 11, color: '#bbb' }}>查看各等級專屬優惠 →</div>
+</div>
+<i className="fa-solid fa-chevron-right" style={{ fontSize: 11, color: '#ccc' }}></i>
 </div>
 
 {/* 數據 */}
@@ -222,8 +238,6 @@ return (
 <div style={{ width: 36, height: 4, borderRadius: 2, background: '#f0e8d0', margin: '0 auto 16px' }} />
 <div style={{ fontSize: 16, fontWeight: 500, color: '#111', marginBottom: 4 }}>設定</div>
 <div style={{ fontSize: 12, color: '#bbb', marginBottom: 18 }}>#{String(member.member_no || '0').padStart(4, '0')}</div>
-
-{/* 暱稱編輯 */}
 <div style={{ marginBottom: 16 }}>
 <label style={{ fontSize: 12, color: '#999', display: 'block', marginBottom: 6 }}>暱稱</label>
 <input
@@ -239,11 +253,7 @@ disabled={saving || !editName.trim() || editName.trim() === member.display_name}
 style={{ width: '100%', padding: 12, background: (saving || !editName.trim() || editName.trim() === member.display_name) ? '#f0ebe3' : 'linear-gradient(135deg,#FAEEDA,#FFF3D0)', border: '0.5px solid #FAC775', borderRadius: 10, fontSize: 14, fontWeight: 500, color: (saving || !editName.trim() || editName.trim() === member.display_name) ? '#ccc' : '#8B5A00', cursor: (saving || !editName.trim() || editName.trim() === member.display_name) ? 'not-allowed' : 'pointer', marginBottom: 10 }}>
 {saving ? '儲存中...' : '儲存暱稱'}
 </button>
-
-{/* 分隔線 */}
 <div style={{ height: '0.5px', background: '#f0e8d0', margin: '6px 0 14px' }} />
-
-{/* 登出 */}
 <button
 onClick={signOut}
 style={{ width: '100%', padding: 12, background: '#fff', border: '0.5px solid #F09595', borderRadius: 10, fontSize: 14, color: '#A32D2D', cursor: 'pointer', marginBottom: 10, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 7 }}>
@@ -255,6 +265,16 @@ onClick={() => setShowSettings(false)}
 style={{ width: '100%', padding: 12, background: '#f8f5f0', border: 'none', borderRadius: 10, fontSize: 14, color: '#888', cursor: 'pointer' }}>
 取消
 </button>
+</div>
+</div>
+)}
+
+{/* 福利頁面 Sheet */}
+{showBenefits && (
+<div onClick={() => setShowBenefits(false)} style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.4)', zIndex: 100, display: 'flex', alignItems: 'flex-end', justifyContent: 'center' }}>
+<div onClick={e => e.stopPropagation()} style={{ width: '100%', maxWidth: 390, height: '88vh', background: '#fff', borderRadius: '16px 16px 0 0', overflow: 'hidden', display: 'flex', flexDirection: 'column' }}>
+<div style={{ width: 36, height: 4, borderRadius: 2, background: '#f0e8d0', margin: '10px auto 0', flexShrink: 0 }} />
+<BenefitsPage onClose={() => setShowBenefits(false)} />
 </div>
 </div>
 )}
