@@ -186,7 +186,7 @@ export default function ProfilePage() {
                   opacity: isDone || isCurrent ? 1 : 0.35,
                   borderRadius: isFirst ? '12px 12px 0 0' : isLast ? '0 0 12px 12px' : 0,
                 }}>
-                  <div style={{ width: 26, height: 26, borderRadius: 10, overflow: 'hidden', flexShrink: 0, border: `1px solid ${isCurrent ? '#FAC775' : '#eee'}` }}>
+                  <div style={{ width: 26, height: 26, borderRadius: 10, overflow: 'hidden', flexShrink: 0, border: "none" }}>
                     <PokeballIcon level={l.name} size={20} />
                   </div>
                   <div style={{ flex: 1, fontSize: 13, fontWeight: 500, color: isCurrent ? '#8B5A00' : '#111' }}>{l.name}</div>
