@@ -84,17 +84,17 @@ export default function ProfilePage() {
 
   const STATUS_LABEL = { pending: '待出貨', completed: '已完成', cancelled: '已取消' }
   const STATUS_STYLE = {
-    pending:   { bg: '#FAEEDA', color: '#8B5A00', border: '#FAC775' },
+    pending:   { bg: '#FAEEDA', color: '#8B4A00', border: '#FAC775' },
     completed: { bg: '#EAF3DE', color: '#173404', border: '#86C566' },
     cancelled: { bg: '#f5f5f5', color: '#999',    border: '#ddd' },
   }
 
   const S = {
-    page: { maxWidth: 390, margin: '0 auto', background: '#fff', minHeight: '100vh', display: 'flex', flexDirection: 'column' },
-    card: { border: '0.5px solid #f0e8d0', borderRadius: 12, padding: 14, boxShadow: '0 1px 6px rgba(186,117,23,0.05)', marginBottom: 14 },
-    secTitle: { fontSize: 13, fontWeight: 700, color: '#111', display: 'flex', alignItems: 'center', gap: 6, marginBottom: 12 },
-    lstat: { background: 'linear-gradient(135deg,#fdfaf4,#faf5eb)', borderRadius: 8, padding: 10, textAlign: 'center', border: '0.5px solid #f0e8d0' },
-    typeBadge: (bg) => ({ width: 22, height: 22, borderRadius: '50%', background: bg, display: 'inline-flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0, color: '#fff', fontSize: 10 }),
+    page: { maxWidth: 390, margin: '0 auto', background: '#FFFBF2', minHeight: '100vh', display: 'flex', flexDirection: 'column' },
+    card: { border: 'none', borderRadius: 18, padding: 14, background: '#fff', boxShadow: '0 4px 16px rgba(186,117,23,.09)', marginBottom: 14 },
+    secTitle: { fontSize: 14, fontWeight: 800, color: '#2D1A00', display: 'flex', alignItems: 'center', gap: 6, marginBottom: 12 },
+    lstat: { background: '#FFFBF2', borderRadius: 12, padding: 10, textAlign: 'center', border: '2px solid #FAE0A0' },
+    typeBadge: (bg) => ({ width: 26, height: 26, borderRadius: 10, background: bg, display: 'inline-flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0, color: '#fff', fontSize: 10 }),
   }
 
   return (
@@ -102,7 +102,7 @@ export default function ProfilePage() {
       <div style={{ flex: 1, overflowY: 'auto' }}>
 
         {/* Hero */}
-        <div style={{ background: 'linear-gradient(135deg,#fff 0%,#fdfaf4 60%,#faf4e8 100%)', padding: '18px 20px 16px', position: 'relative', overflow: 'hidden', borderBottom: '0.5px solid #f0e8d0' }}>
+        <div style={{ background: 'linear-gradient(160deg,#FFFBF2 0%,#FFF5DC 60%,#FFEDBB 100%)', padding: '18px 20px 16px', position: 'relative', overflow: 'hidden', borderBottom: 'none' }}>
           <div style={{ position: 'absolute', top: -40, right: -40, width: 130, height: 130, borderRadius: '50%', background: 'radial-gradient(circle,rgba(186,117,23,0.07) 0%,transparent 70%)' }} />
           <svg style={{ position: 'absolute', right: -16, bottom: -22, width: 100, height: 100, opacity: 0.07, pointerEvents: 'none' }} viewBox="0 0 100 100" fill="none">
             <circle cx="50" cy="50" r="47" stroke="#BA7517" strokeWidth="4"/>
@@ -120,15 +120,15 @@ export default function ProfilePage() {
                   {member.display_name?.[0]?.toUpperCase()}
                 </div>
             }
-            <span style={{ fontSize: 6, color: '#BA7517', fontWeight: 600 }}>{member?.level}</span>
+            <span style={{ fontSize: 6, color: '#E07B00', fontWeight: 600 }}>{member?.level}</span>
             <button onClick={() => { setEditName(member.display_name || ''); setShowSettings(true) }}
               style={{ width: 26, height: 26, borderRadius: '50%', background: 'linear-gradient(135deg,#FAEEDA,#FFF3D0)', border: '0.5px solid #FAC775', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer', marginTop: 2 }}>
-              <i className="fa-solid fa-gear" style={{ fontSize: 12, color: '#BA7517' }}></i>
+              <i className="fa-solid fa-gear" style={{ fontSize: 12, color: '#E07B00' }}></i>
             </button>
           </div>
-          <div style={{ fontSize: 9, color: '#BA7517', fontWeight: 600, opacity: 0.55, letterSpacing: '0.1em', marginBottom: 8 }}>W/NA PTCG × HUGO COLLECTIONS</div>
-          <div style={{ fontSize: 15, fontWeight: 700, color: '#1a1a1a', display: 'flex', alignItems: 'center', gap: 5, marginBottom: 3 }}>
-            <i className="fa-solid fa-user" style={{ fontSize: 13, color: '#BA7517' }}></i>
+          <div style={{ fontSize: 9, color: '#E07B00', fontWeight: 600, opacity: 0.55, letterSpacing: '0.1em', marginBottom: 8 }}>W/NA PTCG × HUGO COLLECTIONS</div>
+          <div style={{ fontSize: 16, fontWeight: 800, color: '#2D1A00', display: 'flex', alignItems: 'center', gap: 5, marginBottom: 3 }}>
+            <i className="fa-solid fa-user" style={{ fontSize: 13, color: '#E07B00' }}></i>
             {member.display_name} 的主頁
           </div>
           <div style={{ fontSize: 11, color: '#bbb', display: 'flex', alignItems: 'center', gap: 4 }}>
@@ -167,14 +167,14 @@ export default function ProfilePage() {
               const isDone = member.points >= l.min
               const isCurrent = member.level === l.name
               return (
-                <div key={l.name} style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '10px 14px', borderBottom: i < LEVELS.length - 1 ? '0.5px solid #f5f0e8' : 'none', background: isCurrent ? 'linear-gradient(135deg,#FAEEDA,#FFF8EE)' : 'transparent', opacity: isDone || isCurrent ? 1 : 0.35 }}>
-                  <div style={{ width: 22, height: 22, borderRadius: '50%', overflow: 'hidden', flexShrink: 0, border: `1px solid ${isCurrent ? '#FAC775' : '#eee'}` }}>
+                <div key={l.name} style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '10px 14px', borderBottom: i < LEVELS.length - 1 ? '0.5px solid #f5f0e8' : 'none', background: isCurrent ? 'linear-gradient(135deg,#FFF5DC,#FFFBF2)' : 'transparent', opacity: isDone || isCurrent ? 1 : 0.35 }}>
+                  <div style={{ width: 26, height: 26, borderRadius: 10, overflow: 'hidden', flexShrink: 0, border: `1px solid ${isCurrent ? '#FAC775' : '#eee'}` }}>
                     <PokeballIcon level={l.name} size={20} />
                   </div>
                   <div style={{ flex: 1, fontSize: 13, fontWeight: 500, color: isCurrent ? '#8B5A00' : '#111' }}>{l.name}</div>
                   <div style={{ fontSize: 11, color: isCurrent ? '#BA7517' : '#bbb' }}>{i === 0 ? '初始會員' : `${l.min.toLocaleString()} 點`}</div>
-                  {isDone && !isCurrent && <i className="fa-solid fa-check" style={{ fontSize: 11, color: '#BA7517' }}></i>}
-                  {isCurrent && <span style={{ fontSize: 9, background: 'linear-gradient(135deg,#FAEEDA,#FFF3D0)', color: '#8B5A00', padding: '2px 7px', borderRadius: 20, border: '0.5px solid #FAC775', fontWeight: 700 }}>目前</span>}
+                  {isDone && !isCurrent && <i className="fa-solid fa-check" style={{ fontSize: 11, color: '#E07B00' }}></i>}
+                  {isCurrent && <span style={{ fontSize: 9, background: 'linear-gradient(135deg,#FAEEDA,#FFF3D0)', color: '#8B4A00', padding: '2px 7px', borderRadius: 20, border: '0.5px solid #FAC775', fontWeight: 700 }}>目前</span>}
                 </div>
               )
             })}
@@ -183,7 +183,7 @@ export default function ProfilePage() {
           {/* 福利入口 */}
           <div onClick={() => setShowBenefits(true)} style={{ display: 'flex', alignItems: 'center', gap: 12, padding: '13px 14px', border: '0.5px solid #f0e8d0', borderRadius: 12, background: 'linear-gradient(135deg,#fdfaf4,#fff)', boxShadow: '0 1px 6px rgba(186,117,23,0.05)', marginBottom: 16, cursor: 'pointer' }}>
             <div style={{ width: 38, height: 38, borderRadius: 10, background: 'linear-gradient(135deg,#FAEEDA,#FFF3D0)', border: '0.5px solid rgba(186,117,23,0.2)', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
-              <i className="fa-solid fa-gift" style={{ fontSize: 16, color: '#BA7517' }}></i>
+              <i className="fa-solid fa-gift" style={{ fontSize: 16, color: '#E07B00' }}></i>
             </div>
             <div style={{ flex: 1 }}>
               <div style={{ fontSize: 13, fontWeight: 500, color: '#111', marginBottom: 2 }}>會員等級福利</div>
@@ -215,7 +215,7 @@ export default function ProfilePage() {
           <div style={S.secTitle}>
             <span style={S.typeBadge('linear-gradient(135deg,#378ADD,#185FA5)')}><i className="fa-solid fa-calendar-check"></i></span>
             本週簽到
-            <span style={{ marginLeft: 'auto', fontSize: 11, background: 'linear-gradient(135deg,#FAEEDA,#FFF3D0)', color: '#8B5A00', padding: '3px 8px', borderRadius: 20, border: '0.5px solid #FAC775', fontWeight: 500 }}>
+            <span style={{ marginLeft: 'auto', fontSize: 11, background: 'linear-gradient(135deg,#FAEEDA,#FFF3D0)', color: '#8B4A00', padding: '3px 8px', borderRadius: 20, border: '0.5px solid #FAC775', fontWeight: 500 }}>
               連續 {member.login_streak} 天
             </span>
           </div>
@@ -246,7 +246,7 @@ export default function ProfilePage() {
             </div>
             {daysUntilFullStreak <= 3 && daysUntilFullStreak > 0 && (
               <div style={{ fontSize: 11, color: '#888', display: 'flex', alignItems: 'center', gap: 4 }}>
-                <i className="fa-solid fa-gift" style={{ color: '#BA7517' }}></i>
+                <i className="fa-solid fa-gift" style={{ color: '#E07B00' }}></i>
                 再 {daysUntilFullStreak} 天全勤可獲得 +15 點
               </div>
             )}
@@ -259,7 +259,7 @@ export default function ProfilePage() {
               出貨記錄
             </div>
             {shippingOrders.length > 3 && (
-              <span onClick={() => setShowShipping(true)} style={{ fontSize: 11, color: '#BA7517', cursor: 'pointer' }}>全部 →</span>
+              <span onClick={() => setShowShipping(true)} style={{ fontSize: 11, color: '#E07B00', cursor: 'pointer' }}>全部 →</span>
             )}
           </div>
           <div style={{ marginBottom: 16 }}>
@@ -319,7 +319,7 @@ export default function ProfilePage() {
             <div style={{ width: 36, height: 4, borderRadius: 2, background: '#f0e8d0', margin: '12px auto 0', flexShrink: 0 }} />
             <div style={{ padding: '12px 20px 8px', borderBottom: '0.5px solid #f5f0e8', display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexShrink: 0 }}>
               <div style={{ fontSize: 15, fontWeight: 600, color: '#111' }}>
-                <i className="fa-solid fa-truck" style={{ color: '#BA7517', marginRight: 6 }}></i>
+                <i className="fa-solid fa-truck" style={{ color: '#E07B00', marginRight: 6 }}></i>
                 全部出貨記錄
               </div>
               <span style={{ fontSize: 11, color: '#bbb' }}>{shippingOrders.length} 筆</span>
