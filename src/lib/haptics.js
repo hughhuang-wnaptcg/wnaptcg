@@ -1,6 +1,4 @@
 // ── 音效 & 震動工具 ──────────────────────────────────
-// 用 Web Audio API 合成音效，不需要外部音檔
-
 const ctx = typeof window !== 'undefined' ? (() => {
   try { return new (window.AudioContext || window.webkitAudioContext)() } catch(e) { return null }
 })() : null
@@ -25,43 +23,67 @@ function playTone(freq, type, duration, gainVal, delay = 0) {
 // 升級音效：上升音階
 export function playLevelUpSound() {
   if (!ctx) return
-  const notes = [523, 659, 784, 1047] // C5 E5 G5 C6
-  notes.forEach((freq, i) => {
-    playTone(freq, 'triangle', 0.35, 0.25, i * 0.12)
-  })
-  // 最後加個閃亮尾音
+  const notes = [523, 659, 784, 1047]
+  notes.forEach((freq, i) => { playTone(freq, 'triangle', 0.35, 0.25, i * 0.12) })
   playTone(1568, 'sine', 0.6, 0.15, notes.length * 0.12)
 }
 
-// 積分獲得音效：輕快的叮
+// 積分獲得音效
 export function playPointsSound() {
   playTone(880, 'sine', 0.18, 0.2, 0)
   playTone(1320, 'sine', 0.25, 0.15, 0.08)
 }
 
-// 按鈕點擊音效：短促輕敲
+// 按鈕點擊音效
 export function playClickSound() {
   playTone(440, 'sine', 0.08, 0.12, 0)
 }
 
-// 出貨申請成功：愉快提示音
+// 出貨申請成功
 export function playSuccessSound() {
   playTone(523, 'sine', 0.15, 0.18, 0)
   playTone(784, 'sine', 0.2, 0.18, 0.1)
   playTone(1047, 'sine', 0.3, 0.15, 0.2)
 }
 
+// 全勤慶祝音效：歡樂長版上升音階 + 尾韻
+export function playWeekCompleteSound() {
+  if (!ctx) return
+  // 主旋律：C E G C E G C（上升）
+  const melody = [523, 659, 784, 1047, 1319, 1568, 2093]
+  melody.forEach((freq, i) => { playTone(freq, 'triangle', 0.3, 0.22, i * 0.1) })
+  // 和聲層
+  const harmony = [659, 784, 988, 1319]
+  harmony.forEach((freq, i) => { playTone(freq, 'sine', 0.4, 0.1, 0.3 + i * 0.12) })
+  // 最後閃亮尾音
+  playTone(2093, 'sine', 0.8, 0.18, melody.length * 0.1 + 0.1)
+  playTone(2637, 'sine', 0.6, 0.12, melody.length * 0.1 + 0.25)
+}
+
+// 補簽成功音效：輕快確認音
+export function playMakeUpSound() {
+  playTone(659, 'sine', 0.15, 0.18, 0)
+  playTone(880, 'sine', 0.2, 0.18, 0.1)
+  playTone(1047, 'sine', 0.25, 0.15, 0.2)
+}
+
+// 積分不足提示音：低沉雙音
+export function playErrorSound() {
+  playTone(220, 'triangle', 0.2, 0.2, 0)
+  playTone(185, 'triangle', 0.25, 0.18, 0.15)
+}
+
 // 震動封裝
 export function vibrate(pattern) {
-  try {
-    if (navigator.vibrate) navigator.vibrate(pattern)
-  } catch(e) {}
+  try { if (navigator.vibrate) navigator.vibrate(pattern) } catch(e) {}
 }
 
 export const VIBRATE = {
-  light: [30],
-  medium: [60],
-  success: [40, 30, 40],
-  levelUp: [50, 40, 80, 40, 120],
-  error: [80, 50, 80],
+  light:        [30],
+  medium:       [60],
+  success:      [40, 30, 40],
+  levelUp:      [50, 40, 80, 40, 120],
+  weekComplete: [60, 40, 60, 40, 100, 40, 180],
+  error:        [80, 50, 80],
+  makeUp:       [40, 20, 40],
 }
