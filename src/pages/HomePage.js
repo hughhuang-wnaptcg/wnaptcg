@@ -354,14 +354,9 @@ export default function HomePage() {
               <span style={S.typeBadge('linear-gradient(135deg,#BA7517,#D4A94A)')}><i className="fa-solid fa-trophy"></i></span>
               戰績牆
             </div>
-            <div style={{ display: 'flex', gap: 12, alignItems: 'center' }}>
-              <span onClick={() => setShowLeaderboard(true)} style={{ fontSize: 11, color: '#E07B00', cursor: 'pointer', fontWeight: 700, display: 'flex', alignItems: 'center', gap: 4 }}>
-                <i className="fa-solid fa-ranking-star" style={{ fontSize: 10 }}></i>排行榜
-              </span>
-              <span style={{ fontSize: 11, color: '#ccc', cursor: 'pointer' }} onClick={() => navigate('/wall')}>全部 →</span>
-            </div>
+            <span style={{ fontSize: 11, color: '#ccc', cursor: 'pointer' }} onClick={() => navigate('/wall')}>全部 →</span>
           </div>
-          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3,1fr)', gap: 7, marginBottom: 16 }}>
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3,1fr)', gap: 7, marginBottom: 10 }}>
             {recentCards.map((card, idx) => (
               <div key={card.id} onClick={() => navigate('/wall')} style={S.card}>
                 <div style={{ aspectRatio: '3/4', background: '#f8f5f0', display: 'flex', alignItems: 'center', justifyContent: 'center', position: 'relative', overflow: 'hidden' }}>
@@ -375,6 +370,20 @@ export default function HomePage() {
                 </div>
               </div>
             ))}
+          </div>
+
+          {/* 排行榜入口 */}
+          <div
+            onClick={() => setShowLeaderboard(true)}
+            style={{ display: 'flex', alignItems: 'center', gap: 12, padding: '11px 14px', background: 'linear-gradient(135deg,#FFF8EE,#FFFBF2)', border: '1px solid #F5E8C8', borderRadius: 12, cursor: 'pointer', marginBottom: 16, boxShadow: '0 2px 8px rgba(186,117,23,.07)' }}>
+            <div style={{ width: 34, height: 34, borderRadius: 10, background: 'linear-gradient(135deg,#BA7517,#D4A94A)', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
+              <i className="fa-solid fa-ranking-star" style={{ fontSize: 15, color: '#fff' }}></i>
+            </div>
+            <div style={{ flex: 1 }}>
+              <div style={{ fontSize: 13, fontWeight: 700, color: '#2D1A00' }}>積分排行榜</div>
+              <div style={{ fontSize: 10, color: '#bbb', marginTop: 1 }}>查看會員積分排名 →</div>
+            </div>
+            <i className="fa-solid fa-chevron-right" style={{ fontSize: 11, color: '#D4A94A' }}></i>
           </div>
 
           {/* Boss */}
