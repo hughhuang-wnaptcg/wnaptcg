@@ -51,10 +51,10 @@ export default function WallPage() {
   const availableRarities = RARITIES.filter(r => rarityCount[r] > 0)
 
   const S = {
-    page: { maxWidth: 390, margin: '0 auto', background: '#fff', minHeight: '100vh', display: 'flex', flexDirection: 'column' },
-    hero: { background: 'linear-gradient(135deg,#fff 0%,#fdfaf4 60%,#faf4e8 100%)', padding: '18px 20px 16px', position: 'relative', overflow: 'hidden', borderBottom: '0.5px solid #f0e8d0' },
-    tabBar: { display: 'flex', borderBottom: '0.5px solid #f0e8d0', background: '#fff' },
-    tabBtn: (active) => ({ flex: 1, padding: '10px 0', fontSize: 13, fontWeight: active ? 500 : 400, color: active ? '#BA7517' : '#bbb', textAlign: 'center', cursor: 'pointer', background: 'none', border: 'none', borderBottom: active ? '2px solid #BA7517' : '2px solid transparent' }),
+    page: { maxWidth: 390, margin: '0 auto', background: '#FFFBF2', minHeight: '100vh', display: 'flex', flexDirection: 'column' },
+    hero: { background: 'linear-gradient(160deg,#FFFBF2 0%,#FFF5DC 60%,#FFEDBB 100%)', padding: '18px 20px 16px', position: 'relative', overflow: 'hidden', borderBottom: 'none' },
+    tabBar: { display: 'flex', borderBottom: '0.5px solid #f0e8d0', background: '#FFFBF2' },
+    tabBtn: (active) => ({ flex: 1, padding: '10px 0', fontSize: 13, fontWeight: active ? 500 : 400, color: active ? '#E07B00' : '#bbb', textAlign: 'center', cursor: 'pointer', background: 'none', border: 'none', borderBottom: active ? '2px solid #E07B00' : '2px solid transparent' }),
   }
 
   return (
@@ -81,8 +81,8 @@ export default function WallPage() {
           <span style={{ fontSize: 6, color: '#BA7517', fontWeight: 600 }}>{member?.level}</span>
         </div>
         <div style={{ fontSize: 9, color: '#BA7517', fontWeight: 600, opacity: 0.55, letterSpacing: '0.1em', marginBottom: 8 }}>W/NA PTCG × HUGO COLLECTIONS</div>
-        <div style={{ fontSize: 15, fontWeight: 700, color: '#1a1a1a', display: 'flex', alignItems: 'center', gap: 5, marginBottom: 3 }}>
-          <i className="fa-solid fa-trophy" style={{ fontSize: 13, color: '#BA7517' }}></i>
+        <div style={{ fontSize: 16, fontWeight: 800, color: '#2D1A00', display: 'flex', alignItems: 'center', gap: 5, marginBottom: 3 }}>
+          <i className="fa-solid fa-trophy" style={{ fontSize: 13, color: '#E07B00' }}></i>
           戰績牆
         </div>
         <div style={{ fontSize: 11, color: '#bbb' }}>
@@ -142,7 +142,7 @@ export default function WallPage() {
               const rc = RARITY_COLORS[card.rarity] || RARITY_COLORS.Other
               return (
                 <div key={card.id} onClick={() => setSelected(card)}
-                  style={{ border: '0.5px solid #f0e8d0', borderRadius: 12, overflow: 'hidden', background: '#fff', cursor: 'pointer', boxShadow: '0 1px 8px rgba(186,117,23,0.06)' }}>
+                  style={{ border: 'none', borderRadius: 18, overflow: 'hidden', background: '#fff', cursor: 'pointer', boxShadow: '0 4px 16px rgba(186,117,23,.10)' }}>
                   <div style={{ aspectRatio: '3/4', background: '#f8f5f0', display: 'flex', alignItems: 'center', justifyContent: 'center', position: 'relative', overflow: 'hidden' }}>
                     {card.image_url
                       ? <img src={card.image_url} alt={card.name} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
