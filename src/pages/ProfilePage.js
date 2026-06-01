@@ -39,12 +39,10 @@ export default function ProfilePage() {
   useEffect(() => { if (member) fetchData() }, [member])
 
   async function fetchData() {
-    // 積分紀錄
     const { data: logData } = await supabase.from('point_logs')
       .select('*').eq('member_id', member.id).order('created_at', { ascending: false }).limit(15)
     setLogs(logData || [])
 
-    // 本週簽到
     const today = new Date()
     const todayStr = today.toISOString().split('T')[0]
     const dayOfWeek = today.getDay()
@@ -65,12 +63,10 @@ export default function ProfilePage() {
       ...d, done: loginDates.has(d.date), typeConfig: TYPE_BY_WEEKDAY[d.weekday],
     })))
 
-    // 出貨記錄
     const { data: shippingData } = await supabase.from('shipping_orders')
       .select('*').eq('member_id', member.id).order('created_at', { ascending: false })
     setShippingOrders(shippingData || [])
 
-    // 鑑定記錄
     const { data: gradingData } = await supabase.from('grading_submissions')
       .select('*').eq('member_id', member.id).order('created_at', { ascending: false })
     setGradings(gradingData || [])
@@ -301,7 +297,7 @@ export default function ProfilePage() {
             })}
           </div>
 
-          {/* ── 已送鑑定 ── */}
+          {/* 已送鑑定 */}
           <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 12 }}>
             <div style={S.secTitle}>
               <span style={S.typeBadge('linear-gradient(135deg,#7038F8,#9B6BFF)')}><i className="fa-solid fa-star"></i></span>
@@ -318,8 +314,14 @@ export default function ProfilePage() {
               const gs = GRADING_STATUS[g.status] || GRADING_STATUS.submitted
               return (
                 <div key={g.id} style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '11px 0', borderBottom: '0.5px solid #f5f0e8' }}>
-                  <div style={{ width: 34, height: 34, borderRadius: 8, background: gs.bg, display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
-                    <i className="fa-solid fa-star" style={{ fontSize: 13, color: gs.color }}></i>
+                  {/* 圖片或預設圖示 */}
+                  <div style={{ width: 44, height: 58, borderRadius: 8, overflow: 'hidden', flexShrink: 0, border: '1.5px solid #F5E8C8' }}>
+                    {g.image_url
+                      ? <img src={g.image_url} alt="" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+                      : <div style={{ width: '100%', height: '100%', background: gs.bg, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                          <i className="fa-solid fa-star" style={{ fontSize: 16, color: gs.color }}></i>
+                        </div>
+                    }
                   </div>
                   <div style={{ flex: 1, minWidth: 0 }}>
                     <div style={{ fontSize: 13, fontWeight: 500, color: '#111', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{g.card_name}</div>
@@ -332,16 +334,10 @@ export default function ProfilePage() {
                     <span style={{ fontSize: 10, fontWeight: 600, background: gs.bg, color: gs.color, padding: '2px 8px', borderRadius: 20 }}>
                       {gs.label}
                     </span>
-                    {g.grade != null && (
-                      <div style={{ fontSize: 11, fontWeight: 700, color: '#2D1A00', marginTop: 3 }}>
-                        {g.grade} 分
-                      </div>
-                    )}
-                    {g.grade == null && (
-                      <div style={{ fontSize: 10, color: '#bbb', marginTop: 3 }}>
-                        {g.submitted_at || '—'}
-                      </div>
-                    )}
+                    {g.grade != null
+                      ? <div style={{ fontSize: 11, fontWeight: 700, color: '#2D1A00', marginTop: 3 }}>{g.grade} 分</div>
+                      : <div style={{ fontSize: 10, color: '#bbb', marginTop: 3 }}>{g.submitted_at || '—'}</div>
+                    }
                   </div>
                 </div>
               )
@@ -380,8 +376,7 @@ export default function ProfilePage() {
             <div style={{ width: 36, height: 4, borderRadius: 2, background: '#f0e8d0', margin: '12px auto 0', flexShrink: 0 }} />
             <div style={{ padding: '12px 20px 8px', borderBottom: '0.5px solid #f5f0e8', display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexShrink: 0 }}>
               <div style={{ fontSize: 15, fontWeight: 600, color: '#111' }}>
-                <i className="fa-solid fa-truck" style={{ color: '#E07B00', marginRight: 6 }}></i>
-                全部出貨記錄
+                <i className="fa-solid fa-truck" style={{ color: '#E07B00', marginRight: 6 }}></i>全部出貨記錄
               </div>
               <span style={{ fontSize: 11, color: '#bbb' }}>{shippingOrders.length} 筆</span>
             </div>
@@ -392,9 +387,7 @@ export default function ProfilePage() {
                   <div key={order.id} style={{ padding: '12px 0', borderBottom: '0.5px solid #f5f0e8' }}>
                     <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 6 }}>
                       <div style={{ fontSize: 13, fontWeight: 600, color: '#111' }}>{order.store_name}</div>
-                      <span style={{ fontSize: 10, fontWeight: 600, background: ss.bg, color: ss.color, padding: '2px 8px', borderRadius: 20, border: `0.5px solid ${ss.border}` }}>
-                        {STATUS_LABEL[order.status]}
-                      </span>
+                      <span style={{ fontSize: 10, fontWeight: 600, background: ss.bg, color: ss.color, padding: '2px 8px', borderRadius: 20, border: `0.5px solid ${ss.border}` }}>{STATUS_LABEL[order.status]}</span>
                     </div>
                     <div style={{ fontSize: 12, color: '#666', marginBottom: 3 }}>
                       <i className="fa-solid fa-user" style={{ fontSize: 10, marginRight: 4, color: '#bbb' }}></i>
@@ -410,9 +403,7 @@ export default function ProfilePage() {
                       <i className="fa-solid fa-clock" style={{ fontSize: 9, marginRight: 4 }}></i>
                       {new Date(order.created_at).toLocaleDateString('zh-TW')}
                       {order.status === 'cancelled' && order.cancelled_at && (
-                        <span style={{ marginLeft: 8, color: '#E24B4A' }}>
-                          · 取消於 {new Date(order.cancelled_at).toLocaleDateString('zh-TW')}
-                        </span>
+                        <span style={{ marginLeft: 8, color: '#E24B4A' }}>· 取消於 {new Date(order.cancelled_at).toLocaleDateString('zh-TW')}</span>
                       )}
                     </div>
                   </div>
@@ -430,8 +421,7 @@ export default function ProfilePage() {
             <div style={{ width: 36, height: 4, borderRadius: 2, background: '#f0e8d0', margin: '12px auto 0', flexShrink: 0 }} />
             <div style={{ padding: '12px 20px 8px', borderBottom: '0.5px solid #f5f0e8', display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexShrink: 0 }}>
               <div style={{ fontSize: 15, fontWeight: 600, color: '#111' }}>
-                <i className="fa-solid fa-star" style={{ color: '#7038F8', marginRight: 6 }}></i>
-                全部鑑定紀錄
+                <i className="fa-solid fa-star" style={{ color: '#7038F8', marginRight: 6 }}></i>全部鑑定紀錄
               </div>
               <span style={{ fontSize: 11, color: '#bbb' }}>{gradings.length} 筆</span>
             </div>
@@ -440,39 +430,35 @@ export default function ProfilePage() {
                 const gs = GRADING_STATUS[g.status] || GRADING_STATUS.submitted
                 return (
                   <div key={g.id} style={{ padding: '12px 0', borderBottom: '0.5px solid #f5f0e8' }}>
+                    {g.image_url && (
+                      <img src={g.image_url} alt="" style={{ width: '100%', height: 180, objectFit: 'cover', borderRadius: 10, marginBottom: 10, border: '1.5px solid #F5E8C8' }} />
+                    )}
                     <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 6 }}>
                       <div style={{ fontSize: 13, fontWeight: 600, color: '#111' }}>{g.card_name}</div>
-                      <span style={{ fontSize: 10, fontWeight: 600, background: gs.bg, color: gs.color, padding: '2px 8px', borderRadius: 20 }}>
-                        {gs.label}
-                      </span>
+                      <span style={{ fontSize: 10, fontWeight: 600, background: gs.bg, color: gs.color, padding: '2px 8px', borderRadius: 20 }}>{gs.label}</span>
                     </div>
                     {g.card_set && (
                       <div style={{ fontSize: 12, color: '#666', marginBottom: 3 }}>
-                        <i className="fa-solid fa-layer-group" style={{ fontSize: 10, marginRight: 4, color: '#bbb' }}></i>
-                        {g.card_set}
+                        <i className="fa-solid fa-layer-group" style={{ fontSize: 10, marginRight: 4, color: '#bbb' }}></i>{g.card_set}
                       </div>
                     )}
                     {g.grading_company && (
                       <div style={{ fontSize: 12, color: '#666', marginBottom: 3 }}>
-                        <i className="fa-solid fa-building" style={{ fontSize: 10, marginRight: 4, color: '#bbb' }}></i>
-                        {g.grading_company}
+                        <i className="fa-solid fa-building" style={{ fontSize: 10, marginRight: 4, color: '#bbb' }}></i>{g.grading_company}
                       </div>
                     )}
                     {g.grade != null && (
                       <div style={{ fontSize: 12, color: '#2D1A00', fontWeight: 700, marginBottom: 3 }}>
-                        <i className="fa-solid fa-star" style={{ fontSize: 10, marginRight: 4, color: '#7038F8' }}></i>
-                        鑑定分數：{g.grade}
+                        <i className="fa-solid fa-star" style={{ fontSize: 10, marginRight: 4, color: '#7038F8' }}></i>鑑定分數：{g.grade}
                       </div>
                     )}
                     {g.notes && (
                       <div style={{ fontSize: 11, color: '#999', marginBottom: 3 }}>
-                        <i className="fa-solid fa-note-sticky" style={{ fontSize: 10, marginRight: 4, color: '#bbb' }}></i>
-                        {g.notes}
+                        <i className="fa-solid fa-note-sticky" style={{ fontSize: 10, marginRight: 4, color: '#bbb' }}></i>{g.notes}
                       </div>
                     )}
                     <div style={{ fontSize: 10, color: '#bbb' }}>
-                      <i className="fa-solid fa-clock" style={{ fontSize: 9, marginRight: 4 }}></i>
-                      送件：{g.submitted_at || '—'}
+                      <i className="fa-solid fa-clock" style={{ fontSize: 9, marginRight: 4 }}></i>送件：{g.submitted_at || '—'}
                     </div>
                   </div>
                 )
