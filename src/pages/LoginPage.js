@@ -26,11 +26,35 @@ export default function LoginPage() {
       document.head.appendChild(link)
     }
     // LINE LIFF SDK
-    const script = document.createElement('script')
-    script.src = 'https://static.line-scdn.net/liff/edge/2/sdk.js'
-    script.async = true
-    document.head.appendChild(script)
-    return () => document.head.removeChild(script)
+    let cancelled = false
+    let script = document.getElementById('liff-sdk')
+
+    async function resumeLineLogin() {
+      try {
+        await window.liff.init({ liffId: LIFF_ID })
+        if (!cancelled && window.liff.isLoggedIn()) {
+          await finishLineLogin(window.liff)
+        }
+      } catch (err) {
+        if (!cancelled) setError('LINE 登入初始化失敗：' + err.message)
+      }
+    }
+
+    if (window.liff) {
+      resumeLineLogin()
+    } else {
+      script = document.createElement('script')
+      script.id = 'liff-sdk'
+      script.src = 'https://static.line-scdn.net/liff/edge/2/sdk.js'
+      script.async = true
+      script.onload = resumeLineLogin
+      script.onerror = () => {
+        if (!cancelled) setError('LINE SDK 載入失敗，請重新整理後再試')
+      }
+      document.head.appendChild(script)
+    }
+
+    return () => { cancelled = true }
   }, [])
 
   async function handleLineLogin() {
@@ -41,6 +65,18 @@ export default function LoginPage() {
       if (!liff) throw new Error('LINE SDK 尚未載入，請稍後再試')
       await liff.init({ liffId: LIFF_ID })
       if (!liff.isLoggedIn()) { liff.login(); return }
+      await finishLineLogin(liff)
+    } catch (err) {
+      console.error(err)
+      setError('LINE 登入失敗：' + err.message)
+    }
+    setLoading(false)
+  }
+
+  async function finishLineLogin(liff) {
+    setLoading(true)
+    setError('')
+    try {
       const profile = await liff.getProfile()
       const lineId = profile.userId
       const fakeEmail = `line_${lineId}@wnaptcg.line`
