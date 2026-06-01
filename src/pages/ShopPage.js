@@ -98,6 +98,7 @@ export default function ShopPage() {
   const [pointsLogs, setPointsLogs] = useState([])
   const [shopOrders, setShopOrders] = useState([])
   const [loading, setLoading] = useState(true)
+  const [productsError, setProductsError] = useState(null)
   const [activeTier, setActiveTier] = useState(null) // 進入的商城
   const [confirmProduct, setConfirmProduct] = useState(null)
   const [buying, setBuying] = useState(false)
@@ -109,11 +110,12 @@ export default function ShopPage() {
 
   async function fetchData() {
     setLoading(true)
-    const [{ data: prods }, { data: logs }, { data: orders }] = await Promise.all([
+    const [{ data: prods, error: productsFetchError }, { data: logs }, { data: orders }] = await Promise.all([
       supabase.from('shop_products').select('*').eq('is_active', true).order('created_at', { ascending: false }),
       supabase.from('points_logs').select('*').eq('member_id', member.id).order('created_at', { ascending: false }).limit(30),
       supabase.from('shop_orders').select('*, shop_products(name, image_url)').eq('member_id', member.id).order('created_at', { ascending: false }).limit(30),
     ])
+    setProductsError(productsFetchError)
     setProducts(prods || [])
     setPointsLogs(logs || [])
     setShopOrders(orders || [])
@@ -192,7 +194,13 @@ export default function ShopPage() {
 
           {/* 商品 Grid */}
           <div style={{ padding: '14px 16px 28px' }}>
-            {tierProds.length === 0 ? (
+            {productsError ? (
+              <div style={{ textAlign: 'center', padding: '48px 20px', color: '#A32D2D' }}>
+                <i className="fa-solid fa-triangle-exclamation" style={{ fontSize: 28, display: 'block', marginBottom: 10, opacity: 0.7 }}></i>
+                <div style={{ fontSize: 13, fontWeight: 700, marginBottom: 4 }}>商品載入失敗</div>
+                <div style={{ fontSize: 11, lineHeight: 1.5 }}>請稍後再試，或通知管理員檢查商城權限設定。</div>
+              </div>
+            ) : tierProds.length === 0 ? (
               <div style={{ textAlign: 'center', padding: '48px 0', color: isVip ? '#444' : '#bbb' }}>
                 <i className="fa-solid fa-box-open" style={{ fontSize: 36, display: 'block', marginBottom: 10, opacity: 0.3 }}></i>
                 <div style={{ fontSize: 13 }}>目前無商品</div>
