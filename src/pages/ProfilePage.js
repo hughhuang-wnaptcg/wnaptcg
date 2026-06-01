@@ -3,7 +3,6 @@ import { supabase, LEVELS, getNextLevel, RARITY_COLORS } from '../lib/supabase'
 import { useAuth } from '../hooks/useAuth'
 import { PokeballIcon, LevelBadge } from '../lib/pokeballs'
 import BottomNav from '../components/BottomNav'
-import BenefitsPage from '../components/BenefitsPage'
 
 const CDN = 'https://cdn.jsdelivr.net/gh/duiker101/pokemon-type-svg-icons@master/icons'
 const TYPE_BY_WEEKDAY = {
@@ -629,12 +628,69 @@ export default function ProfilePage() {
         </div>
       )}
 
-      {/* 福利頁面 Sheet */}
+      {/* 積分升級表 Sheet */}
       {showBenefits && (
         <div onClick={() => setShowBenefits(false)} style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.4)', zIndex: 100, display: 'flex', alignItems: 'flex-end', justifyContent: 'center' }}>
-          <div onClick={e => e.stopPropagation()} style={{ width: '100%', maxWidth: 390, height: '88vh', background: '#fff', borderRadius: '16px 16px 0 0', overflow: 'hidden', display: 'flex', flexDirection: 'column' }}>
-            <div style={{ width: 36, height: 4, borderRadius: 2, background: '#f0e8d0', margin: '10px auto 0', flexShrink: 0 }} />
-            <BenefitsPage onClose={() => setShowBenefits(false)} />
+          <div onClick={e => e.stopPropagation()} style={{ width: '100%', maxWidth: 390, maxHeight: '85vh', background: '#fff', borderRadius: '16px 16px 0 0', display: 'flex', flexDirection: 'column' }}>
+            <div style={{ width: 36, height: 4, borderRadius: 2, background: '#f0e8d0', margin: '12px auto 0', flexShrink: 0 }} />
+            <div style={{ padding: '12px 20px 8px', borderBottom: '0.5px solid #f5f0e8', flexShrink: 0 }}>
+              <div style={{ fontSize: 16, fontWeight: 800, color: '#2D1A00', display: 'flex', alignItems: 'center', gap: 7 }}>
+                <i className="fa-solid fa-trophy" style={{ fontSize: 14, color: '#E07B00' }}></i>
+                會員等級積分表
+              </div>
+              <div style={{ fontSize: 11, color: '#bbb', marginTop: 3 }}>累積積分即可自動升級</div>
+            </div>
+            <div style={{ overflowY: 'auto', padding: '12px 20px 32px' }}>
+              {LEVELS.map((lv, i) => {
+                const next = LEVELS[i + 1]
+                const isCurrentLevel = member.level === lv.name
+                const isAchieved = member.points >= lv.min
+                return (
+                  <div key={lv.name} style={{
+                    display: 'flex', alignItems: 'center', gap: 14,
+                    padding: '12px 14px', borderRadius: 14, marginBottom: 8,
+                    background: isCurrentLevel ? 'linear-gradient(135deg,#FFF8EE,#FFFBF2)' : '#fdfaf4',
+                    border: isCurrentLevel ? '1.5px solid #FAC775' : '0.5px solid #f0e8d0',
+                    position: 'relative', overflow: 'hidden',
+                  }}>
+                    {isCurrentLevel && (
+                      <div style={{ position: 'absolute', top: 6, right: 10, fontSize: 9, fontWeight: 700, background: '#E07B00', color: '#fff', padding: '2px 7px', borderRadius: 99 }}>目前等級</div>
+                    )}
+                    {/* 球種圖示 */}
+                    <div style={{ flexShrink: 0 }}>
+                      <PokeballIcon level={lv.name} size={36} />
+                    </div>
+                    <div style={{ flex: 1 }}>
+                      <div style={{ display: 'flex', alignItems: 'center', gap: 6, marginBottom: 4 }}>
+                        <span style={{ fontSize: 14, fontWeight: 800, color: isAchieved ? '#2D1A00' : '#bbb' }}>{lv.name}</span>
+                      </div>
+                      <div style={{ fontSize: 11, color: isAchieved ? '#BA7517' : '#ccc', fontWeight: 600 }}>
+                        {lv.min === 0 ? '初始等級' : `累積 ${lv.min.toLocaleString()} 積分`}
+                      </div>
+                      {next && (
+                        <div style={{ fontSize: 10, color: '#bbb', marginTop: 2 }}>
+                          → 下一級 {next.name}：{next.min.toLocaleString()} 積分
+                        </div>
+                      )}
+                    </div>
+                    <div style={{ textAlign: 'right', flexShrink: 0 }}>
+                      {isAchieved
+                        ? <i className="fa-solid fa-circle-check" style={{ fontSize: 18, color: '#78C850' }}></i>
+                        : <div style={{ textAlign: 'right' }}>
+                            <div style={{ fontSize: 12, fontWeight: 700, color: '#bbb' }}>還差</div>
+                            <div style={{ fontSize: 13, fontWeight: 800, color: '#D4A94A' }}>{(lv.min - member.points).toLocaleString()}</div>
+                            <div style={{ fontSize: 9, color: '#bbb' }}>積分</div>
+                          </div>
+                      }
+                    </div>
+                  </div>
+                )
+              })}
+              <div style={{ textAlign: 'center', fontSize: 11, color: '#bbb', marginTop: 8, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 5 }}>
+                <i className="fa-solid fa-circle-info" style={{ fontSize: 10 }}></i>
+                每消費 $1 可獲得 1 積分
+              </div>
+            </div>
           </div>
         </div>
       )}
