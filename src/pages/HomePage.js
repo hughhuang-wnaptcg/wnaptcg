@@ -4,15 +4,14 @@ import { supabase, LEVELS } from '../lib/supabase'
 import { useAuth } from '../hooks/useAuth'
 import { PokeballIcon } from '../lib/pokeballs'
 import BottomNav from '../components/BottomNav'
+import LeaderboardSheet from '../components/LeaderboardSheet'
 import {
   playWeekCompleteSound, playMakeUpSound, playErrorSound,
   vibrate, VIBRATE,
 } from '../lib/haptics'
 
-// ── 屬性 icon CDN ──────────────────────────────────────
 const CDN = 'https://cdn.jsdelivr.net/gh/duiker101/pokemon-type-svg-icons@master/icons'
 
-// 依星期幾對應（0=週日, 1=週一, ..., 6=週六）
 const TYPE_BY_WEEKDAY = {
   1: { type: 'water',    color: '#6890F0', name: '水',  label: '一' },
   2: { type: 'fire',     color: '#F08030', name: '火',  label: '二' },
@@ -23,7 +22,6 @@ const TYPE_BY_WEEKDAY = {
   0: { type: 'dragon',   color: '#7038F8', name: '龍',  label: '日' },
 }
 
-// ── Pull-to-refresh hook ──────────────────────────────
 function usePullToRefresh(onRefresh) {
   const scrollRef = useRef(null)
   const startY = useRef(0)
@@ -78,8 +76,8 @@ export default function HomePage() {
   const [newsModal, setNewsModal] = useState(false)
   const [todayPoints, setTodayPoints] = useState(0)
   const [showWeekCelebration, setShowWeekCelebration] = useState(false)
+  const [showLeaderboard, setShowLeaderboard] = useState(false)
 
-  // 出貨相關
   const [shippingModal, setShippingModal] = useState(false)
   const [cancelModal, setCancelModal] = useState(false)
   const [currentOrder, setCurrentOrder] = useState(null)
@@ -88,12 +86,10 @@ export default function HomePage() {
   const [shippingSaving, setShippingSaving] = useState(false)
   const [shippingError, setShippingError] = useState('')
 
-  // 補簽相關
   const [makeUpModal, setMakeUpModal] = useState(null)
   const [makeUpSaving, setMakeUpSaving] = useState(false)
   const [makeUpError, setMakeUpError] = useState('')
 
-  // 全勤慶祝
   useEffect(() => {
     if (loginResult?.weekComplete) {
       setTimeout(() => {
@@ -131,34 +127,26 @@ export default function HomePage() {
   }, [member])
 
   async function fetchWeekLogins(memberId) {
-    // 生成本週一到本週日（固定7天，依星期幾對應屬性）
     const today = new Date()
     const todayStr = today.toISOString().split('T')[0]
-
-    // 計算本週一的日期（週一為一週起點）
-    const dayOfWeek = today.getDay() // 0=日, 1=一 ... 6=六
+    const dayOfWeek = today.getDay()
     const mondayOffset = dayOfWeek === 0 ? -6 : 1 - dayOfWeek
     const monday = new Date(today)
     monday.setDate(today.getDate() + mondayOffset)
-
     const days = []
     for (let i = 0; i < 7; i++) {
       const d = new Date(monday)
       d.setDate(monday.getDate() + i)
       const dateStr = d.toISOString().split('T')[0]
-      const weekday = d.getDay() // 0=日,1=一...6=六
+      const weekday = d.getDay()
       days.push({ date: dateStr, weekday })
     }
-
-    // 查這週的簽到記錄
     const dateStrs = days.map(d => d.date)
     const { data: weekData } = await supabase.from('daily_logins')
       .select('login_date').eq('member_id', memberId).in('login_date', dateStrs)
     const loginDates = new Set((weekData || []).map(l => l.login_date))
-
     setWeekLogins(days.map(d => ({
-      date: d.date,
-      weekday: d.weekday,
+      date: d.date, weekday: d.weekday,
       done: loginDates.has(d.date),
       typeConfig: TYPE_BY_WEEKDAY[d.weekday],
       isFuture: d.date > todayStr,
@@ -189,7 +177,6 @@ export default function HomePage() {
 
   const { scrollRef, pullDistance, refreshing, onTouchStart, onTouchMove, onTouchEnd, THRESHOLD } = usePullToRefresh(fetchData)
 
-  // ── 出貨 ────────────────────────────────────────────
   async function handleSubmitShipping() {
     if (!shippingForm.store_name.trim() || !shippingForm.recipient_name.trim() || !shippingForm.phone.trim()) {
       setShippingError('請填寫所有必填欄位'); return
@@ -213,7 +200,6 @@ export default function HomePage() {
     setShippingSaving(false)
   }
 
-  // ── 補簽 ────────────────────────────────────────────
   function openMakeUp(day) {
     const today = new Date().toISOString().split('T')[0]
     if (day.done || day.date >= today) return
@@ -251,7 +237,6 @@ export default function HomePage() {
   const isPulling = pullDistance > 0
   const isReadyToRelease = pullDistance >= THRESHOLD
   const blockedDaysLeft = cannotOrderUntil ? Math.ceil((cannotOrderUntil - new Date()) / (1000 * 60 * 60 * 24)) : 0
-  const signedCount = weekLogins.filter(d => d.done).length
   const isWeekComplete = weekLogins.length === 7 && weekLogins.every(d => d.done)
 
   const inp = { width: '100%', padding: '10px 12px', border: '0.5px solid #f0e8d0', borderRadius: 8, fontSize: 14, color: '#111', outline: 'none', background: '#fdfaf4', boxSizing: 'border-box' }
@@ -306,25 +291,14 @@ export default function HomePage() {
           <div style={{ position:'absolute', bottom:-8, left:-8, fontSize:88, opacity:0.055, color:'#BA7517', lineHeight:1, pointerEvents:'none' }}>
             <i className={`fa-solid ${greeting.icon}`}></i>
           </div>
-
-          {/* ── BUG 1 修正：固定尺寸容器讓圓框正確包住 SVG ── */}
           <div style={{ position: 'absolute', top: 15, right: 15, display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 3 }}>
             {member && (
-              <div style={{
-                width: 40, height: 40, borderRadius: '50%',
-                border: '2px solid #FAC775',
-                boxShadow: '0 2px 8px rgba(186,117,23,.2)',
-                overflow: 'hidden',
-                display: 'flex', alignItems: 'center', justifyContent: 'center',
-                background: '#fff',
-                flexShrink: 0,
-              }}>
+              <div style={{ width: 40, height: 40, borderRadius: '50%', border: '2px solid #FAC775', boxShadow: '0 2px 8px rgba(186,117,23,.2)', overflow: 'hidden', display: 'flex', alignItems: 'center', justifyContent: 'center', background: '#fff', flexShrink: 0 }}>
                 <PokeballIcon level={member.level} size={36} />
               </div>
             )}
             <span style={{ fontSize: 7, color: '#BA7517', fontWeight: 700, letterSpacing: '0.05em' }}>{member?.level}</span>
           </div>
-
           <div style={{ fontSize: 9, fontWeight: 700, color: '#E07B00', letterSpacing: '0.12em', opacity: 0.6, marginBottom: 9 }}>W/NA PTCG × HUGO COLLECTIONS</div>
           <div style={{ fontSize: 19, fontWeight: 800, color: '#2D1A00', lineHeight: 1.3 }}>
             {greeting.text}，<span style={{ color: '#BA7517' }}>{member?.display_name || 'Trainer'}</span>
@@ -380,7 +354,12 @@ export default function HomePage() {
               <span style={S.typeBadge('linear-gradient(135deg,#BA7517,#D4A94A)')}><i className="fa-solid fa-trophy"></i></span>
               戰績牆
             </div>
-            <span style={{ fontSize: 11, color: '#ccc', cursor: 'pointer' }} onClick={() => navigate('/wall')}>全部 →</span>
+            <div style={{ display: 'flex', gap: 12, alignItems: 'center' }}>
+              <span onClick={() => setShowLeaderboard(true)} style={{ fontSize: 11, color: '#E07B00', cursor: 'pointer', fontWeight: 700, display: 'flex', alignItems: 'center', gap: 4 }}>
+                <i className="fa-solid fa-ranking-star" style={{ fontSize: 10 }}></i>排行榜
+              </span>
+              <span style={{ fontSize: 11, color: '#ccc', cursor: 'pointer' }} onClick={() => navigate('/wall')}>全部 →</span>
+            </div>
           </div>
           <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3,1fr)', gap: 7, marginBottom: 16 }}>
             {recentCards.map((card, idx) => (
@@ -478,7 +457,7 @@ export default function HomePage() {
             </>
           )}
 
-          {/* ── 本週簽到 ── */}
+          {/* 本週簽到 */}
           {weekLogins.length > 0 && (
             <div style={{ marginBottom: 100 }}>
               <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 10 }}>
@@ -493,53 +472,29 @@ export default function HomePage() {
                 </div>
                 <span style={{ fontSize: 9, color: '#bbb' }}>7天全勤 +15點</span>
               </div>
-
               <div style={{ display: 'grid', gridTemplateColumns: 'repeat(7,1fr)', gap: 4, marginBottom: 8 }}>
                 {weekLogins.map((d) => {
                   const isToday = d.date === today
                   const canMakeUp = !d.done && !isToday && !d.isFuture
                   const tc = d.typeConfig
-
-                  // 背景色：今天已簽=紅、已簽=金、未來=淡灰、可補簽=米白、今天未簽=淡紅提示
                   const bg = d.done
                     ? (isToday ? '#FCEBEB' : 'linear-gradient(135deg,#FAEEDA,#FFF3D0)')
                     : d.isFuture ? '#f5f5f5' : isToday ? '#fff5f5' : '#f8f5f0'
                   const borderColor = d.done
                     ? (isToday ? '#F09595' : '#FAC775')
                     : d.isFuture ? '#eee' : isToday ? '#F09595' : canMakeUp ? '#e5ddd0' : '#eee'
-
                   return (
-                    <div
-                      key={d.date}
-                      onClick={() => canMakeUp && openMakeUp(d)}
-                      style={{
-                        aspectRatio: 1, borderRadius: 9,
-                        background: bg, border: `1px solid ${borderColor}`,
-                        display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: 2,
-                        cursor: canMakeUp ? 'pointer' : 'default',
-                        position: 'relative', transition: 'transform 0.1s',
-                      }}
-                    >
-                      <div style={{
-                        width: 26, height: 26, borderRadius: 10,
-                        background: d.done ? tc.color : d.isFuture ? '#ddd' : isToday ? tc.color : '#d0c8be',
-                        display: 'flex', alignItems: 'center', justifyContent: 'center',
-                        opacity: d.done ? 1 : d.isFuture ? 0.3 : isToday ? 0.35 : 0.45,
-                      }}>
+                    <div key={d.date} onClick={() => canMakeUp && openMakeUp(d)}
+                      style={{ aspectRatio: 1, borderRadius: 9, background: bg, border: `1px solid ${borderColor}`, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: 2, cursor: canMakeUp ? 'pointer' : 'default', position: 'relative', transition: 'transform 0.1s' }}>
+                      <div style={{ width: 26, height: 26, borderRadius: 10, background: d.done ? tc.color : d.isFuture ? '#ddd' : isToday ? tc.color : '#d0c8be', display: 'flex', alignItems: 'center', justifyContent: 'center', opacity: d.done ? 1 : d.isFuture ? 0.3 : isToday ? 0.35 : 0.45 }}>
                         <img src={`${CDN}/${tc.type}.svg`} alt={tc.name} style={{ width: 13, height: 13 }} />
                       </div>
-                      <span style={{ fontSize: 8, fontWeight: 700, color: d.done ? (isToday ? '#7A1A1A' : '#7A4A00') : d.isFuture ? '#ccc' : '#bbb' }}>
-                        {tc.label}
-                      </span>
-                      {/* 可補簽提示小點 */}
-                      {canMakeUp && (
-                        <div style={{ position: 'absolute', top: 3, right: 3, width: 5, height: 5, borderRadius: '50%', background: '#BA7517', opacity: 0.6 }} />
-                      )}
+                      <span style={{ fontSize: 8, fontWeight: 700, color: d.done ? (isToday ? '#7A1A1A' : '#7A4A00') : d.isFuture ? '#ccc' : '#bbb' }}>{tc.label}</span>
+                      {canMakeUp && <div style={{ position: 'absolute', top: 3, right: 3, width: 5, height: 5, borderRadius: '50%', background: '#BA7517', opacity: 0.6 }} />}
                     </div>
                   )
                 })}
               </div>
-
               <div style={{ display: 'flex', alignItems: 'center', gap: 5, fontSize: 10, color: '#bbb' }}>
                 <div style={{ width: 5, height: 5, borderRadius: '50%', background: '#BA7517', opacity: 0.6, flexShrink: 0 }} />
                 點擊未簽日期可補簽（消耗 10 積分）
@@ -601,6 +556,15 @@ export default function HomePage() {
             </div>
             <div style={{ fontSize: 15, fontWeight: 700, color: '#BA7517', marginBottom: 4 }}>7日全勤達成！</div>
             <div style={{ fontSize: 12, color: '#8B5A00' }}>額外獲得 <strong style={{ color: '#E24B4A', fontSize: 16 }}>+15</strong> 積分！</div>
+          </div>
+        </div>
+      )}
+
+      {/* 排行榜 Sheet */}
+      {showLeaderboard && (
+        <div onClick={() => setShowLeaderboard(false)} style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.4)', zIndex: 100, display: 'flex', alignItems: 'flex-end', justifyContent: 'center' }}>
+          <div onClick={e => e.stopPropagation()} style={{ width: '100%', maxWidth: 390, height: '85vh', background: '#fff', borderRadius: '16px 16px 0 0', display: 'flex', flexDirection: 'column', position: 'relative', overflow: 'hidden' }}>
+            <LeaderboardSheet onClose={() => setShowLeaderboard(false)} currentMemberId={member?.id} />
           </div>
         </div>
       )}
