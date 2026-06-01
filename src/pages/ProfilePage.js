@@ -172,12 +172,20 @@ export default function ProfilePage() {
           </div>
 
           {/* 等級路線 */}
-          <div style={{ border: '0.5px solid #f0e8d0', borderRadius: 12, overflow: 'hidden', marginBottom: 16, boxShadow: '0 1px 6px rgba(186,117,23,0.05)' }}>
+          <div style={{ borderRadius: 12, marginBottom: 16, border: '0.5px solid #f0e8d0', boxShadow: '0 1px 6px rgba(186,117,23,0.05)', overflow: 'hidden' }}>
             {LEVELS.map((l, i) => {
               const isDone = member.points >= l.min
               const isCurrent = member.level === l.name
+              const isFirst = i === 0
+              const isLast = i === LEVELS.length - 1
               return (
-                <div key={l.name} style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '10px 14px', borderBottom: i < LEVELS.length - 1 ? '0.5px solid #f5f0e8' : 'none', background: isCurrent ? 'linear-gradient(135deg,#FFF5DC,#FFFBF2)' : 'transparent', opacity: isDone || isCurrent ? 1 : 0.35 }}>
+                <div key={l.name} style={{
+                  display: 'flex', alignItems: 'center', gap: 10, padding: '10px 14px',
+                  borderBottom: isLast ? 'none' : '0.5px solid #f5f0e8',
+                  background: isCurrent ? 'linear-gradient(135deg,#FFF5DC,#FFFBF2)' : '#fff',
+                  opacity: isDone || isCurrent ? 1 : 0.35,
+                  borderRadius: isFirst ? '12px 12px 0 0' : isLast ? '0 0 12px 12px' : 0,
+                }}>
                   <div style={{ width: 26, height: 26, borderRadius: 10, overflow: 'hidden', flexShrink: 0, border: `1px solid ${isCurrent ? '#FAC775' : '#eee'}` }}>
                     <PokeballIcon level={l.name} size={20} />
                   </div>
