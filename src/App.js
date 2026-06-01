@@ -6,6 +6,7 @@ import HomePage from './pages/HomePage'
 import WallPage from './pages/WallPage'
 import ChallengePage from './pages/ChallengePage'
 import ProfilePage from './pages/ProfilePage'
+import ShopPage from './pages/ShopPage'
 import AdminLayout from './admin/AdminLayout'
 import AdminDashboard from './admin/AdminDashboard'
 import AdminMembers from './admin/AdminMembers'
@@ -23,12 +24,10 @@ function PageTransition({ children }) {
 
   useEffect(() => {
     if (location.pathname === transKey) return
-    // 淡出
     setOpacity(0)
     const t1 = setTimeout(() => {
       setDisplayChildren(children)
       setTransKey(location.pathname)
-      // 淡入
       const t2 = setTimeout(() => setOpacity(1), 20)
       return () => clearTimeout(t2)
     }, 160)
@@ -163,6 +162,7 @@ function AppInner() {
         <Route path="/login" element={<LoginPage />} />
         <Route path="/" element={<PrivateRoute><HomePage /></PrivateRoute>} />
         <Route path="/wall" element={<PrivateRoute><WallPage /></PrivateRoute>} />
+        <Route path="/shop" element={<PrivateRoute><ShopPage /></PrivateRoute>} />
         <Route path="/challenge" element={<PrivateRoute><ChallengePage /></PrivateRoute>} />
         <Route path="/profile" element={<PrivateRoute><ProfilePage /></PrivateRoute>} />
         <Route path="/admin" element={<AdminRoute><AdminLayout /></AdminRoute>}>
