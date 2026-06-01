@@ -433,10 +433,15 @@ export default function ProfilePage() {
                     {g.image_url && (
                       <img src={g.image_url} alt="" style={{ width: '100%', height: 180, objectFit: 'cover', borderRadius: 10, marginBottom: 10, border: '1.5px solid #F5E8C8' }} />
                     )}
-                    <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 6 }}>
-                      <div style={{ fontSize: 13, fontWeight: 600, color: '#111' }}>{g.card_name}</div>
-                      <span style={{ fontSize: 10, fontWeight: 600, background: gs.bg, color: gs.color, padding: '2px 8px', borderRadius: 20 }}>{gs.label}</span>
-                    </div>
+                    <div style={{ ...S.secTitle, justifyContent: 'space-between', marginBottom: 12 }}>
+  <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+    <span style={S.typeBadge('linear-gradient(135deg,#BA7517,#D4A94A)')}><i className="fa-solid fa-truck"></i></span>
+    出貨記錄
+  </div>
+  {shippingOrders.length > 3 && (
+    <span onClick={() => setShowShipping(true)} style={{ fontSize: 11, color: '#E07B00', cursor: 'pointer', fontWeight: 400 }}>全部 →</span>
+  )}
+</div>
                     {g.card_set && (
                       <div style={{ fontSize: 12, color: '#666', marginBottom: 3 }}>
                         <i className="fa-solid fa-layer-group" style={{ fontSize: 10, marginRight: 4, color: '#bbb' }}></i>{g.card_set}
