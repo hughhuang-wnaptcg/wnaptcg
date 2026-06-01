@@ -257,14 +257,14 @@ export default function HomePage() {
   const inp = { width: '100%', padding: '10px 12px', border: '0.5px solid #f0e8d0', borderRadius: 8, fontSize: 14, color: '#111', outline: 'none', background: '#fdfaf4', boxSizing: 'border-box' }
 
   const S = {
-    page: { maxWidth: 390, margin: '0 auto', background: '#fff', minHeight: '100vh', display: 'flex', flexDirection: 'column' },
-    hero: { background: 'linear-gradient(135deg,#fff 0%,#fdfaf4 55%,#faf0d8 100%)', padding: '22px 20px 20px', position: 'relative', overflow: 'hidden', borderBottom: '1px solid #f0e8d0' },
+    page: { maxWidth: 390, margin: '0 auto', background: '#FFFBF2', minHeight: '100vh', display: 'flex', flexDirection: 'column' },
+    hero: { background: 'linear-gradient(160deg,#FFFBF2 0%,#FFF5DC 60%,#FFEDBB 100%)', padding: '22px 20px 20px', position: 'relative', overflow: 'hidden', borderBottom: 'none' },
     secLeft: { fontSize: 13, fontWeight: 700, color: '#1a1a1a', display: 'flex', alignItems: 'center', gap: 7 },
-    typeBadge: (bg) => ({ width: 22, height: 22, borderRadius: '50%', background: bg, display: 'inline-flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0, color: '#fff', fontSize: 10 }),
-    card: { border: '1px solid #f0e8d0', borderRadius: 10, overflow: 'hidden', cursor: 'pointer', background: '#fff', boxShadow: '0 2px 8px rgba(186,117,23,.07)' },
-    bossCard: { border: '1px solid #f0e8d0', borderRadius: 12, padding: 14, background: '#fdfaf4', boxShadow: '0 1px 6px rgba(186,117,23,.05)', marginBottom: 16 },
-    levelCard: { border: '1px solid #f0e8d0', borderRadius: 12, padding: 14, boxShadow: '0 1px 6px rgba(186,117,23,.05)', marginBottom: 16 },
-    lstat: { background: 'linear-gradient(135deg,#fdfaf4,#faf5eb)', borderRadius: 8, padding: 10, textAlign: 'center', border: '1px solid #f0e8d0' },
+    typeBadge: (bg) => ({ width: 26, height: 26, borderRadius: 10, background: bg, display: 'inline-flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0, color: '#fff', fontSize: 10 }),
+    card: { border: 'none', borderRadius: 16, overflow: 'hidden', cursor: 'pointer', background: '#fff', boxShadow: '0 4px 14px rgba(186,117,23,.10)' },
+    bossCard: { border: 'none', borderRadius: 18, padding: 14, background: '#fff', boxShadow: '0 4px 16px rgba(186,117,23,.09)', marginBottom: 16 },
+    levelCard: { border: 'none', borderRadius: 18, padding: 14, background: '#fff', boxShadow: '0 4px 16px rgba(186,117,23,.09)', marginBottom: 16 },
+    lstat: { background: '#FFFBF2', borderRadius: 12, padding: 10, textAlign: 'center', border: '2px solid #FAE0A0' },
   }
 
   return (
@@ -325,17 +325,20 @@ export default function HomePage() {
             <span style={{ fontSize: 7, color: '#BA7517', fontWeight: 700, letterSpacing: '0.05em' }}>{member?.level}</span>
           </div>
 
-          <div style={{ fontSize: 9, fontWeight: 700, color: '#BA7517', letterSpacing: '0.12em', opacity: 0.5, marginBottom: 9 }}>W/NA PTCG × HUGO COLLECTIONS</div>
-          <div style={{ fontSize: 17, fontWeight: 600, color: '#1a1a1a', lineHeight: 1.3 }}>
+          <div style={{ fontSize: 9, fontWeight: 700, color: '#E07B00', letterSpacing: '0.12em', opacity: 0.6, marginBottom: 9 }}>W/NA PTCG × HUGO COLLECTIONS</div>
+          <div style={{ fontSize: 19, fontWeight: 800, color: '#2D1A00', lineHeight: 1.3 }}>
             {greeting.text}，<span style={{ color: '#BA7517' }}>{member?.display_name || 'Trainer'}</span>
           </div>
-          <div style={{ fontSize: 14, color: '#666', margin: '2px 0 12px' }}>今天要開什麼包？</div>
+          <div style={{ fontSize: 13, color: '#A07040', margin: '3px 0 14px', fontWeight: 500 }}>今天要開什麼包？</div>
           {todayPoints > 0 && (
-            <div style={{ display: 'inline-flex', alignItems: 'center', gap: 6, background: 'linear-gradient(135deg,#FFF8E7,#FAEEDA)', border: '1px solid #FAC775', borderRadius: 999, padding: '5px 13px', fontSize: 11, color: '#7A4A00', fontWeight: 600 }}>
-              <i className="fa-solid fa-star" style={{ color: '#BA7517', fontSize: 11 }}></i>
-              今日已獲得 <strong style={{ color: '#BA7517', margin: '0 1px' }}>+{todayPoints}</strong> 點
+            <div style={{ display: 'inline-flex', alignItems: 'center', gap: 6, background: '#fff', border: '2px solid #FAC775', borderRadius: 999, padding: '6px 14px', fontSize: 12, color: '#8B4A00', fontWeight: 700, boxShadow: '0 2px 8px rgba(186,117,23,.12)' }}>
+              <i className="fa-solid fa-star" style={{ color: '#E07B00', fontSize: 12 }}></i>
+              今日已獲得 <strong style={{ color: '#E07B00', margin: '0 1px' }}>+{todayPoints}</strong> 點
             </div>
           )}
+          <svg style={{ position: 'absolute', bottom: -1, left: 0, right: 0, width: '100%' }} viewBox="0 0 390 22" preserveAspectRatio="none" height="22">
+            <path d="M0 22 Q97 2 195 12 Q293 22 390 6 L390 22 Z" fill="#FFFBF2"/>
+          </svg>
         </div>
 
         {/* 公告 */}
@@ -518,7 +521,7 @@ export default function HomePage() {
                       }}
                     >
                       <div style={{
-                        width: 22, height: 22, borderRadius: '50%',
+                        width: 26, height: 26, borderRadius: 10,
                         background: d.done ? tc.color : d.isFuture ? '#ddd' : isToday ? tc.color : '#d0c8be',
                         display: 'flex', alignItems: 'center', justifyContent: 'center',
                         opacity: d.done ? 1 : d.isFuture ? 0.3 : isToday ? 0.35 : 0.45,
