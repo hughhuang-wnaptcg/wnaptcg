@@ -7,13 +7,20 @@ import BenefitsPage from '../components/BenefitsPage'
 
 const CDN = 'https://cdn.jsdelivr.net/gh/duiker101/pokemon-type-svg-icons@master/icons'
 const TYPE_BY_WEEKDAY = {
-  1: { type: 'water',    color: '#6890F0', name: '水',   label: '一' },
-  2: { type: 'fire',     color: '#F08030', name: '火',   label: '二' },
-  3: { type: 'grass',    color: '#78C850', name: '草',   label: '三' },
-  4: { type: 'electric', color: '#F8D030', name: '電',   label: '四' },
-  5: { type: 'psychic',  color: '#F85888', name: '超能', label: '五' },
-  6: { type: 'fighting', color: '#C03028', name: '鬥',   label: '六' },
-  0: { type: 'dragon',   color: '#7038F8', name: '龍',   label: '日' },
+  1: { type: 'water', color: '#6890F0', name: '水', label: '一' },
+  2: { type: 'fire', color: '#F08030', name: '火', label: '二' },
+  3: { type: 'grass', color: '#78C850', name: '草', label: '三' },
+  4: { type: 'electric', color: '#F8D030', name: '電', label: '四' },
+  5: { type: 'psychic', color: '#F85888', name: '超能', label: '五' },
+  6: { type: 'fighting', color: '#C03028', name: '鬥', label: '六' },
+  0: { type: 'dragon', color: '#7038F8', name: '龍', label: '日' },
+}
+
+const GRADING_STATUS = {
+  submitted: { label: '已送出', color: '#E07B00', bg: '#FFF3E0' },
+  grading:   { label: '鑑定中', color: '#1976D2', bg: '#E3F2FD' },
+  returned:  { label: '已取回', color: '#388E3C', bg: '#E8F5E9' },
+  sold:      { label: '已售出', color: '#757575', bg: '#F5F5F5' },
 }
 
 export default function ProfilePage() {
@@ -21,9 +28,11 @@ export default function ProfilePage() {
   const [logs, setLogs] = useState([])
   const [weekLogins, setWeekLogins] = useState([])
   const [shippingOrders, setShippingOrders] = useState([])
+  const [gradings, setGradings] = useState([])
   const [showSettings, setShowSettings] = useState(false)
   const [showBenefits, setShowBenefits] = useState(false)
   const [showShipping, setShowShipping] = useState(false)
+  const [showGrading, setShowGrading] = useState(false)
   const [editName, setEditName] = useState('')
   const [saving, setSaving] = useState(false)
 
@@ -35,7 +44,7 @@ export default function ProfilePage() {
       .select('*').eq('member_id', member.id).order('created_at', { ascending: false }).limit(15)
     setLogs(logData || [])
 
-    // 本週簽到（依星期幾對應）
+    // 本週簽到
     const today = new Date()
     const todayStr = today.toISOString().split('T')[0]
     const dayOfWeek = today.getDay()
@@ -60,6 +69,11 @@ export default function ProfilePage() {
     const { data: shippingData } = await supabase.from('shipping_orders')
       .select('*').eq('member_id', member.id).order('created_at', { ascending: false })
     setShippingOrders(shippingData || [])
+
+    // 鑑定記錄
+    const { data: gradingData } = await supabase.from('grading_submissions')
+      .select('*').eq('member_id', member.id).order('created_at', { ascending: false })
+    setGradings(gradingData || [])
   }
 
   async function handleSaveName() {
@@ -79,7 +93,7 @@ export default function ProfilePage() {
   const today = new Date().toISOString().split('T')[0]
   const daysUntilFullStreak = 7 - (member.login_streak % 7)
 
-  const logIcons  = { login: 'fa-calendar-day', streak_bonus: 'fa-fire', purchase: 'fa-bag-shopping', manual: 'fa-pen', makeup: 'fa-rotate-left', level_up: 'fa-arrow-up' }
+  const logIcons = { login: 'fa-calendar-day', streak_bonus: 'fa-fire', purchase: 'fa-bag-shopping', manual: 'fa-pen', makeup: 'fa-rotate-left', level_up: 'fa-arrow-up' }
   const logColors = { login: '#EAF3DE', streak_bonus: '#FAEEDA', purchase: '#FAEEDA', manual: '#E6F1FB', makeup: '#f5f0e8', level_up: '#E6F1FB' }
 
   const STATUS_LABEL = { pending: '待出貨', completed: '已完成', cancelled: '已取消' }
@@ -211,7 +225,7 @@ export default function ProfilePage() {
             ))}
           </div>
 
-          {/* ── 本週簽到（屬性 icon 版）── */}
+          {/* 本週簽到 */}
           <div style={S.secTitle}>
             <span style={S.typeBadge('linear-gradient(135deg,#378ADD,#185FA5)')}><i className="fa-solid fa-calendar-check"></i></span>
             本週簽到
@@ -252,7 +266,7 @@ export default function ProfilePage() {
             )}
           </div>
 
-          {/* ── 出貨記錄 ── */}
+          {/* 出貨記錄 */}
           <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 12 }}>
             <div style={S.secTitle}>
               <span style={S.typeBadge('linear-gradient(135deg,#BA7517,#D4A94A)')}><i className="fa-solid fa-truck"></i></span>
@@ -281,6 +295,53 @@ export default function ProfilePage() {
                       {STATUS_LABEL[order.status]}
                     </span>
                     <div style={{ fontSize: 10, color: '#bbb', marginTop: 3 }}>{new Date(order.created_at).toLocaleDateString('zh-TW')}</div>
+                  </div>
+                </div>
+              )
+            })}
+          </div>
+
+          {/* ── 已送鑑定 ── */}
+          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 12 }}>
+            <div style={S.secTitle}>
+              <span style={S.typeBadge('linear-gradient(135deg,#7038F8,#9B6BFF)')}><i className="fa-solid fa-star"></i></span>
+              已送鑑定
+            </div>
+            {gradings.length > 3 && (
+              <span onClick={() => setShowGrading(true)} style={{ fontSize: 11, color: '#E07B00', cursor: 'pointer' }}>全部 →</span>
+            )}
+          </div>
+          <div style={{ marginBottom: 16 }}>
+            {gradings.length === 0 ? (
+              <div style={{ fontSize: 13, color: '#ccc', textAlign: 'center', padding: '16px 0' }}>尚無鑑定紀錄</div>
+            ) : gradings.slice(0, 3).map(g => {
+              const gs = GRADING_STATUS[g.status] || GRADING_STATUS.submitted
+              return (
+                <div key={g.id} style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '11px 0', borderBottom: '0.5px solid #f5f0e8' }}>
+                  <div style={{ width: 34, height: 34, borderRadius: 8, background: gs.bg, display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
+                    <i className="fa-solid fa-star" style={{ fontSize: 13, color: gs.color }}></i>
+                  </div>
+                  <div style={{ flex: 1, minWidth: 0 }}>
+                    <div style={{ fontSize: 13, fontWeight: 500, color: '#111', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{g.card_name}</div>
+                    <div style={{ fontSize: 11, color: '#999', marginTop: 1 }}>
+                      {g.grading_company || '—'}
+                      {g.card_set ? ` · ${g.card_set}` : ''}
+                    </div>
+                  </div>
+                  <div style={{ textAlign: 'right', flexShrink: 0 }}>
+                    <span style={{ fontSize: 10, fontWeight: 600, background: gs.bg, color: gs.color, padding: '2px 8px', borderRadius: 20 }}>
+                      {gs.label}
+                    </span>
+                    {g.grade != null && (
+                      <div style={{ fontSize: 11, fontWeight: 700, color: '#2D1A00', marginTop: 3 }}>
+                        {g.grade} 分
+                      </div>
+                    )}
+                    {g.grade == null && (
+                      <div style={{ fontSize: 10, color: '#bbb', marginTop: 3 }}>
+                        {g.submitted_at || '—'}
+                      </div>
+                    )}
                   </div>
                 </div>
               )
@@ -353,6 +414,65 @@ export default function ProfilePage() {
                           · 取消於 {new Date(order.cancelled_at).toLocaleDateString('zh-TW')}
                         </span>
                       )}
+                    </div>
+                  </div>
+                )
+              })}
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* 鑑定紀錄全覽 Sheet */}
+      {showGrading && (
+        <div onClick={() => setShowGrading(false)} style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.4)', zIndex: 100, display: 'flex', alignItems: 'flex-end', justifyContent: 'center' }}>
+          <div onClick={e => e.stopPropagation()} style={{ width: '100%', maxWidth: 390, maxHeight: '80vh', background: '#fff', borderRadius: '16px 16px 0 0', display: 'flex', flexDirection: 'column' }}>
+            <div style={{ width: 36, height: 4, borderRadius: 2, background: '#f0e8d0', margin: '12px auto 0', flexShrink: 0 }} />
+            <div style={{ padding: '12px 20px 8px', borderBottom: '0.5px solid #f5f0e8', display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexShrink: 0 }}>
+              <div style={{ fontSize: 15, fontWeight: 600, color: '#111' }}>
+                <i className="fa-solid fa-star" style={{ color: '#7038F8', marginRight: 6 }}></i>
+                全部鑑定紀錄
+              </div>
+              <span style={{ fontSize: 11, color: '#bbb' }}>{gradings.length} 筆</span>
+            </div>
+            <div style={{ overflowY: 'auto', padding: '8px 20px 32px' }}>
+              {gradings.map(g => {
+                const gs = GRADING_STATUS[g.status] || GRADING_STATUS.submitted
+                return (
+                  <div key={g.id} style={{ padding: '12px 0', borderBottom: '0.5px solid #f5f0e8' }}>
+                    <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 6 }}>
+                      <div style={{ fontSize: 13, fontWeight: 600, color: '#111' }}>{g.card_name}</div>
+                      <span style={{ fontSize: 10, fontWeight: 600, background: gs.bg, color: gs.color, padding: '2px 8px', borderRadius: 20 }}>
+                        {gs.label}
+                      </span>
+                    </div>
+                    {g.card_set && (
+                      <div style={{ fontSize: 12, color: '#666', marginBottom: 3 }}>
+                        <i className="fa-solid fa-layer-group" style={{ fontSize: 10, marginRight: 4, color: '#bbb' }}></i>
+                        {g.card_set}
+                      </div>
+                    )}
+                    {g.grading_company && (
+                      <div style={{ fontSize: 12, color: '#666', marginBottom: 3 }}>
+                        <i className="fa-solid fa-building" style={{ fontSize: 10, marginRight: 4, color: '#bbb' }}></i>
+                        {g.grading_company}
+                      </div>
+                    )}
+                    {g.grade != null && (
+                      <div style={{ fontSize: 12, color: '#2D1A00', fontWeight: 700, marginBottom: 3 }}>
+                        <i className="fa-solid fa-star" style={{ fontSize: 10, marginRight: 4, color: '#7038F8' }}></i>
+                        鑑定分數：{g.grade}
+                      </div>
+                    )}
+                    {g.notes && (
+                      <div style={{ fontSize: 11, color: '#999', marginBottom: 3 }}>
+                        <i className="fa-solid fa-note-sticky" style={{ fontSize: 10, marginRight: 4, color: '#bbb' }}></i>
+                        {g.notes}
+                      </div>
+                    )}
+                    <div style={{ fontSize: 10, color: '#bbb' }}>
+                      <i className="fa-solid fa-clock" style={{ fontSize: 9, marginRight: 4 }}></i>
+                      送件：{g.submitted_at || '—'}
                     </div>
                   </div>
                 )
