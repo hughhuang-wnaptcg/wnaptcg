@@ -222,9 +222,13 @@ export default function ProfilePage() {
               </div>
               <div style={{ flex: 1 }}>
                 <div style={{ fontSize: 16, fontWeight: 800, color: '#2D1A00', marginBottom: 4 }}>{member.display_name}</div>
-                <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: 6, marginBottom: 4 }}>
                   <LevelBadge level={member.level} size='md' />
                   <span style={{ fontSize: 11, color: '#bbb' }}>#{String(member.member_no || '0').padStart(4, '0')}</span>
+                </div>
+                <div style={{ fontSize: 10, color: '#bbb', display: 'flex', alignItems: 'center', gap: 3 }}>
+                  <i className="fa-regular fa-clock" style={{ fontSize: 9 }}></i>
+                  加入於 {new Date(member.created_at).toLocaleDateString('zh-TW')}
                 </div>
               </div>
               <div style={{ textAlign: 'right' }}>
