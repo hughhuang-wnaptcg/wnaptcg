@@ -3,6 +3,10 @@ import { useNavigate } from 'react-router-dom'
 import { supabase } from '../lib/supabase'
 
 const LIFF_ID = '2010232634-k2C4gSOg'
+const hasLiffCallback = () => {
+  const params = new URLSearchParams(window.location.search)
+  return params.has('code') || params.has('state') || params.has('liff.state')
+}
 
 const BENEFITS = [
   { icon: 'fa-trophy', text: '戰績牆開箱紀錄' },
@@ -32,7 +36,7 @@ export default function LoginPage() {
     async function resumeLineLogin() {
       try {
         await window.liff.init({ liffId: LIFF_ID })
-        if (!cancelled && window.liff.isLoggedIn()) {
+        if (!cancelled && hasLiffCallback() && window.liff.isLoggedIn()) {
           await finishLineLogin(window.liff)
         }
       } catch (err) {
@@ -64,7 +68,10 @@ export default function LoginPage() {
       const liff = window.liff
       if (!liff) throw new Error('LINE SDK 尚未載入，請稍後再試')
       await liff.init({ liffId: LIFF_ID })
-      if (!liff.isLoggedIn()) { liff.login(); return }
+      if (!liff.isLoggedIn()) {
+        liff.login({ redirectUri: `${window.location.origin}/login` })
+        return
+      }
       await finishLineLogin(liff)
     } catch (err) {
       console.error(err)
