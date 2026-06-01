@@ -102,7 +102,7 @@ export default function ProfilePage() {
   const S = {
     page: { maxWidth: 390, margin: '0 auto', background: '#FFFBF2', minHeight: '100vh', display: 'flex', flexDirection: 'column' },
     card: { border: 'none', borderRadius: 18, padding: 14, background: '#fff', boxShadow: '0 4px 16px rgba(186,117,23,.09)', marginBottom: 14 },
-    secTitle: { fontSize: 14, fontWeight: 800, color: '#2D1A00', display: 'flex', alignItems: 'center', gap: 6, marginBottom: 12 },
+    secTitle: { fontSize: 14, fontWeight: 800, color: '#2D1A00', display: 'flex', alignItems: 'center', gap: 6 },
     lstat: { background: '#FFFBF2', borderRadius: 12, padding: 10, textAlign: 'center', border: '2px solid #FAE0A0' },
     typeBadge: (bg) => ({ width: 26, height: 26, borderRadius: 10, background: bg, display: 'inline-flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0, color: '#fff', fontSize: 10 }),
   }
@@ -112,7 +112,7 @@ export default function ProfilePage() {
       <div style={{ flex: 1, overflowY: 'auto' }}>
 
         {/* Hero */}
-        <div style={{ background: 'linear-gradient(160deg,#FFFBF2 0%,#FFF5DC 60%,#FFEDBB 100%)', padding: '18px 20px 16px', position: 'relative', overflow: 'hidden', borderBottom: 'none' }}>
+        <div style={{ background: 'linear-gradient(160deg,#FFFBF2 0%,#FFF5DC 60%,#FFEDBB 100%)', padding: '18px 20px 16px', position: 'relative', overflow: 'hidden' }}>
           <div style={{ position: 'absolute', top: -40, right: -40, width: 130, height: 130, borderRadius: '50%', background: 'radial-gradient(circle,rgba(186,117,23,0.07) 0%,transparent 70%)' }} />
           <svg style={{ position: 'absolute', right: -16, bottom: -22, width: 100, height: 100, opacity: 0.07, pointerEvents: 'none' }} viewBox="0 0 100 100" fill="none">
             <circle cx="50" cy="50" r="47" stroke="#BA7517" strokeWidth="4"/>
@@ -150,7 +150,7 @@ export default function ProfilePage() {
         <div style={{ padding: '18px 20px 0' }}>
 
           {/* 等級進度 */}
-          <div style={S.secTitle}>
+          <div style={{ ...S.secTitle, marginBottom: 12 }}>
             <span style={S.typeBadge('linear-gradient(135deg,#BA7517,#EF9F27)')}><i className="fa-solid fa-medal"></i></span>
             等級進度
           </div>
@@ -203,7 +203,7 @@ export default function ProfilePage() {
           </div>
 
           {/* 數據 */}
-          <div style={S.secTitle}>
+          <div style={{ ...S.secTitle, marginBottom: 12 }}>
             <span style={S.typeBadge('linear-gradient(135deg,#378ADD,#185FA5)')}><i className="fa-solid fa-chart-bar"></i></span>
             我的數據
           </div>
@@ -222,7 +222,7 @@ export default function ProfilePage() {
           </div>
 
           {/* 本週簽到 */}
-          <div style={S.secTitle}>
+          <div style={{ ...S.secTitle, marginBottom: 12 }}>
             <span style={S.typeBadge('linear-gradient(135deg,#378ADD,#185FA5)')}><i className="fa-solid fa-calendar-check"></i></span>
             本週簽到
             <span style={{ marginLeft: 'auto', fontSize: 11, background: 'linear-gradient(135deg,#FAEEDA,#FFF3D0)', color: '#8B4A00', padding: '3px 8px', borderRadius: 20, border: '0.5px solid #FAC775', fontWeight: 500 }}>
@@ -241,12 +241,7 @@ export default function ProfilePage() {
                     border: `1px solid ${d.done ? (isToday ? '#F09595' : '#FAC775') : d.isFuture ? '#eee' : '#eee'}`,
                     display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: 2,
                   }}>
-                    <div style={{
-                      width: 20, height: 20, borderRadius: '50%',
-                      background: d.done ? tc.color : d.isFuture ? '#ddd' : '#e0dbd4',
-                      display: 'flex', alignItems: 'center', justifyContent: 'center',
-                      opacity: d.done ? 1 : d.isFuture ? 0.3 : 0.4,
-                    }}>
+                    <div style={{ width: 20, height: 20, borderRadius: '50%', background: d.done ? tc.color : d.isFuture ? '#ddd' : '#e0dbd4', display: 'flex', alignItems: 'center', justifyContent: 'center', opacity: d.done ? 1 : d.isFuture ? 0.3 : 0.4 }}>
                       <img src={`${CDN}/${tc.type}.svg`} alt={tc.name} style={{ width: 12, height: 12 }} />
                     </div>
                     <span style={{ fontSize: 8, fontWeight: 700, color: d.done ? (isToday ? '#7A1A1A' : '#7A4A00') : '#bbb' }}>{tc.label}</span>
@@ -263,13 +258,13 @@ export default function ProfilePage() {
           </div>
 
           {/* 出貨記錄 */}
-          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 12 }}>
-            <div style={S.secTitle}>
+          <div style={{ ...S.secTitle, justifyContent: 'space-between', marginBottom: 12 }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
               <span style={S.typeBadge('linear-gradient(135deg,#BA7517,#D4A94A)')}><i className="fa-solid fa-truck"></i></span>
               出貨記錄
             </div>
             {shippingOrders.length > 3 && (
-              <span onClick={() => setShowShipping(true)} style={{ fontSize: 11, color: '#E07B00', cursor: 'pointer' }}>全部 →</span>
+              <span onClick={() => setShowShipping(true)} style={{ fontSize: 11, color: '#E07B00', cursor: 'pointer', fontWeight: 400 }}>全部 →</span>
             )}
           </div>
           <div style={{ marginBottom: 16 }}>
@@ -298,13 +293,13 @@ export default function ProfilePage() {
           </div>
 
           {/* 已送鑑定 */}
-          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 12 }}>
-            <div style={S.secTitle}>
+          <div style={{ ...S.secTitle, justifyContent: 'space-between', marginBottom: 12 }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
               <span style={S.typeBadge('linear-gradient(135deg,#7038F8,#9B6BFF)')}><i className="fa-solid fa-star"></i></span>
               已送鑑定
             </div>
             {gradings.length > 3 && (
-              <span onClick={() => setShowGrading(true)} style={{ fontSize: 11, color: '#E07B00', cursor: 'pointer' }}>全部 →</span>
+              <span onClick={() => setShowGrading(true)} style={{ fontSize: 11, color: '#E07B00', cursor: 'pointer', fontWeight: 400 }}>全部 →</span>
             )}
           </div>
           <div style={{ marginBottom: 16 }}>
@@ -314,7 +309,6 @@ export default function ProfilePage() {
               const gs = GRADING_STATUS[g.status] || GRADING_STATUS.submitted
               return (
                 <div key={g.id} style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '11px 0', borderBottom: '0.5px solid #f5f0e8' }}>
-                  {/* 圖片或預設圖示 */}
                   <div style={{ width: 44, height: 58, borderRadius: 8, overflow: 'hidden', flexShrink: 0, border: '1.5px solid #F5E8C8' }}>
                     {g.image_url
                       ? <img src={g.image_url} alt="" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
@@ -326,14 +320,11 @@ export default function ProfilePage() {
                   <div style={{ flex: 1, minWidth: 0 }}>
                     <div style={{ fontSize: 13, fontWeight: 500, color: '#111', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{g.card_name}</div>
                     <div style={{ fontSize: 11, color: '#999', marginTop: 1 }}>
-                      {g.grading_company || '—'}
-                      {g.card_set ? ` · ${g.card_set}` : ''}
+                      {g.grading_company || '—'}{g.card_set ? ` · ${g.card_set}` : ''}
                     </div>
                   </div>
                   <div style={{ textAlign: 'right', flexShrink: 0 }}>
-                    <span style={{ fontSize: 10, fontWeight: 600, background: gs.bg, color: gs.color, padding: '2px 8px', borderRadius: 20 }}>
-                      {gs.label}
-                    </span>
+                    <span style={{ fontSize: 10, fontWeight: 600, background: gs.bg, color: gs.color, padding: '2px 8px', borderRadius: 20 }}>{gs.label}</span>
                     {g.grade != null
                       ? <div style={{ fontSize: 11, fontWeight: 700, color: '#2D1A00', marginTop: 3 }}>{g.grade} 分</div>
                       : <div style={{ fontSize: 10, color: '#bbb', marginTop: 3 }}>{g.submitted_at || '—'}</div>
@@ -345,7 +336,7 @@ export default function ProfilePage() {
           </div>
 
           {/* 積分紀錄 */}
-          <div style={S.secTitle}>
+          <div style={{ ...S.secTitle, marginBottom: 12 }}>
             <span style={S.typeBadge('linear-gradient(135deg,#639922,#3B6D11)')}><i className="fa-solid fa-clock-rotate-left"></i></span>
             積分紀錄
           </div>
@@ -395,8 +386,7 @@ export default function ProfilePage() {
                     </div>
                     {order.note && (
                       <div style={{ fontSize: 11, color: '#999', marginBottom: 3 }}>
-                        <i className="fa-solid fa-note-sticky" style={{ fontSize: 10, marginRight: 4, color: '#bbb' }}></i>
-                        {order.note}
+                        <i className="fa-solid fa-note-sticky" style={{ fontSize: 10, marginRight: 4, color: '#bbb' }}></i>{order.note}
                       </div>
                     )}
                     <div style={{ fontSize: 10, color: '#bbb' }}>
@@ -433,38 +423,15 @@ export default function ProfilePage() {
                     {g.image_url && (
                       <img src={g.image_url} alt="" style={{ width: '100%', height: 180, objectFit: 'cover', borderRadius: 10, marginBottom: 10, border: '1.5px solid #F5E8C8' }} />
                     )}
-                    <div style={{ ...S.secTitle, justifyContent: 'space-between', marginBottom: 12 }}>
-  <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
-    <span style={S.typeBadge('linear-gradient(135deg,#BA7517,#D4A94A)')}><i className="fa-solid fa-truck"></i></span>
-    出貨記錄
-  </div>
-  {shippingOrders.length > 3 && (
-    <span onClick={() => setShowShipping(true)} style={{ fontSize: 11, color: '#E07B00', cursor: 'pointer', fontWeight: 400 }}>全部 →</span>
-  )}
-</div>
-                    {g.card_set && (
-                      <div style={{ fontSize: 12, color: '#666', marginBottom: 3 }}>
-                        <i className="fa-solid fa-layer-group" style={{ fontSize: 10, marginRight: 4, color: '#bbb' }}></i>{g.card_set}
-                      </div>
-                    )}
-                    {g.grading_company && (
-                      <div style={{ fontSize: 12, color: '#666', marginBottom: 3 }}>
-                        <i className="fa-solid fa-building" style={{ fontSize: 10, marginRight: 4, color: '#bbb' }}></i>{g.grading_company}
-                      </div>
-                    )}
-                    {g.grade != null && (
-                      <div style={{ fontSize: 12, color: '#2D1A00', fontWeight: 700, marginBottom: 3 }}>
-                        <i className="fa-solid fa-star" style={{ fontSize: 10, marginRight: 4, color: '#7038F8' }}></i>鑑定分數：{g.grade}
-                      </div>
-                    )}
-                    {g.notes && (
-                      <div style={{ fontSize: 11, color: '#999', marginBottom: 3 }}>
-                        <i className="fa-solid fa-note-sticky" style={{ fontSize: 10, marginRight: 4, color: '#bbb' }}></i>{g.notes}
-                      </div>
-                    )}
-                    <div style={{ fontSize: 10, color: '#bbb' }}>
-                      <i className="fa-solid fa-clock" style={{ fontSize: 9, marginRight: 4 }}></i>送件：{g.submitted_at || '—'}
+                    <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 6 }}>
+                      <div style={{ fontSize: 13, fontWeight: 600, color: '#111' }}>{g.card_name}</div>
+                      <span style={{ fontSize: 10, fontWeight: 600, background: gs.bg, color: gs.color, padding: '2px 8px', borderRadius: 20 }}>{gs.label}</span>
                     </div>
+                    {g.card_set && <div style={{ fontSize: 12, color: '#666', marginBottom: 3 }}><i className="fa-solid fa-layer-group" style={{ fontSize: 10, marginRight: 4, color: '#bbb' }}></i>{g.card_set}</div>}
+                    {g.grading_company && <div style={{ fontSize: 12, color: '#666', marginBottom: 3 }}><i className="fa-solid fa-building" style={{ fontSize: 10, marginRight: 4, color: '#bbb' }}></i>{g.grading_company}</div>}
+                    {g.grade != null && <div style={{ fontSize: 12, color: '#2D1A00', fontWeight: 700, marginBottom: 3 }}><i className="fa-solid fa-star" style={{ fontSize: 10, marginRight: 4, color: '#7038F8' }}></i>鑑定分數：{g.grade}</div>}
+                    {g.notes && <div style={{ fontSize: 11, color: '#999', marginBottom: 3 }}><i className="fa-solid fa-note-sticky" style={{ fontSize: 10, marginRight: 4, color: '#bbb' }}></i>{g.notes}</div>}
+                    <div style={{ fontSize: 10, color: '#bbb' }}><i className="fa-solid fa-clock" style={{ fontSize: 9, marginRight: 4 }}></i>送件：{g.submitted_at || '—'}</div>
                   </div>
                 )
               })}
