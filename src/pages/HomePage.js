@@ -252,7 +252,7 @@ export default function HomePage() {
   const isReadyToRelease = pullDistance >= THRESHOLD
   const blockedDaysLeft = cannotOrderUntil ? Math.ceil((cannotOrderUntil - new Date()) / (1000 * 60 * 60 * 24)) : 0
   const signedCount = weekLogins.filter(d => d.done).length
-  const isWeekComplete = weekLogins.length === 7 && weekLogins.filter(d => !d.isFuture).every(d => d.done)
+  const isWeekComplete = weekLogins.length === 7 && weekLogins.every(d => d.done)
 
   const inp = { width: '100%', padding: '10px 12px', border: '0.5px solid #f0e8d0', borderRadius: 8, fontSize: 14, color: '#111', outline: 'none', background: '#fdfaf4', boxSizing: 'border-box' }
 
