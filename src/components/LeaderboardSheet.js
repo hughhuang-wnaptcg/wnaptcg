@@ -14,7 +14,7 @@ export default function LeaderboardSheet({ onClose, currentMemberId }) {
   async function fetchLeaderboard() {
     const { data } = await supabase
       .from('members')
-      .select('id, display_name, level, points, avatar_url, member_no, showcase_cards')
+      .select('id, display_name, level, points, avatar_url, member_no, showcase_cards, created_at')
       .eq('is_hidden', false)
       .order('points', { ascending: false })
       .limit(50)
@@ -134,9 +134,13 @@ export default function LeaderboardSheet({ onClose, currentMemberId }) {
               }
               <div style={{ flex: 1 }}>
                 <div style={{ fontSize: 17, fontWeight: 800, color: '#2D1A00', marginBottom: 5 }}>{selected.display_name}</div>
-                <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 4 }}>
                   <LevelBadge level={selected.level} size='md' />
                   <span style={{ fontSize: 11, color: '#bbb' }}>#{String(selected.member_no || '0').padStart(4, '0')}</span>
+                </div>
+                <div style={{ fontSize: 10, color: '#bbb', display: 'flex', alignItems: 'center', gap: 3 }}>
+                  <i className="fa-regular fa-clock" style={{ fontSize: 9 }}></i>
+                  加入於 {new Date(selected.created_at).toLocaleDateString('zh-TW')}
                 </div>
               </div>
               <div style={{ textAlign: 'right' }}>
