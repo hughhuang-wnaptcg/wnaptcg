@@ -6,6 +6,12 @@ import BottomNav from '../components/BottomNav'
 
 const RARITIES = ['UR','HR','SAR','CSR','SSR','SR','AR','CHR','PROMO','Other']
 
+function formatDate(iso) {
+  if (!iso) return ''
+  const d = new Date(iso)
+  return `${d.getFullYear()}/${String(d.getMonth()+1).padStart(2,'0')}/${String(d.getDate()).padStart(2,'0')}`
+}
+
 export default function WallPage() {
   const { member } = useAuth()
   const [cards, setCards] = useState([])
@@ -19,12 +25,12 @@ export default function WallPage() {
 
   async function fetchCards() {
     const { data: allData } = await supabase.from('cards')
-      .select('*, card_owners(member_id, members(display_name, level, avatar_url))')
+      .select('*, card_owners(member_id, created_at, members(display_name, level, avatar_url))')
       .order('created_at', { ascending: false })
     setCards(allData || [])
     if (member) {
       const { data: myData } = await supabase.from('cards')
-        .select('*, card_owners!inner(member_id, members(display_name, level, avatar_url))')
+        .select('*, card_owners!inner(member_id, created_at, members(display_name, level, avatar_url))')
         .eq('card_owners.member_id', member.id)
         .order('created_at', { ascending: false })
       setMyCards(myData || [])
@@ -34,20 +40,17 @@ export default function WallPage() {
 
   const baseCards = tab === 'my' ? myCards : cards
 
-  // 稀有度篩選
   const displayCards = useMemo(() => {
     if (!rarityFilter) return baseCards
     return baseCards.filter(c => c.rarity === rarityFilter)
   }, [baseCards, rarityFilter])
 
-  // 各稀有度數量（用於 badge）
   const rarityCount = useMemo(() => {
     const counts = {}
     baseCards.forEach(c => { counts[c.rarity] = (counts[c.rarity] || 0) + 1 })
     return counts
   }, [baseCards])
 
-  // 篩選器只顯示有資料的稀有度
   const availableRarities = RARITIES.filter(r => rarityCount[r] > 0)
 
   const S = {
@@ -140,6 +143,7 @@ export default function WallPage() {
           <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2,1fr)', gap: 10, padding: '14px 20px 20px' }}>
             {displayCards.map((card, idx) => {
               const rc = RARITY_COLORS[card.rarity] || RARITY_COLORS.Other
+              const owner = card.card_owners?.[0]
               return (
                 <div key={card.id} onClick={() => setSelected(card)}
                   style={{ border: 'none', borderRadius: 18, overflow: 'hidden', background: '#fff', cursor: 'pointer', boxShadow: '0 4px 16px rgba(186,117,23,.10)' }}>
@@ -154,16 +158,30 @@ export default function WallPage() {
                     <div style={{ fontSize: 11, fontWeight: 600, color: '#111', marginBottom: 3 }}>{card.name}</div>
                     <div style={{ fontSize: 10, color: '#BA7517', marginBottom: 6 }}>{card.series}</div>
                     {tab === 'all' && (
-                      <div style={{ display: 'flex', alignItems: 'center', gap: 5, paddingTop: 5, borderTop: '0.5px solid #f5f0e8' }}>
-                        {card.card_owners?.[0]?.members?.avatar_url
-                          ? <img src={card.card_owners[0].members.avatar_url} alt="" style={{ width: 18, height: 18, borderRadius: '50%', objectFit: 'cover', border: '0.5px solid #FAC775' }} />
-                          : <div style={{ width: 18, height: 18, borderRadius: '50%', background: 'linear-gradient(135deg,#FAEEDA,#FFF3D0)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 7, fontWeight: 600, color: '#633806', border: '0.5px solid #FAC775' }}>
-                              {card.card_owners?.[0]?.members?.display_name?.[0]?.toUpperCase() || '?'}
-                            </div>
-                        }
-                        <span style={{ fontSize: 9, color: '#999', flex: 1, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
-                          {card.card_owners?.map(o => o.members?.display_name).join(', ') || '-'}
-                        </span>
+                      <div style={{ paddingTop: 5, borderTop: '0.5px solid #f5f0e8' }}>
+                        <div style={{ display: 'flex', alignItems: 'center', gap: 5 }}>
+                          {owner?.members?.avatar_url
+                            ? <img src={owner.members.avatar_url} alt="" style={{ width: 18, height: 18, borderRadius: '50%', objectFit: 'cover', border: '0.5px solid #FAC775' }} />
+                            : <div style={{ width: 18, height: 18, borderRadius: '50%', background: 'linear-gradient(135deg,#FAEEDA,#FFF3D0)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 7, fontWeight: 600, color: '#633806', border: '0.5px solid #FAC775' }}>
+                                {owner?.members?.display_name?.[0]?.toUpperCase() || '?'}
+                              </div>
+                          }
+                          <span style={{ fontSize: 9, color: '#999', flex: 1, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                            {card.card_owners?.map(o => o.members?.display_name).join(', ') || '-'}
+                          </span>
+                        </div>
+                        {owner?.created_at && (
+                          <div style={{ fontSize: 9, color: '#ccc', marginTop: 3 }}>
+                            <i className="fa-regular fa-calendar" style={{ marginRight: 3 }}></i>
+                            {formatDate(owner.created_at)}
+                          </div>
+                        )}
+                      </div>
+                    )}
+                    {tab === 'my' && owner?.created_at && (
+                      <div style={{ paddingTop: 5, borderTop: '0.5px solid #f5f0e8', fontSize: 9, color: '#ccc' }}>
+                        <i className="fa-regular fa-calendar" style={{ marginRight: 3 }}></i>
+                        {formatDate(owner.created_at)}
                       </div>
                     )}
                   </div>
@@ -198,9 +216,15 @@ export default function WallPage() {
                       {o.members?.display_name?.[0]?.toUpperCase()}
                     </div>
                 }
-                <div>
+                <div style={{ flex: 1 }}>
                   <div style={{ fontSize: 14, fontWeight: 500, color: '#111', marginBottom: 3 }}>{o.members?.display_name}</div>
                   <LevelBadge level={o.members?.level} size='sm' />
+                  {o.created_at && (
+                    <div style={{ fontSize: 10, color: '#bbb', marginTop: 4 }}>
+                      <i className="fa-regular fa-calendar" style={{ marginRight: 3 }}></i>
+                      獲得於 {formatDate(o.created_at)}
+                    </div>
+                  )}
                 </div>
               </div>
             ))}
