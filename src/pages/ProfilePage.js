@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react'
-import { supabase, LEVELS, getNextLevel } from '../lib/supabase'
+import { supabase, LEVELS, getNextLevel, RARITY_COLORS } from '../lib/supabase'
 import { useAuth } from '../hooks/useAuth'
 import { PokeballIcon, LevelBadge } from '../lib/pokeballs'
 import BottomNav from '../components/BottomNav'
@@ -7,15 +7,14 @@ import BenefitsPage from '../components/BenefitsPage'
 
 const CDN = 'https://cdn.jsdelivr.net/gh/duiker101/pokemon-type-svg-icons@master/icons'
 const TYPE_BY_WEEKDAY = {
-  1: { type: 'water', color: '#6890F0', name: '水', label: '一' },
-  2: { type: 'fire', color: '#F08030', name: '火', label: '二' },
-  3: { type: 'grass', color: '#78C850', name: '草', label: '三' },
-  4: { type: 'electric', color: '#F8D030', name: '電', label: '四' },
-  5: { type: 'psychic', color: '#F85888', name: '超能', label: '五' },
-  6: { type: 'fighting', color: '#C03028', name: '鬥', label: '六' },
-  0: { type: 'dragon', color: '#7038F8', name: '龍', label: '日' },
+  1: { type: 'water',    color: '#6890F0', name: '水',  label: '一' },
+  2: { type: 'fire',     color: '#F08030', name: '火',  label: '二' },
+  3: { type: 'grass',    color: '#78C850', name: '草',  label: '三' },
+  4: { type: 'electric', color: '#F8D030', name: '電',  label: '四' },
+  5: { type: 'psychic',  color: '#F85888', name: '超能', label: '五' },
+  6: { type: 'fighting', color: '#C03028', name: '鬥',  label: '六' },
+  0: { type: 'dragon',   color: '#7038F8', name: '龍',  label: '日' },
 }
-
 const GRADING_STATUS = {
   submitted: { label: '已送出', color: '#E07B00', bg: '#FFF3E0' },
   grading:   { label: '鑑定中', color: '#1976D2', bg: '#E3F2FD' },
@@ -25,14 +24,18 @@ const GRADING_STATUS = {
 
 export default function ProfilePage() {
   const { member, setMember, signOut } = useAuth()
+  const [profileTab, setProfileTab] = useState('home') // 'home' | 'mine'
   const [logs, setLogs] = useState([])
   const [weekLogins, setWeekLogins] = useState([])
   const [shippingOrders, setShippingOrders] = useState([])
   const [gradings, setGradings] = useState([])
+  const [myCards, setMyCards] = useState([]) // 持有卡片，供選展示用
+  const [showcaseCards, setShowcaseCards] = useState([]) // 展示卡詳情
   const [showSettings, setShowSettings] = useState(false)
   const [showBenefits, setShowBenefits] = useState(false)
   const [showShipping, setShowShipping] = useState(false)
   const [showGrading, setShowGrading] = useState(false)
+  const [showCardPicker, setShowCardPicker] = useState(null) // slot index 0~2
   const [editName, setEditName] = useState('')
   const [saving, setSaving] = useState(false)
 
@@ -70,6 +73,49 @@ export default function ProfilePage() {
     const { data: gradingData } = await supabase.from('grading_submissions')
       .select('*').eq('member_id', member.id).order('created_at', { ascending: false })
     setGradings(gradingData || [])
+
+    // 持有卡片
+    const { data: ownedData } = await supabase.from('card_owners')
+      .select('id, card_id, cards(id, name, rarity, series, image_url)')
+      .eq('member_id', member.id)
+    setMyCards(ownedData || [])
+
+    // 展示卡
+    await fetchShowcase(member.showcase_cards || [])
+  }
+
+  async function fetchShowcase(cardOwnerIds) {
+    if (!cardOwnerIds || cardOwnerIds.length === 0) { setShowcaseCards([]); return }
+    const { data } = await supabase.from('card_owners')
+      .select('id, card_id, cards(id, name, rarity, series, image_url)')
+      .in('id', cardOwnerIds)
+    // 保持順序
+    const ordered = cardOwnerIds.map(coid => data?.find(d => d.id === coid) || null)
+    setShowcaseCards(ordered)
+  }
+
+  async function handleSelectShowcase(slotIndex, cardOwnerId) {
+    const current = [...(member.showcase_cards || [])]
+    // 補足3格
+    while (current.length < 3) current.push(null)
+    current[slotIndex] = cardOwnerId
+    const cleaned = current.map(v => v || null)
+    await supabase.from('members').update({ showcase_cards: cleaned.filter(Boolean) }).eq('id', member.id)
+    const updated = { ...member, showcase_cards: cleaned.filter(Boolean) }
+    setMember(updated)
+    await fetchShowcase(cleaned.filter(Boolean))
+    setShowCardPicker(null)
+  }
+
+  async function handleRemoveShowcase(slotIndex) {
+    const current = [...(member.showcase_cards || [])]
+    while (current.length < 3) current.push(null)
+    current[slotIndex] = null
+    const cleaned = current.filter(Boolean)
+    await supabase.from('members').update({ showcase_cards: cleaned }).eq('id', member.id)
+    const updated = { ...member, showcase_cards: cleaned }
+    setMember(updated)
+    await fetchShowcase(cleaned)
   }
 
   async function handleSaveName() {
@@ -91,7 +137,6 @@ export default function ProfilePage() {
 
   const logIcons = { login: 'fa-calendar-day', streak_bonus: 'fa-fire', purchase: 'fa-bag-shopping', manual: 'fa-pen', makeup: 'fa-rotate-left', level_up: 'fa-arrow-up' }
   const logColors = { login: '#EAF3DE', streak_bonus: '#FAEEDA', purchase: '#FAEEDA', manual: '#E6F1FB', makeup: '#f5f0e8', level_up: '#E6F1FB' }
-
   const STATUS_LABEL = { pending: '待出貨', completed: '已完成', cancelled: '已取消' }
   const STATUS_STYLE = {
     pending:   { bg: '#FAEEDA', color: '#8B4A00', border: '#FAC775' },
@@ -105,7 +150,13 @@ export default function ProfilePage() {
     secTitle: { fontSize: 14, fontWeight: 800, color: '#2D1A00', display: 'flex', alignItems: 'center', gap: 6 },
     lstat: { background: '#FFFBF2', borderRadius: 12, padding: 10, textAlign: 'center', border: '2px solid #FAE0A0' },
     typeBadge: (bg) => ({ width: 26, height: 26, borderRadius: 10, background: bg, display: 'inline-flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0, color: '#fff', fontSize: 10 }),
+    tabBtn: (active) => ({ flex: 1, padding: '10px 0', fontSize: 13, fontWeight: active ? 600 : 400, color: active ? '#E07B00' : '#bbb', textAlign: 'center', cursor: 'pointer', background: 'none', border: 'none', borderBottom: active ? '2px solid #E07B00' : '2px solid transparent' }),
   }
+
+  // 展示卡 slot（補足3格）
+  const showcaseSlots = [0, 1, 2].map(i => showcaseCards[i] || null)
+  // 已在展示的 card_owner ids
+  const showcaseIds = (member.showcase_cards || [])
 
   return (
     <div style={S.page}>
@@ -147,226 +198,327 @@ export default function ProfilePage() {
           </div>
         </div>
 
-        <div style={{ padding: '18px 20px 0' }}>
+        {/* Tab 切換 */}
+        <div style={{ display: 'flex', borderBottom: '0.5px solid #f0e8d0', background: '#FFFBF2' }}>
+          <button style={S.tabBtn(profileTab === 'home')} onClick={() => setProfileTab('home')}>
+            <i className="fa-solid fa-house" style={{ marginRight: 5, fontSize: 12 }}></i>主頁
+          </button>
+          <button style={S.tabBtn(profileTab === 'mine')} onClick={() => setProfileTab('mine')}>
+            <i className="fa-solid fa-chart-bar" style={{ marginRight: 5, fontSize: 12 }}></i>我的
+          </button>
+        </div>
 
-          {/* 等級進度 */}
-          <div style={{ ...S.secTitle, marginBottom: 12 }}>
-            <span style={S.typeBadge('linear-gradient(135deg,#BA7517,#EF9F27)')}><i className="fa-solid fa-medal"></i></span>
-            等級進度
-          </div>
-          <div style={S.card}>
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 10 }}>
-              <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
-                <LevelBadge level={member.level} size='md' />
-                <span style={{ fontSize: 13, color: '#ccc' }}>→</span>
-                {nextLevel && <LevelBadge level={nextLevel.name} size='md' />}
+        {/* ── 主頁 Tab ── */}
+        {profileTab === 'home' && (
+          <div style={{ padding: '18px 20px 28px' }}>
+
+            {/* 等級徽章區 */}
+            <div style={{ display: 'flex', alignItems: 'center', gap: 12, padding: '14px 16px', background: '#fff', borderRadius: 16, boxShadow: '0 4px 14px rgba(186,117,23,.09)', marginBottom: 16 }}>
+              <div style={{ width: 52, height: 52, borderRadius: '50%', overflow: 'hidden', border: '2px solid #FAC775', flexShrink: 0, display: 'flex', alignItems: 'center', justifyContent: 'center', background: '#FAEEDA' }}>
+                {member.avatar_url
+                  ? <img src={member.avatar_url} alt="" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+                  : <span style={{ fontSize: 20, fontWeight: 700, color: '#633806' }}>{member.display_name?.[0]?.toUpperCase()}</span>
+                }
               </div>
-              {nextLevel && <span style={{ fontSize: 11, color: '#999' }}>還差 {(nextLevel.min - member.points).toLocaleString()} 點</span>}
-            </div>
-            <div style={{ height: 8, background: '#f0e8d0', borderRadius: 99, overflow: 'hidden', marginBottom: 5 }}>
-              <div style={{ height: '100%', width: `${levelProgress}%`, background: 'linear-gradient(90deg,#378ADD,#BA7517)', borderRadius: 99 }} />
-            </div>
-            <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 11, color: '#bbb' }}>
-              <span>{member.points?.toLocaleString()} 點</span><span>{levelProgress}%</span>
-            </div>
-          </div>
-
-          {/* 等級路線 */}
-          <div style={{ borderRadius: 12, marginBottom: 16, border: '0.5px solid #f0e8d0', boxShadow: '0 1px 6px rgba(186,117,23,0.05)', overflow: 'hidden' }}>
-            {LEVELS.map((l, i) => {
-              const isDone = member.points >= l.min
-              const isCurrent = member.level === l.name
-              const isFirst = i === 0
-              const isLast = i === LEVELS.length - 1
-              return (
-                <div key={l.name} style={{
-                  display: 'flex', alignItems: 'center', gap: 10, padding: '10px 14px',
-                  borderBottom: isLast ? 'none' : '0.5px solid #f5f0e8',
-                  background: isCurrent ? 'linear-gradient(135deg,#FFF5DC,#FFFBF2)' : '#fff',
-                  opacity: isDone || isCurrent ? 1 : 0.35,
-                  borderRadius: isFirst ? '12px 12px 0 0' : isLast ? '0 0 12px 12px' : 0,
-                }}>
-                  <div style={{ width: 26, height: 26, borderRadius: 10, overflow: 'hidden', flexShrink: 0, border: "none" }}>
-                    <PokeballIcon level={l.name} size={20} />
-                  </div>
-                  <div style={{ flex: 1, fontSize: 13, fontWeight: 500, color: isCurrent ? '#8B5A00' : '#111' }}>{l.name}</div>
-                  <div style={{ fontSize: 11, color: isCurrent ? '#BA7517' : '#bbb' }}>{i === 0 ? '初始會員' : `${l.min.toLocaleString()} 點`}</div>
-                  {isDone && !isCurrent && <i className="fa-solid fa-check" style={{ fontSize: 11, color: '#E07B00' }}></i>}
-                  {isCurrent && <span style={{ fontSize: 9, background: 'linear-gradient(135deg,#FAEEDA,#FFF3D0)', color: '#8B4A00', padding: '2px 7px', borderRadius: 20, border: '0.5px solid #FAC775', fontWeight: 700 }}>目前</span>}
+              <div style={{ flex: 1 }}>
+                <div style={{ fontSize: 16, fontWeight: 800, color: '#2D1A00', marginBottom: 4 }}>{member.display_name}</div>
+                <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+                  <LevelBadge level={member.level} size='md' />
+                  <span style={{ fontSize: 11, color: '#bbb' }}>#{String(member.member_no || '0').padStart(4, '0')}</span>
                 </div>
-              )
-            })}
-          </div>
-
-          {/* 福利入口 */}
-          <div onClick={() => setShowBenefits(true)} style={{ display: 'flex', alignItems: 'center', gap: 12, padding: '13px 14px', border: '0.5px solid #f0e8d0', borderRadius: 12, background: 'linear-gradient(135deg,#fdfaf4,#fff)', boxShadow: '0 1px 6px rgba(186,117,23,0.05)', marginBottom: 16, cursor: 'pointer' }}>
-            <div style={{ width: 38, height: 38, borderRadius: 10, background: 'linear-gradient(135deg,#FAEEDA,#FFF3D0)', border: '0.5px solid rgba(186,117,23,0.2)', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
-              <i className="fa-solid fa-gift" style={{ fontSize: 16, color: '#E07B00' }}></i>
-            </div>
-            <div style={{ flex: 1 }}>
-              <div style={{ fontSize: 13, fontWeight: 500, color: '#111', marginBottom: 2 }}>會員等級福利</div>
-              <div style={{ fontSize: 11, color: '#bbb' }}>查看各等級專屬優惠 →</div>
-            </div>
-            <i className="fa-solid fa-chevron-right" style={{ fontSize: 11, color: '#ccc' }}></i>
-          </div>
-
-          {/* 數據 */}
-          <div style={{ ...S.secTitle, marginBottom: 12 }}>
-            <span style={S.typeBadge('linear-gradient(135deg,#378ADD,#185FA5)')}><i className="fa-solid fa-chart-bar"></i></span>
-            我的數據
-          </div>
-          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2,1fr)', gap: 8, marginBottom: 16 }}>
-            {[
-              { num: member.points?.toLocaleString(), label: '累積積分' },
-              { num: `$${(member.total_spent||0).toLocaleString()}`, label: '累積消費' },
-              { num: member.login_streak, label: '連續登入天數' },
-              { num: member.total_logins, label: '總登入天數' },
-            ].map((s, i) => (
-              <div key={i} style={S.lstat}>
-                <div style={{ fontSize: 20, fontWeight: 700, color: '#111' }}>{s.num}</div>
-                <div style={{ fontSize: 11, color: '#999', marginTop: 3 }}>{s.label}</div>
               </div>
-            ))}
-          </div>
+              <div style={{ textAlign: 'right' }}>
+                <div style={{ fontSize: 18, fontWeight: 800, color: '#E07B00' }}>{member.points?.toLocaleString()}</div>
+                <div style={{ fontSize: 10, color: '#bbb' }}>積分</div>
+              </div>
+            </div>
 
-          {/* 本週簽到 */}
-          <div style={{ ...S.secTitle, marginBottom: 12 }}>
-            <span style={S.typeBadge('linear-gradient(135deg,#378ADD,#185FA5)')}><i className="fa-solid fa-calendar-check"></i></span>
-            本週簽到
-            <span style={{ marginLeft: 'auto', fontSize: 11, background: 'linear-gradient(135deg,#FAEEDA,#FFF3D0)', color: '#8B4A00', padding: '3px 8px', borderRadius: 20, border: '0.5px solid #FAC775', fontWeight: 500 }}>
-              連續 {member.login_streak} 天
-            </span>
-          </div>
-          <div style={{ ...S.card, marginBottom: 16 }}>
-            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(7,1fr)', gap: 4, marginBottom: 8 }}>
-              {weekLogins.map((d) => {
-                const isToday = d.date === today
-                const tc = d.typeConfig
+            {/* 展示卡 */}
+            <div style={{ ...S.secTitle, marginBottom: 12 }}>
+              <span style={S.typeBadge('linear-gradient(135deg,#BA7517,#EF9F27)')}><i className="fa-solid fa-id-card"></i></span>
+              展示卡
+              <span style={{ fontSize: 11, color: '#bbb', fontWeight: 400, marginLeft: 4 }}>最多 3 張</span>
+            </div>
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3,1fr)', gap: 10, marginBottom: 20 }}>
+              {showcaseSlots.map((slot, i) => {
+                const rc = slot?.cards ? (RARITY_COLORS[slot.cards.rarity] || RARITY_COLORS.Other) : null
                 return (
-                  <div key={d.date} style={{
-                    aspectRatio: 1, borderRadius: 9,
-                    background: d.done ? (isToday ? '#FCEBEB' : 'linear-gradient(135deg,#FAEEDA,#FFF3D0)') : d.isFuture ? '#f5f5f5' : isToday ? '#fff5f5' : '#f8f5f0',
-                    border: `1px solid ${d.done ? (isToday ? '#F09595' : '#FAC775') : d.isFuture ? '#eee' : '#eee'}`,
-                    display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: 2,
-                  }}>
-                    <div style={{ width: 20, height: 20, borderRadius: '50%', background: d.done ? tc.color : d.isFuture ? '#ddd' : '#e0dbd4', display: 'flex', alignItems: 'center', justifyContent: 'center', opacity: d.done ? 1 : d.isFuture ? 0.3 : 0.4 }}>
-                      <img src={`${CDN}/${tc.type}.svg`} alt={tc.name} style={{ width: 12, height: 12 }} />
+                  <div key={i} style={{ position: 'relative' }}>
+                    <div
+                      onClick={() => setShowCardPicker(i)}
+                      style={{ aspectRatio: '3/4', borderRadius: 14, overflow: 'hidden', background: slot ? '#fff' : '#f5f0e8', border: slot ? 'none' : '2px dashed #F5E8C8', boxShadow: slot ? '0 4px 14px rgba(186,117,23,.12)' : 'none', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', flexDirection: 'column', position: 'relative' }}>
+                      {slot?.cards?.image_url
+                        ? <img src={slot.cards.image_url} alt="" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+                        : slot
+                          ? <i className="fa-solid fa-id-card" style={{ fontSize: 28, color: '#D4A94A', opacity: 0.4 }}></i>
+                          : <>
+                              <i className="fa-solid fa-plus" style={{ fontSize: 16, color: '#D4A94A', opacity: 0.5, marginBottom: 4 }}></i>
+                              <span style={{ fontSize: 9, color: '#D4A94A', opacity: 0.6 }}>選擇卡片</span>
+                            </>
+                      }
+                      {slot?.cards && (
+                        <span style={{ position: 'absolute', top: 5, left: 5, fontSize: 7, fontWeight: 700, padding: '2px 5px', borderRadius: 20, background: rc.bg, color: rc.color }}>{slot.cards.rarity}</span>
+                      )}
                     </div>
-                    <span style={{ fontSize: 8, fontWeight: 700, color: d.done ? (isToday ? '#7A1A1A' : '#7A4A00') : '#bbb' }}>{tc.label}</span>
+                    {slot && (
+                      <button
+                        onClick={e => { e.stopPropagation(); handleRemoveShowcase(i) }}
+                        style={{ position: 'absolute', top: 4, right: 4, width: 18, height: 18, borderRadius: '50%', background: 'rgba(0,0,0,0.45)', border: 'none', color: '#fff', fontSize: 9, cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 2 }}>
+                        ✕
+                      </button>
+                    )}
+                    {slot?.cards && (
+                      <div style={{ marginTop: 5, fontSize: 9, color: '#7a5c2e', fontWeight: 600, textAlign: 'center', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                        {slot.cards.name}
+                      </div>
+                    )}
                   </div>
                 )
               })}
             </div>
-            {daysUntilFullStreak <= 3 && daysUntilFullStreak > 0 && (
-              <div style={{ fontSize: 11, color: '#888', display: 'flex', alignItems: 'center', gap: 4 }}>
-                <i className="fa-solid fa-gift" style={{ color: '#E07B00' }}></i>
-                再 {daysUntilFullStreak} 天全勤可獲得 +15 點
-              </div>
-            )}
-          </div>
 
-          {/* 出貨記錄 */}
-          <div style={{ ...S.secTitle, justifyContent: 'space-between', marginBottom: 12 }}>
-            <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
-              <span style={S.typeBadge('linear-gradient(135deg,#BA7517,#D4A94A)')}><i className="fa-solid fa-truck"></i></span>
-              出貨記錄
+            {/* 等級進度（簡版） */}
+            <div style={{ ...S.secTitle, marginBottom: 12 }}>
+              <span style={S.typeBadge('linear-gradient(135deg,#378ADD,#185FA5)')}><i className="fa-solid fa-medal"></i></span>
+              等級進度
             </div>
-            {shippingOrders.length > 3 && (
-              <span onClick={() => setShowShipping(true)} style={{ fontSize: 11, color: '#E07B00', cursor: 'pointer', fontWeight: 400 }}>全部 →</span>
-            )}
-          </div>
-          <div style={{ marginBottom: 16 }}>
-            {shippingOrders.length === 0 ? (
-              <div style={{ fontSize: 13, color: '#ccc', textAlign: 'center', padding: '16px 0' }}>尚無出貨記錄</div>
-            ) : shippingOrders.slice(0, 3).map(order => {
-              const ss = STATUS_STYLE[order.status] || STATUS_STYLE.cancelled
-              return (
-                <div key={order.id} style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '11px 0', borderBottom: '0.5px solid #f5f0e8' }}>
-                  <div style={{ width: 34, height: 34, borderRadius: 8, background: ss.bg, display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0, border: `0.5px solid ${ss.border}` }}>
-                    <i className="fa-solid fa-truck" style={{ fontSize: 13, color: ss.color }}></i>
-                  </div>
-                  <div style={{ flex: 1, minWidth: 0 }}>
-                    <div style={{ fontSize: 13, fontWeight: 500, color: '#111', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{order.store_name}</div>
-                    <div style={{ fontSize: 11, color: '#999', marginTop: 1 }}>{order.recipient_name} · {order.phone}</div>
-                  </div>
-                  <div style={{ textAlign: 'right', flexShrink: 0 }}>
-                    <span style={{ fontSize: 10, fontWeight: 600, background: ss.bg, color: ss.color, padding: '2px 8px', borderRadius: 20, border: `0.5px solid ${ss.border}` }}>
-                      {STATUS_LABEL[order.status]}
-                    </span>
-                    <div style={{ fontSize: 10, color: '#bbb', marginTop: 3 }}>{new Date(order.created_at).toLocaleDateString('zh-TW')}</div>
-                  </div>
+            <div style={S.card}>
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 10 }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+                  <LevelBadge level={member.level} size='md' />
+                  <span style={{ fontSize: 13, color: '#ccc' }}>→</span>
+                  {nextLevel && <LevelBadge level={nextLevel.name} size='md' />}
                 </div>
-              )
-            })}
-          </div>
-
-          {/* 已送鑑定 */}
-          <div style={{ ...S.secTitle, justifyContent: 'space-between', marginBottom: 12 }}>
-            <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
-              <span style={S.typeBadge('linear-gradient(135deg,#7038F8,#9B6BFF)')}><i className="fa-solid fa-star"></i></span>
-              已送鑑定
+                {nextLevel && <span style={{ fontSize: 11, color: '#999' }}>還差 {(nextLevel.min - member.points).toLocaleString()} 點</span>}
+              </div>
+              <div style={{ height: 8, background: '#f0e8d0', borderRadius: 99, overflow: 'hidden', marginBottom: 5 }}>
+                <div style={{ height: '100%', width: `${levelProgress}%`, background: 'linear-gradient(90deg,#378ADD,#BA7517)', borderRadius: 99 }} />
+              </div>
+              <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 11, color: '#bbb' }}>
+                <span>{member.points?.toLocaleString()} 點</span><span>{levelProgress}%</span>
+              </div>
             </div>
-            {gradings.length > 3 && (
-              <span onClick={() => setShowGrading(true)} style={{ fontSize: 11, color: '#E07B00', cursor: 'pointer', fontWeight: 400 }}>全部 →</span>
-            )}
+
+            {/* 福利入口 */}
+            <div onClick={() => setShowBenefits(true)} style={{ display: 'flex', alignItems: 'center', gap: 12, padding: '13px 14px', border: '0.5px solid #f0e8d0', borderRadius: 12, background: 'linear-gradient(135deg,#fdfaf4,#fff)', boxShadow: '0 1px 6px rgba(186,117,23,0.05)', cursor: 'pointer' }}>
+              <div style={{ width: 38, height: 38, borderRadius: 10, background: 'linear-gradient(135deg,#FAEEDA,#FFF3D0)', border: '0.5px solid rgba(186,117,23,0.2)', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
+                <i className="fa-solid fa-gift" style={{ fontSize: 16, color: '#E07B00' }}></i>
+              </div>
+              <div style={{ flex: 1 }}>
+                <div style={{ fontSize: 13, fontWeight: 500, color: '#111', marginBottom: 2 }}>會員等級福利</div>
+                <div style={{ fontSize: 11, color: '#bbb' }}>查看各等級專屬優惠 →</div>
+              </div>
+              <i className="fa-solid fa-chevron-right" style={{ fontSize: 11, color: '#ccc' }}></i>
+            </div>
           </div>
-          <div style={{ marginBottom: 16 }}>
-            {gradings.length === 0 ? (
-              <div style={{ fontSize: 13, color: '#ccc', textAlign: 'center', padding: '16px 0' }}>尚無鑑定紀錄</div>
-            ) : gradings.slice(0, 3).map(g => {
-              const gs = GRADING_STATUS[g.status] || GRADING_STATUS.submitted
-              return (
-                <div key={g.id} style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '11px 0', borderBottom: '0.5px solid #f5f0e8' }}>
-                  <div style={{ width: 44, height: 58, borderRadius: 8, overflow: 'hidden', flexShrink: 0, border: '1.5px solid #F5E8C8' }}>
-                    {g.image_url
-                      ? <img src={g.image_url} alt="" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
-                      : <div style={{ width: '100%', height: '100%', background: gs.bg, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                          <i className="fa-solid fa-star" style={{ fontSize: 16, color: gs.color }}></i>
-                        </div>
-                    }
-                  </div>
-                  <div style={{ flex: 1, minWidth: 0 }}>
-                    <div style={{ fontSize: 13, fontWeight: 500, color: '#111', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{g.card_name}</div>
-                    <div style={{ fontSize: 11, color: '#999', marginTop: 1 }}>
-                      {g.grading_company || '—'}{g.card_set ? ` · ${g.card_set}` : ''}
+        )}
+
+        {/* ── 我的 Tab ── */}
+        {profileTab === 'mine' && (
+          <div style={{ padding: '18px 20px 0' }}>
+
+            {/* 數據 */}
+            <div style={{ ...S.secTitle, marginBottom: 12 }}>
+              <span style={S.typeBadge('linear-gradient(135deg,#378ADD,#185FA5)')}><i className="fa-solid fa-chart-bar"></i></span>
+              我的數據
+            </div>
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2,1fr)', gap: 8, marginBottom: 16 }}>
+              {[
+                { num: member.points?.toLocaleString(), label: '累積積分' },
+                { num: `$${(member.total_spent||0).toLocaleString()}`, label: '累積消費' },
+                { num: member.login_streak, label: '連續登入天數' },
+                { num: member.total_logins, label: '總登入天數' },
+              ].map((s, i) => (
+                <div key={i} style={S.lstat}>
+                  <div style={{ fontSize: 20, fontWeight: 700, color: '#111' }}>{s.num}</div>
+                  <div style={{ fontSize: 11, color: '#999', marginTop: 3 }}>{s.label}</div>
+                </div>
+              ))}
+            </div>
+
+            {/* 本週簽到 */}
+            <div style={{ ...S.secTitle, marginBottom: 12 }}>
+              <span style={S.typeBadge('linear-gradient(135deg,#378ADD,#185FA5)')}><i className="fa-solid fa-calendar-check"></i></span>
+              本週簽到
+              <span style={{ marginLeft: 'auto', fontSize: 11, background: 'linear-gradient(135deg,#FAEEDA,#FFF3D0)', color: '#8B4A00', padding: '3px 8px', borderRadius: 20, border: '0.5px solid #FAC775', fontWeight: 500 }}>
+                連續 {member.login_streak} 天
+              </span>
+            </div>
+            <div style={{ ...S.card, marginBottom: 16 }}>
+              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(7,1fr)', gap: 4, marginBottom: 8 }}>
+                {weekLogins.map((d) => {
+                  const isToday = d.date === today
+                  const tc = d.typeConfig
+                  return (
+                    <div key={d.date} style={{
+                      aspectRatio: 1, borderRadius: 9,
+                      background: d.done ? (isToday ? '#FCEBEB' : 'linear-gradient(135deg,#FAEEDA,#FFF3D0)') : d.isFuture ? '#f5f5f5' : isToday ? '#fff5f5' : '#f8f5f0',
+                      border: `1px solid ${d.done ? (isToday ? '#F09595' : '#FAC775') : d.isFuture ? '#eee' : '#eee'}`,
+                      display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: 2,
+                    }}>
+                      <div style={{ width: 20, height: 20, borderRadius: '50%', background: d.done ? tc.color : d.isFuture ? '#ddd' : '#e0dbd4', display: 'flex', alignItems: 'center', justifyContent: 'center', opacity: d.done ? 1 : d.isFuture ? 0.3 : 0.4 }}>
+                        <img src={`${CDN}/${tc.type}.svg`} alt={tc.name} style={{ width: 12, height: 12 }} />
+                      </div>
+                      <span style={{ fontSize: 8, fontWeight: 700, color: d.done ? (isToday ? '#7A1A1A' : '#7A4A00') : '#bbb' }}>{tc.label}</span>
+                    </div>
+                  )
+                })}
+              </div>
+              {daysUntilFullStreak <= 3 && daysUntilFullStreak > 0 && (
+                <div style={{ fontSize: 11, color: '#888', display: 'flex', alignItems: 'center', gap: 4 }}>
+                  <i className="fa-solid fa-gift" style={{ color: '#E07B00' }}></i>
+                  再 {daysUntilFullStreak} 天全勤可獲得 +15 點
+                </div>
+              )}
+            </div>
+
+            {/* 出貨記錄 */}
+            <div style={{ ...S.secTitle, justifyContent: 'space-between', marginBottom: 12 }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+                <span style={S.typeBadge('linear-gradient(135deg,#BA7517,#D4A94A)')}><i className="fa-solid fa-truck"></i></span>
+                出貨記錄
+              </div>
+              {shippingOrders.length > 3 && (
+                <span onClick={() => setShowShipping(true)} style={{ fontSize: 11, color: '#E07B00', cursor: 'pointer', fontWeight: 400 }}>全部 →</span>
+              )}
+            </div>
+            <div style={{ marginBottom: 16 }}>
+              {shippingOrders.length === 0 ? (
+                <div style={{ fontSize: 13, color: '#ccc', textAlign: 'center', padding: '16px 0' }}>尚無出貨記錄</div>
+              ) : shippingOrders.slice(0, 3).map(order => {
+                const ss = STATUS_STYLE[order.status] || STATUS_STYLE.cancelled
+                return (
+                  <div key={order.id} style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '11px 0', borderBottom: '0.5px solid #f5f0e8' }}>
+                    <div style={{ width: 34, height: 34, borderRadius: 8, background: ss.bg, display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0, border: `0.5px solid ${ss.border}` }}>
+                      <i className="fa-solid fa-truck" style={{ fontSize: 13, color: ss.color }}></i>
+                    </div>
+                    <div style={{ flex: 1, minWidth: 0 }}>
+                      <div style={{ fontSize: 13, fontWeight: 500, color: '#111', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{order.store_name}</div>
+                      <div style={{ fontSize: 11, color: '#999', marginTop: 1 }}>{order.recipient_name} · {order.phone}</div>
+                    </div>
+                    <div style={{ textAlign: 'right', flexShrink: 0 }}>
+                      <span style={{ fontSize: 10, fontWeight: 600, background: ss.bg, color: ss.color, padding: '2px 8px', borderRadius: 20, border: `0.5px solid ${ss.border}` }}>
+                        {STATUS_LABEL[order.status]}
+                      </span>
+                      <div style={{ fontSize: 10, color: '#bbb', marginTop: 3 }}>{new Date(order.created_at).toLocaleDateString('zh-TW')}</div>
                     </div>
                   </div>
-                  <div style={{ textAlign: 'right', flexShrink: 0 }}>
-                    <span style={{ fontSize: 10, fontWeight: 600, background: gs.bg, color: gs.color, padding: '2px 8px', borderRadius: 20 }}>{gs.label}</span>
-                    {g.grade != null
-                      ? <div style={{ fontSize: 11, fontWeight: 700, color: '#2D1A00', marginTop: 3 }}>{g.grade} 分</div>
-                      : <div style={{ fontSize: 10, color: '#bbb', marginTop: 3 }}>{g.submitted_at || '—'}</div>
-                    }
+                )
+              })}
+            </div>
+
+            {/* 已送鑑定 */}
+            <div style={{ ...S.secTitle, justifyContent: 'space-between', marginBottom: 12 }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+                <span style={S.typeBadge('linear-gradient(135deg,#7038F8,#9B6BFF)')}><i className="fa-solid fa-star"></i></span>
+                已送鑑定
+              </div>
+              {gradings.length > 3 && (
+                <span onClick={() => setShowGrading(true)} style={{ fontSize: 11, color: '#E07B00', cursor: 'pointer', fontWeight: 400 }}>全部 →</span>
+              )}
+            </div>
+            <div style={{ marginBottom: 16 }}>
+              {gradings.length === 0 ? (
+                <div style={{ fontSize: 13, color: '#ccc', textAlign: 'center', padding: '16px 0' }}>尚無鑑定紀錄</div>
+              ) : gradings.slice(0, 3).map(g => {
+                const gs = GRADING_STATUS[g.status] || GRADING_STATUS.submitted
+                return (
+                  <div key={g.id} style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '11px 0', borderBottom: '0.5px solid #f5f0e8' }}>
+                    <div style={{ width: 44, height: 58, borderRadius: 8, overflow: 'hidden', flexShrink: 0, border: '1.5px solid #F5E8C8' }}>
+                      {g.image_url
+                        ? <img src={g.image_url} alt="" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+                        : <div style={{ width: '100%', height: '100%', background: gs.bg, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                            <i className="fa-solid fa-star" style={{ fontSize: 16, color: gs.color }}></i>
+                          </div>
+                      }
+                    </div>
+                    <div style={{ flex: 1, minWidth: 0 }}>
+                      <div style={{ fontSize: 13, fontWeight: 500, color: '#111', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{g.card_name}</div>
+                      <div style={{ fontSize: 11, color: '#999', marginTop: 1 }}>
+                        {g.grading_company || '—'}{g.card_set ? ` · ${g.card_set}` : ''}
+                      </div>
+                    </div>
+                    <div style={{ textAlign: 'right', flexShrink: 0 }}>
+                      <span style={{ fontSize: 10, fontWeight: 600, background: gs.bg, color: gs.color, padding: '2px 8px', borderRadius: 20 }}>{gs.label}</span>
+                      {g.grade != null
+                        ? <div style={{ fontSize: 11, fontWeight: 700, color: '#2D1A00', marginTop: 3 }}>{g.grade} 分</div>
+                        : <div style={{ fontSize: 10, color: '#bbb', marginTop: 3 }}>{g.submitted_at || '—'}</div>
+                      }
+                    </div>
+                  </div>
+                )
+              })}
+            </div>
+
+            {/* 積分紀錄 */}
+            <div style={{ ...S.secTitle, marginBottom: 12 }}>
+              <span style={S.typeBadge('linear-gradient(135deg,#639922,#3B6D11)')}><i className="fa-solid fa-clock-rotate-left"></i></span>
+              積分紀錄
+            </div>
+            <div style={{ marginBottom: 28 }}>
+              {logs.length === 0 && <div style={{ fontSize: 13, color: '#ccc', textAlign: 'center', padding: '16px 0' }}>尚無紀錄</div>}
+              {logs.map(log => (
+                <div key={log.id} style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '11px 0', borderBottom: '0.5px solid #f5f0e8' }}>
+                  <div style={{ width: 34, height: 34, borderRadius: 8, background: logColors[log.type] || '#f5f5f5', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
+                    <i className={`fa-solid ${logIcons[log.type] || 'fa-pen'}`} style={{ fontSize: 14, color: '#666' }}></i>
+                  </div>
+                  <div style={{ flex: 1 }}>
+                    <div style={{ fontSize: 13, fontWeight: 500, color: '#111' }}>{log.note || log.type}</div>
+                    <div style={{ fontSize: 11, color: '#999', marginTop: 1 }}>{new Date(log.created_at).toLocaleDateString('zh-TW')}</div>
+                  </div>
+                  <div style={{ fontSize: 13, fontWeight: 600, color: log.points > 0 ? '#BA7517' : '#A32D2D' }}>
+                    {log.points > 0 ? '+' : ''}{log.points}
                   </div>
                 </div>
-              )
-            })}
+              ))}
+            </div>
           </div>
+        )}
+      </div>
 
-          {/* 積分紀錄 */}
-          <div style={{ ...S.secTitle, marginBottom: 12 }}>
-            <span style={S.typeBadge('linear-gradient(135deg,#639922,#3B6D11)')}><i className="fa-solid fa-clock-rotate-left"></i></span>
-            積分紀錄
-          </div>
-          <div style={{ marginBottom: 28 }}>
-            {logs.length === 0 && <div style={{ fontSize: 13, color: '#ccc', textAlign: 'center', padding: '16px 0' }}>尚無紀錄</div>}
-            {logs.map(log => (
-              <div key={log.id} style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '11px 0', borderBottom: '0.5px solid #f5f0e8' }}>
-                <div style={{ width: 34, height: 34, borderRadius: 8, background: logColors[log.type] || '#f5f5f5', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
-                  <i className={`fa-solid ${logIcons[log.type] || 'fa-pen'}`} style={{ fontSize: 14, color: '#666' }}></i>
+      {/* 卡片選擇器 Sheet */}
+      {showCardPicker !== null && (
+        <div onClick={() => setShowCardPicker(null)} style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.4)', zIndex: 200, display: 'flex', alignItems: 'flex-end', justifyContent: 'center' }}>
+          <div onClick={e => e.stopPropagation()} style={{ width: '100%', maxWidth: 390, maxHeight: '75vh', background: '#fff', borderRadius: '16px 16px 0 0', display: 'flex', flexDirection: 'column' }}>
+            <div style={{ width: 36, height: 4, borderRadius: 2, background: '#f0e8d0', margin: '12px auto 0', flexShrink: 0 }} />
+            <div style={{ padding: '12px 20px 8px', borderBottom: '0.5px solid #f5f0e8', flexShrink: 0 }}>
+              <div style={{ fontSize: 15, fontWeight: 700, color: '#2D1A00' }}>選擇展示卡 · 第 {showCardPicker + 1} 格</div>
+              <div style={{ fontSize: 11, color: '#bbb', marginTop: 2 }}>從你持有的卡片中選擇</div>
+            </div>
+            <div style={{ overflowY: 'auto', padding: '10px 16px 32px' }}>
+              {myCards.length === 0 ? (
+                <div style={{ textAlign: 'center', padding: '32px 0', color: '#bbb', fontSize: 13 }}>尚無持有卡片</div>
+              ) : (
+                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3,1fr)', gap: 10 }}>
+                  {myCards.map(co => {
+                    const rc = RARITY_COLORS[co.cards?.rarity] || RARITY_COLORS.Other
+                    const isSelected = showcaseIds.includes(co.id)
+                    return (
+                      <div key={co.id}
+                        onClick={() => !isSelected && handleSelectShowcase(showCardPicker, co.id)}
+                        style={{ opacity: isSelected ? 0.4 : 1, cursor: isSelected ? 'not-allowed' : 'pointer' }}>
+                        <div style={{ aspectRatio: '3/4', borderRadius: 12, overflow: 'hidden', background: '#f8f5f0', border: `1.5px solid ${isSelected ? '#F5E8C8' : rc.color + '44'}`, position: 'relative', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                          {co.cards?.image_url
+                            ? <img src={co.cards.image_url} alt="" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+                            : <i className="fa-solid fa-id-card" style={{ fontSize: 24, color: '#D4A94A', opacity: 0.4 }}></i>
+                          }
+                          <span style={{ position: 'absolute', top: 4, left: 4, fontSize: 7, fontWeight: 700, padding: '1px 5px', borderRadius: 20, background: rc.bg, color: rc.color }}>{co.cards?.rarity}</span>
+                          {isSelected && <div style={{ position: 'absolute', inset: 0, background: 'rgba(255,255,255,0.5)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                            <i className="fa-solid fa-check" style={{ fontSize: 20, color: '#E07B00' }}></i>
+                          </div>}
+                        </div>
+                        <div style={{ marginTop: 4, fontSize: 9, color: '#7a5c2e', fontWeight: 600, textAlign: 'center', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                          {co.cards?.name}
+                        </div>
+                      </div>
+                    )
+                  })}
                 </div>
-                <div style={{ flex: 1 }}>
-                  <div style={{ fontSize: 13, fontWeight: 500, color: '#111' }}>{log.note || log.type}</div>
-                  <div style={{ fontSize: 11, color: '#999', marginTop: 1 }}>{new Date(log.created_at).toLocaleDateString('zh-TW')}</div>
-                </div>
-                <div style={{ fontSize: 13, fontWeight: 600, color: log.points > 0 ? '#BA7517' : '#A32D2D' }}>
-                  {log.points > 0 ? '+' : ''}{log.points}
-                </div>
-              </div>
-            ))}
+              )}
+            </div>
           </div>
         </div>
-      </div>
+      )}
 
       {/* 出貨記錄全覽 Sheet */}
       {showShipping && (
