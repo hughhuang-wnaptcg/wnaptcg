@@ -21,7 +21,6 @@ const GRADING_STATUS = {
   sold:      { label: '已售出', color: '#757575', bg: '#F5F5F5' },
 }
 
-// 可自訂頭貼的最低等級索引（高級球 = index 2）
 const CUSTOM_AVATAR_MIN_LEVEL = '高級球'
 
 function canUploadCustomAvatar(level) {
@@ -33,7 +32,7 @@ function canUploadCustomAvatar(level) {
 
 export default function ProfilePage() {
   const { member, setMember, signOut } = useAuth()
-  const [profileTab, setProfileTab] = useState('home') // 'home' | 'mine'
+  const [profileTab, setProfileTab] = useState('home')
   const [logs, setLogs] = useState([])
   const [weekLogins, setWeekLogins] = useState([])
   const [shippingOrders, setShippingOrders] = useState([])
@@ -312,7 +311,7 @@ export default function ProfilePage() {
               })}
             </div>
 
-            {/* 等級進度（簡版） */}
+            {/* 等級進度 */}
             <div style={{ ...S.secTitle, marginBottom: 12 }}>
               <span style={S.typeBadge('linear-gradient(135deg,#378ADD,#185FA5)')}><i className="fa-solid fa-medal"></i></span>
               等級進度
@@ -671,7 +670,12 @@ export default function ProfilePage() {
                     </div>
                   )}
 
-                  <button onClick={() => setEditAvatar('')} style={{ width: '100%', padding: '6px 10px', background: '#fff', border: 'none', fontSize: 11, color: '#999', cursor: 'pointer' }}>移除頭貼</button>
+                  {/* 移除頭貼：退回原本的 avatar_url */}
+                  <button
+                    onClick={() => setEditAvatar(member.avatar_url || '')}
+                    style={{ width: '100%', padding: '6px 10px', background: '#fff', border: 'none', fontSize: 11, color: '#999', cursor: 'pointer' }}>
+                    移除頭貼
+                  </button>
                 </div>
               </div>
 
