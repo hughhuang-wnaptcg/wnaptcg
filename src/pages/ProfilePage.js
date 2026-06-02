@@ -241,8 +241,6 @@ export default function ProfilePage() {
         {/* ── 主頁 Tab ── */}
         {profileTab === 'home' && (
           <div style={{ padding: '18px 20px 28px' }}>
-
-            {/* 等級徽章區 */}
             <div style={{ display: 'flex', alignItems: 'center', gap: 12, padding: '14px 16px', background: '#fff', borderRadius: 16, boxShadow: '0 4px 14px rgba(186,117,23,.09)', marginBottom: 16 }}>
               <div style={{ width: 52, height: 52, borderRadius: '50%', overflow: 'hidden', border: '2px solid #FAC775', flexShrink: 0, display: 'flex', alignItems: 'center', justifyContent: 'center', background: '#FAEEDA' }}>
                 {member.avatar_url
@@ -278,34 +276,21 @@ export default function ProfilePage() {
                 const rc = slot?.cards ? (RARITY_COLORS[slot.cards.rarity] || RARITY_COLORS.Other) : null
                 return (
                   <div key={i} style={{ position: 'relative' }}>
-                    <div
-                      onClick={() => setShowCardPicker(i)}
+                    <div onClick={() => setShowCardPicker(i)}
                       style={{ aspectRatio: '3/4', borderRadius: 14, overflow: 'hidden', background: slot ? '#fff' : '#f5f0e8', border: slot ? 'none' : '2px dashed #F5E8C8', boxShadow: slot ? '0 4px 14px rgba(186,117,23,.12)' : 'none', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', flexDirection: 'column', position: 'relative' }}>
                       {slot?.cards?.image_url
                         ? <img src={slot.cards.image_url} alt="" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
                         : slot
                           ? <i className="fa-solid fa-id-card" style={{ fontSize: 28, color: '#D4A94A', opacity: 0.4 }}></i>
-                          : <>
-                              <i className="fa-solid fa-plus" style={{ fontSize: 16, color: '#D4A94A', opacity: 0.5, marginBottom: 4 }}></i>
-                              <span style={{ fontSize: 9, color: '#D4A94A', opacity: 0.6 }}>選擇卡片</span>
-                            </>
+                          : <><i className="fa-solid fa-plus" style={{ fontSize: 16, color: '#D4A94A', opacity: 0.5, marginBottom: 4 }}></i><span style={{ fontSize: 9, color: '#D4A94A', opacity: 0.6 }}>選擇卡片</span></>
                       }
-                      {slot?.cards && (
-                        <span style={{ position: 'absolute', top: 5, left: 5, fontSize: 7, fontWeight: 700, padding: '2px 5px', borderRadius: 20, background: rc.bg, color: rc.color }}>{slot.cards.rarity}</span>
-                      )}
+                      {slot?.cards && <span style={{ position: 'absolute', top: 5, left: 5, fontSize: 7, fontWeight: 700, padding: '2px 5px', borderRadius: 20, background: rc.bg, color: rc.color }}>{slot.cards.rarity}</span>}
                     </div>
                     {slot && (
-                      <button
-                        onClick={e => { e.stopPropagation(); handleRemoveShowcase(i) }}
-                        style={{ position: 'absolute', top: 4, right: 4, width: 18, height: 18, borderRadius: '50%', background: 'rgba(0,0,0,0.45)', border: 'none', color: '#fff', fontSize: 9, cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 2 }}>
-                        ✕
-                      </button>
+                      <button onClick={e => { e.stopPropagation(); handleRemoveShowcase(i) }}
+                        style={{ position: 'absolute', top: 4, right: 4, width: 18, height: 18, borderRadius: '50%', background: 'rgba(0,0,0,0.45)', border: 'none', color: '#fff', fontSize: 9, cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 2 }}>✕</button>
                     )}
-                    {slot?.cards && (
-                      <div style={{ marginTop: 5, fontSize: 9, color: '#7a5c2e', fontWeight: 600, textAlign: 'center', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
-                        {slot.cards.name}
-                      </div>
-                    )}
+                    {slot?.cards && <div style={{ marginTop: 5, fontSize: 9, color: '#7a5c2e', fontWeight: 600, textAlign: 'center', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{slot.cards.name}</div>}
                   </div>
                 )
               })}
@@ -350,8 +335,6 @@ export default function ProfilePage() {
         {/* ── 我的 Tab ── */}
         {profileTab === 'mine' && (
           <div style={{ padding: '18px 20px 0' }}>
-
-            {/* 數據 */}
             <div style={{ ...S.secTitle, marginBottom: 12 }}>
               <span style={S.typeBadge('linear-gradient(135deg,#378ADD,#185FA5)')}><i className="fa-solid fa-chart-bar"></i></span>
               我的數據
@@ -374,9 +357,7 @@ export default function ProfilePage() {
             <div style={{ ...S.secTitle, marginBottom: 12 }}>
               <span style={S.typeBadge('linear-gradient(135deg,#378ADD,#185FA5)')}><i className="fa-solid fa-calendar-check"></i></span>
               本週簽到
-              <span style={{ marginLeft: 'auto', fontSize: 11, background: 'linear-gradient(135deg,#FAEEDA,#FFF3D0)', color: '#8B4A00', padding: '3px 8px', borderRadius: 20, border: '0.5px solid #FAC775', fontWeight: 500 }}>
-                連續 {member.login_streak} 天
-              </span>
+              <span style={{ marginLeft: 'auto', fontSize: 11, background: 'linear-gradient(135deg,#FAEEDA,#FFF3D0)', color: '#8B4A00', padding: '3px 8px', borderRadius: 20, border: '0.5px solid #FAC775', fontWeight: 500 }}>連續 {member.login_streak} 天</span>
             </div>
             <div style={{ ...S.card, marginBottom: 16 }}>
               <div style={{ display: 'grid', gridTemplateColumns: 'repeat(7,1fr)', gap: 4, marginBottom: 8 }}>
@@ -384,12 +365,7 @@ export default function ProfilePage() {
                   const isToday = d.date === today
                   const tc = d.typeConfig
                   return (
-                    <div key={d.date} style={{
-                      aspectRatio: 1, borderRadius: 9,
-                      background: d.done ? (isToday ? '#FCEBEB' : 'linear-gradient(135deg,#FAEEDA,#FFF3D0)') : d.isFuture ? '#f5f5f5' : isToday ? '#fff5f5' : '#f8f5f0',
-                      border: `1px solid ${d.done ? (isToday ? '#F09595' : '#FAC775') : d.isFuture ? '#eee' : '#eee'}`,
-                      display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: 2,
-                    }}>
+                    <div key={d.date} style={{ aspectRatio: 1, borderRadius: 9, background: d.done ? (isToday ? '#FCEBEB' : 'linear-gradient(135deg,#FAEEDA,#FFF3D0)') : d.isFuture ? '#f5f5f5' : isToday ? '#fff5f5' : '#f8f5f0', border: `1px solid ${d.done ? (isToday ? '#F09595' : '#FAC775') : d.isFuture ? '#eee' : '#eee'}`, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: 2 }}>
                       <div style={{ width: 20, height: 20, borderRadius: '50%', background: d.done ? tc.color : d.isFuture ? '#ddd' : '#e0dbd4', display: 'flex', alignItems: 'center', justifyContent: 'center', opacity: d.done ? 1 : d.isFuture ? 0.3 : 0.4 }}>
                         <img src={`${CDN}/${tc.type}.svg`} alt={tc.name} style={{ width: 12, height: 12 }} />
                       </div>
@@ -412,33 +388,30 @@ export default function ProfilePage() {
                 <span style={S.typeBadge('linear-gradient(135deg,#BA7517,#D4A94A)')}><i className="fa-solid fa-truck"></i></span>
                 出貨記錄
               </div>
-              {shippingOrders.length > 3 && (
-                <span onClick={() => setShowShipping(true)} style={{ fontSize: 11, color: '#E07B00', cursor: 'pointer', fontWeight: 400 }}>全部 →</span>
-              )}
+              {shippingOrders.length > 3 && <span onClick={() => setShowShipping(true)} style={{ fontSize: 11, color: '#E07B00', cursor: 'pointer', fontWeight: 400 }}>全部 →</span>}
             </div>
             <div style={{ marginBottom: 16 }}>
-              {shippingOrders.length === 0 ? (
-                <div style={{ fontSize: 13, color: '#ccc', textAlign: 'center', padding: '16px 0' }}>尚無出貨記錄</div>
-              ) : shippingOrders.slice(0, 3).map(order => {
-                const ss = STATUS_STYLE[order.status] || STATUS_STYLE.cancelled
-                return (
-                  <div key={order.id} style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '11px 0', borderBottom: '0.5px solid #f5f0e8' }}>
-                    <div style={{ width: 34, height: 34, borderRadius: 8, background: ss.bg, display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0, border: `0.5px solid ${ss.border}` }}>
-                      <i className="fa-solid fa-truck" style={{ fontSize: 13, color: ss.color }}></i>
-                    </div>
-                    <div style={{ flex: 1, minWidth: 0 }}>
-                      <div style={{ fontSize: 13, fontWeight: 500, color: '#111', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{order.store_name}</div>
-                      <div style={{ fontSize: 11, color: '#999', marginTop: 1 }}>{order.recipient_name} · {order.phone}</div>
-                    </div>
-                    <div style={{ textAlign: 'right', flexShrink: 0 }}>
-                      <span style={{ fontSize: 10, fontWeight: 600, background: ss.bg, color: ss.color, padding: '2px 8px', borderRadius: 20, border: `0.5px solid ${ss.border}` }}>
-                        {STATUS_LABEL[order.status]}
-                      </span>
-                      <div style={{ fontSize: 10, color: '#bbb', marginTop: 3 }}>{new Date(order.created_at).toLocaleDateString('zh-TW')}</div>
-                    </div>
-                  </div>
-                )
-              })}
+              {shippingOrders.length === 0
+                ? <div style={{ fontSize: 13, color: '#ccc', textAlign: 'center', padding: '16px 0' }}>尚無出貨記錄</div>
+                : shippingOrders.slice(0, 3).map(order => {
+                    const ss = STATUS_STYLE[order.status] || STATUS_STYLE.cancelled
+                    return (
+                      <div key={order.id} style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '11px 0', borderBottom: '0.5px solid #f5f0e8' }}>
+                        <div style={{ width: 34, height: 34, borderRadius: 8, background: ss.bg, display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0, border: `0.5px solid ${ss.border}` }}>
+                          <i className="fa-solid fa-truck" style={{ fontSize: 13, color: ss.color }}></i>
+                        </div>
+                        <div style={{ flex: 1, minWidth: 0 }}>
+                          <div style={{ fontSize: 13, fontWeight: 500, color: '#111', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{order.store_name}</div>
+                          <div style={{ fontSize: 11, color: '#999', marginTop: 1 }}>{order.recipient_name} · {order.phone}</div>
+                        </div>
+                        <div style={{ textAlign: 'right', flexShrink: 0 }}>
+                          <span style={{ fontSize: 10, fontWeight: 600, background: ss.bg, color: ss.color, padding: '2px 8px', borderRadius: 20, border: `0.5px solid ${ss.border}` }}>{STATUS_LABEL[order.status]}</span>
+                          <div style={{ fontSize: 10, color: '#bbb', marginTop: 3 }}>{new Date(order.created_at).toLocaleDateString('zh-TW')}</div>
+                        </div>
+                      </div>
+                    )
+                  })
+              }
             </div>
 
             {/* 已送鑑定 */}
@@ -447,41 +420,36 @@ export default function ProfilePage() {
                 <span style={S.typeBadge('linear-gradient(135deg,#7038F8,#9B6BFF)')}><i className="fa-solid fa-star"></i></span>
                 已送鑑定
               </div>
-              {gradings.length > 3 && (
-                <span onClick={() => setShowGrading(true)} style={{ fontSize: 11, color: '#E07B00', cursor: 'pointer', fontWeight: 400 }}>全部 →</span>
-              )}
+              {gradings.length > 3 && <span onClick={() => setShowGrading(true)} style={{ fontSize: 11, color: '#E07B00', cursor: 'pointer', fontWeight: 400 }}>全部 →</span>}
             </div>
             <div style={{ marginBottom: 16 }}>
-              {gradings.length === 0 ? (
-                <div style={{ fontSize: 13, color: '#ccc', textAlign: 'center', padding: '16px 0' }}>尚無鑑定紀錄</div>
-              ) : gradings.slice(0, 3).map(g => {
-                const gs = GRADING_STATUS[g.status] || GRADING_STATUS.submitted
-                return (
-                  <div key={g.id} style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '11px 0', borderBottom: '0.5px solid #f5f0e8' }}>
-                    <div style={{ width: 44, height: 58, borderRadius: 8, overflow: 'hidden', flexShrink: 0, border: '1.5px solid #F5E8C8' }}>
-                      {g.image_url
-                        ? <img src={g.image_url} alt="" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
-                        : <div style={{ width: '100%', height: '100%', background: gs.bg, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                            <i className="fa-solid fa-star" style={{ fontSize: 16, color: gs.color }}></i>
-                          </div>
-                      }
-                    </div>
-                    <div style={{ flex: 1, minWidth: 0 }}>
-                      <div style={{ fontSize: 13, fontWeight: 500, color: '#111', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{g.card_name}</div>
-                      <div style={{ fontSize: 11, color: '#999', marginTop: 1 }}>
-                        {g.grading_company || '—'}{g.card_set ? ` · ${g.card_set}` : ''}
+              {gradings.length === 0
+                ? <div style={{ fontSize: 13, color: '#ccc', textAlign: 'center', padding: '16px 0' }}>尚無鑑定紀錄</div>
+                : gradings.slice(0, 3).map(g => {
+                    const gs = GRADING_STATUS[g.status] || GRADING_STATUS.submitted
+                    return (
+                      <div key={g.id} style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '11px 0', borderBottom: '0.5px solid #f5f0e8' }}>
+                        <div style={{ width: 44, height: 58, borderRadius: 8, overflow: 'hidden', flexShrink: 0, border: '1.5px solid #F5E8C8' }}>
+                          {g.image_url
+                            ? <img src={g.image_url} alt="" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+                            : <div style={{ width: '100%', height: '100%', background: gs.bg, display: 'flex', alignItems: 'center', justifyContent: 'center' }}><i className="fa-solid fa-star" style={{ fontSize: 16, color: gs.color }}></i></div>
+                          }
+                        </div>
+                        <div style={{ flex: 1, minWidth: 0 }}>
+                          <div style={{ fontSize: 13, fontWeight: 500, color: '#111', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{g.card_name}</div>
+                          <div style={{ fontSize: 11, color: '#999', marginTop: 1 }}>{g.grading_company || '—'}{g.card_set ? ` · ${g.card_set}` : ''}</div>
+                        </div>
+                        <div style={{ textAlign: 'right', flexShrink: 0 }}>
+                          <span style={{ fontSize: 10, fontWeight: 600, background: gs.bg, color: gs.color, padding: '2px 8px', borderRadius: 20 }}>{gs.label}</span>
+                          {g.grade != null
+                            ? <div style={{ fontSize: 11, fontWeight: 700, color: '#2D1A00', marginTop: 3 }}>{g.grade} 分</div>
+                            : <div style={{ fontSize: 10, color: '#bbb', marginTop: 3 }}>{g.submitted_at || '—'}</div>
+                          }
+                        </div>
                       </div>
-                    </div>
-                    <div style={{ textAlign: 'right', flexShrink: 0 }}>
-                      <span style={{ fontSize: 10, fontWeight: 600, background: gs.bg, color: gs.color, padding: '2px 8px', borderRadius: 20 }}>{gs.label}</span>
-                      {g.grade != null
-                        ? <div style={{ fontSize: 11, fontWeight: 700, color: '#2D1A00', marginTop: 3 }}>{g.grade} 分</div>
-                        : <div style={{ fontSize: 10, color: '#bbb', marginTop: 3 }}>{g.submitted_at || '—'}</div>
-                      }
-                    </div>
-                  </div>
-                )
-              })}
+                    )
+                  })
+              }
             </div>
 
             {/* 積分紀錄 */}
@@ -520,35 +488,28 @@ export default function ProfilePage() {
               <div style={{ fontSize: 11, color: '#bbb', marginTop: 2 }}>從你持有的卡片中選擇</div>
             </div>
             <div style={{ overflowY: 'auto', padding: '10px 16px 32px' }}>
-              {myCards.length === 0 ? (
-                <div style={{ textAlign: 'center', padding: '32px 0', color: '#bbb', fontSize: 13 }}>尚無持有卡片</div>
-              ) : (
-                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3,1fr)', gap: 10 }}>
-                  {myCards.map(co => {
-                    const rc = RARITY_COLORS[co.cards?.rarity] || RARITY_COLORS.Other
-                    const isSelected = showcaseIds.includes(co.id)
-                    return (
-                      <div key={co.id}
-                        onClick={() => !isSelected && handleSelectShowcase(showCardPicker, co.id)}
-                        style={{ opacity: isSelected ? 0.4 : 1, cursor: isSelected ? 'not-allowed' : 'pointer' }}>
-                        <div style={{ aspectRatio: '3/4', borderRadius: 12, overflow: 'hidden', background: '#f8f5f0', border: `1.5px solid ${isSelected ? '#F5E8C8' : rc.color + '44'}`, position: 'relative', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                          {co.cards?.image_url
-                            ? <img src={co.cards.image_url} alt="" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
-                            : <i className="fa-solid fa-id-card" style={{ fontSize: 24, color: '#D4A94A', opacity: 0.4 }}></i>
-                          }
-                          <span style={{ position: 'absolute', top: 4, left: 4, fontSize: 7, fontWeight: 700, padding: '1px 5px', borderRadius: 20, background: rc.bg, color: rc.color }}>{co.cards?.rarity}</span>
-                          {isSelected && <div style={{ position: 'absolute', inset: 0, background: 'rgba(255,255,255,0.5)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                            <i className="fa-solid fa-check" style={{ fontSize: 20, color: '#E07B00' }}></i>
-                          </div>}
+              {myCards.length === 0
+                ? <div style={{ textAlign: 'center', padding: '32px 0', color: '#bbb', fontSize: 13 }}>尚無持有卡片</div>
+                : <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3,1fr)', gap: 10 }}>
+                    {myCards.map(co => {
+                      const rc = RARITY_COLORS[co.cards?.rarity] || RARITY_COLORS.Other
+                      const isSelected = showcaseIds.includes(co.id)
+                      return (
+                        <div key={co.id} onClick={() => !isSelected && handleSelectShowcase(showCardPicker, co.id)} style={{ opacity: isSelected ? 0.4 : 1, cursor: isSelected ? 'not-allowed' : 'pointer' }}>
+                          <div style={{ aspectRatio: '3/4', borderRadius: 12, overflow: 'hidden', background: '#f8f5f0', border: `1.5px solid ${isSelected ? '#F5E8C8' : rc.color + '44'}`, position: 'relative', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                            {co.cards?.image_url
+                              ? <img src={co.cards.image_url} alt="" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+                              : <i className="fa-solid fa-id-card" style={{ fontSize: 24, color: '#D4A94A', opacity: 0.4 }}></i>
+                            }
+                            <span style={{ position: 'absolute', top: 4, left: 4, fontSize: 7, fontWeight: 700, padding: '1px 5px', borderRadius: 20, background: rc.bg, color: rc.color }}>{co.cards?.rarity}</span>
+                            {isSelected && <div style={{ position: 'absolute', inset: 0, background: 'rgba(255,255,255,0.5)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}><i className="fa-solid fa-check" style={{ fontSize: 20, color: '#E07B00' }}></i></div>}
+                          </div>
+                          <div style={{ marginTop: 4, fontSize: 9, color: '#7a5c2e', fontWeight: 600, textAlign: 'center', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{co.cards?.name}</div>
                         </div>
-                        <div style={{ marginTop: 4, fontSize: 9, color: '#7a5c2e', fontWeight: 600, textAlign: 'center', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
-                          {co.cards?.name}
-                        </div>
-                      </div>
-                    )
-                  })}
-                </div>
-              )}
+                      )
+                    })}
+                  </div>
+              }
             </div>
           </div>
         </div>
@@ -560,9 +521,7 @@ export default function ProfilePage() {
           <div onClick={e => e.stopPropagation()} style={{ width: '100%', maxWidth: 390, maxHeight: '80vh', background: '#fff', borderRadius: '16px 16px 0 0', display: 'flex', flexDirection: 'column' }}>
             <div style={{ width: 36, height: 4, borderRadius: 2, background: '#f0e8d0', margin: '12px auto 0', flexShrink: 0 }} />
             <div style={{ padding: '12px 20px 8px', borderBottom: '0.5px solid #f5f0e8', display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexShrink: 0 }}>
-              <div style={{ fontSize: 15, fontWeight: 600, color: '#111' }}>
-                <i className="fa-solid fa-truck" style={{ color: '#E07B00', marginRight: 6 }}></i>全部出貨記錄
-              </div>
+              <div style={{ fontSize: 15, fontWeight: 600, color: '#111' }}><i className="fa-solid fa-truck" style={{ color: '#E07B00', marginRight: 6 }}></i>全部出貨記錄</div>
               <span style={{ fontSize: 11, color: '#bbb' }}>{shippingOrders.length} 筆</span>
             </div>
             <div style={{ overflowY: 'auto', padding: '8px 20px 32px' }}>
@@ -574,21 +533,12 @@ export default function ProfilePage() {
                       <div style={{ fontSize: 13, fontWeight: 600, color: '#111' }}>{order.store_name}</div>
                       <span style={{ fontSize: 10, fontWeight: 600, background: ss.bg, color: ss.color, padding: '2px 8px', borderRadius: 20, border: `0.5px solid ${ss.border}` }}>{STATUS_LABEL[order.status]}</span>
                     </div>
-                    <div style={{ fontSize: 12, color: '#666', marginBottom: 3 }}>
-                      <i className="fa-solid fa-user" style={{ fontSize: 10, marginRight: 4, color: '#bbb' }}></i>
-                      {order.recipient_name} · {order.phone}
-                    </div>
-                    {order.note && (
-                      <div style={{ fontSize: 11, color: '#999', marginBottom: 3 }}>
-                        <i className="fa-solid fa-note-sticky" style={{ fontSize: 10, marginRight: 4, color: '#bbb' }}></i>{order.note}
-                      </div>
-                    )}
+                    <div style={{ fontSize: 12, color: '#666', marginBottom: 3 }}><i className="fa-solid fa-user" style={{ fontSize: 10, marginRight: 4, color: '#bbb' }}></i>{order.recipient_name} · {order.phone}</div>
+                    {order.note && <div style={{ fontSize: 11, color: '#999', marginBottom: 3 }}><i className="fa-solid fa-note-sticky" style={{ fontSize: 10, marginRight: 4, color: '#bbb' }}></i>{order.note}</div>}
                     <div style={{ fontSize: 10, color: '#bbb' }}>
                       <i className="fa-solid fa-clock" style={{ fontSize: 9, marginRight: 4 }}></i>
                       {new Date(order.created_at).toLocaleDateString('zh-TW')}
-                      {order.status === 'cancelled' && order.cancelled_at && (
-                        <span style={{ marginLeft: 8, color: '#E24B4A' }}>· 取消於 {new Date(order.cancelled_at).toLocaleDateString('zh-TW')}</span>
-                      )}
+                      {order.status === 'cancelled' && order.cancelled_at && <span style={{ marginLeft: 8, color: '#E24B4A' }}>· 取消於 {new Date(order.cancelled_at).toLocaleDateString('zh-TW')}</span>}
                     </div>
                   </div>
                 )
@@ -604,9 +554,7 @@ export default function ProfilePage() {
           <div onClick={e => e.stopPropagation()} style={{ width: '100%', maxWidth: 390, maxHeight: '80vh', background: '#fff', borderRadius: '16px 16px 0 0', display: 'flex', flexDirection: 'column' }}>
             <div style={{ width: 36, height: 4, borderRadius: 2, background: '#f0e8d0', margin: '12px auto 0', flexShrink: 0 }} />
             <div style={{ padding: '12px 20px 8px', borderBottom: '0.5px solid #f5f0e8', display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexShrink: 0 }}>
-              <div style={{ fontSize: 15, fontWeight: 600, color: '#111' }}>
-                <i className="fa-solid fa-star" style={{ color: '#7038F8', marginRight: 6 }}></i>全部鑑定紀錄
-              </div>
+              <div style={{ fontSize: 15, fontWeight: 600, color: '#111' }}><i className="fa-solid fa-star" style={{ color: '#7038F8', marginRight: 6 }}></i>全部鑑定紀錄</div>
               <span style={{ fontSize: 11, color: '#bbb' }}>{gradings.length} 筆</span>
             </div>
             <div style={{ overflowY: 'auto', padding: '8px 20px 32px' }}>
@@ -614,9 +562,7 @@ export default function ProfilePage() {
                 const gs = GRADING_STATUS[g.status] || GRADING_STATUS.submitted
                 return (
                   <div key={g.id} style={{ padding: '12px 0', borderBottom: '0.5px solid #f5f0e8' }}>
-                    {g.image_url && (
-                      <img src={g.image_url} alt="" style={{ width: '100%', height: 180, objectFit: 'cover', borderRadius: 10, marginBottom: 10, border: '1.5px solid #F5E8C8' }} />
-                    )}
+                    {g.image_url && <img src={g.image_url} alt="" style={{ width: '100%', height: 180, objectFit: 'cover', borderRadius: 10, marginBottom: 10, border: '1.5px solid #F5E8C8' }} />}
                     <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 6 }}>
                       <div style={{ fontSize: 13, fontWeight: 600, color: '#111' }}>{g.card_name}</div>
                       <span style={{ fontSize: 10, fontWeight: 600, background: gs.bg, color: gs.color, padding: '2px 8px', borderRadius: 20 }}>{gs.label}</span>
@@ -653,11 +599,8 @@ export default function ProfilePage() {
                 <div style={{ flex: 1 }}>
                   <input ref={avatarFileRef} type="file" accept="image/*" onChange={handleAvatarUpload} style={{ display: 'none' }} />
 
-                  {/* 自訂上傳：高級球以上才可用 */}
                   {canCustomAvatar ? (
-                    <button
-                      onClick={() => !avatarUploading && avatarFileRef.current?.click()}
-                      disabled={avatarUploading}
+                    <button onClick={() => !avatarUploading && avatarFileRef.current?.click()} disabled={avatarUploading}
                       style={{ width: '100%', padding: '8px 10px', background: '#FFFBF2', border: '0.5px solid #FAC775', borderRadius: 8, fontSize: 12, color: '#BA7517', cursor: avatarUploading ? 'not-allowed' : 'pointer', marginBottom: 5 }}>
                       {avatarUploading ? '上傳中...' : '上傳自訂頭貼'}
                     </button>
@@ -670,11 +613,10 @@ export default function ProfilePage() {
                     </div>
                   )}
 
-                  {/* 移除頭貼：退回原本的 avatar_url */}
-                  <button
-                    onClick={() => setEditAvatar(member.avatar_url || '')}
+                  {/* 移除頭貼：退回 LINE 原始頭貼 */}
+                  <button onClick={() => setEditAvatar(member.line_avatar_url || '')}
                     style={{ width: '100%', padding: '6px 10px', background: '#fff', border: 'none', fontSize: 11, color: '#999', cursor: 'pointer' }}>
-                    移除頭貼
+                    恢復 LINE 頭貼
                   </button>
                 </div>
               </div>
@@ -731,31 +673,15 @@ export default function ProfilePage() {
                 const isCurrentLevel = member.level === lv.name
                 const isAchieved = member.points >= lv.min
                 return (
-                  <div key={lv.name} style={{
-                    display: 'flex', alignItems: 'center', gap: 14,
-                    padding: '12px 14px', borderRadius: 14, marginBottom: 8,
-                    background: isCurrentLevel ? 'linear-gradient(135deg,#FFF8EE,#FFFBF2)' : '#fdfaf4',
-                    border: isCurrentLevel ? '1.5px solid #FAC775' : '0.5px solid #f0e8d0',
-                    position: 'relative', overflow: 'hidden',
-                  }}>
-                    {isCurrentLevel && (
-                      <div style={{ position: 'absolute', top: 6, right: 10, fontSize: 9, fontWeight: 700, background: '#E07B00', color: '#fff', padding: '2px 7px', borderRadius: 99 }}>目前等級</div>
-                    )}
-                    <div style={{ flexShrink: 0 }}>
-                      <PokeballIcon level={lv.name} size={36} />
-                    </div>
+                  <div key={lv.name} style={{ display: 'flex', alignItems: 'center', gap: 14, padding: '12px 14px', borderRadius: 14, marginBottom: 8, background: isCurrentLevel ? 'linear-gradient(135deg,#FFF8EE,#FFFBF2)' : '#fdfaf4', border: isCurrentLevel ? '1.5px solid #FAC775' : '0.5px solid #f0e8d0', position: 'relative', overflow: 'hidden' }}>
+                    {isCurrentLevel && <div style={{ position: 'absolute', top: 6, right: 10, fontSize: 9, fontWeight: 700, background: '#E07B00', color: '#fff', padding: '2px 7px', borderRadius: 99 }}>目前等級</div>}
+                    <div style={{ flexShrink: 0 }}><PokeballIcon level={lv.name} size={36} /></div>
                     <div style={{ flex: 1 }}>
                       <div style={{ display: 'flex', alignItems: 'center', gap: 6, marginBottom: 4 }}>
                         <span style={{ fontSize: 14, fontWeight: 800, color: isAchieved ? '#2D1A00' : '#bbb' }}>{lv.name}</span>
                       </div>
-                      <div style={{ fontSize: 11, color: isAchieved ? '#BA7517' : '#ccc', fontWeight: 600 }}>
-                        {lv.min === 0 ? '初始等級' : `累積 ${lv.min.toLocaleString()} 積分`}
-                      </div>
-                      {next && (
-                        <div style={{ fontSize: 10, color: '#bbb', marginTop: 2 }}>
-                          → 下一級 {next.name}：{next.min.toLocaleString()} 積分
-                        </div>
-                      )}
+                      <div style={{ fontSize: 11, color: isAchieved ? '#BA7517' : '#ccc', fontWeight: 600 }}>{lv.min === 0 ? '初始等級' : `累積 ${lv.min.toLocaleString()} 積分`}</div>
+                      {next && <div style={{ fontSize: 10, color: '#bbb', marginTop: 2 }}>→ 下一級 {next.name}：{next.min.toLocaleString()} 積分</div>}
                     </div>
                     <div style={{ textAlign: 'right', flexShrink: 0 }}>
                       {isAchieved
