@@ -61,12 +61,6 @@ const TIER_CONFIG = {
   },
 }
 
-const LEVEL_ORDER = ['精靈球', '超級球', '高級球', '豪華球', '貴重球', '究極球', '大師球']
-
-function canAccess(memberLevel, tier) {
-  return TIER_CONFIG[tier].allowedLevels.includes(memberLevel)
-}
-
 const POKEBALL_SVG = {
   精靈球: `<svg width="16" height="16" viewBox="0 0 52 52"><circle cx="26" cy="26" r="24" fill="#fff" stroke="#ccc" stroke-width="1"/><path d="M2 26 A24 24 0 0 1 50 26 Z" fill="#E24B4A"/><rect x="2" y="23" width="48" height="6" fill="#1a1a1a"/><circle cx="26" cy="26" r="7" fill="#fff" stroke="#1a1a1a" stroke-width="2.5"/><circle cx="26" cy="26" r="3.5" fill="#e8e8e8"/></svg>`,
   超級球: `<svg width="16" height="16" viewBox="0 0 52 52"><circle cx="26" cy="26" r="24" fill="#fff" stroke="#ccc" stroke-width="1"/><path d="M2 26 A24 24 0 0 1 50 26 Z" fill="#378ADD"/><polygon points="15,8 22,14 15,20 8,14" fill="#E24B4A"/><polygon points="37,8 44,14 37,20 30,14" fill="#E24B4A"/><rect x="2" y="23" width="48" height="6" fill="#1a1a1a"/><circle cx="26" cy="26" r="7" fill="#fff" stroke="#1a1a1a" stroke-width="2.5"/><circle cx="26" cy="26" r="3.5" fill="#e8e8e8"/></svg>`,
@@ -92,6 +86,118 @@ function BallTag({ level, cls, textColor }) {
   )
 }
 
+const STATUS_CONFIG = {
+  pending:   { label: '待處理', bg: '#FFF3E0', color: '#E07B00' },
+  shipped:   { label: '已出貨', bg: '#EAF3DE', color: '#388E3C' },
+  cancelled: { label: '已取消', bg: '#f5f5f5', color: '#999' },
+}
+
+function canAccess(memberLevel, tier) {
+  return TIER_CONFIG[tier].allowedLevels.includes(memberLevel)
+}
+
+function SuccessOverlay({ product, onClose }) {
+  const CONFETTI_COLORS = ['#BA7517','#E24B4A','#378ADD','#06C755','#FAC775','#F85888','#7038F8','#78C850','#FF6B00','#00CFFF']
+  const pieces = Array.from({ length: 28 }, (_, i) => ({
+    color: CONFETTI_COLORS[i % CONFETTI_COLORS.length],
+    x: 10 + Math.random() * 80,
+    delay: Math.random() * 0.5,
+    dur: 0.8 + Math.random() * 0.6,
+    size: 5 + Math.random() * 6,
+    rotate: Math.random() * 360,
+    shape: i % 3,
+  }))
+
+  return (
+    <div onClick={onClose} style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.5)', zIndex: 300, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+      <style>{`
+        @keyframes confettiFall {
+          0%   { transform: translateY(-20px) rotate(0deg); opacity: 1; }
+          100% { transform: translateY(280px) rotate(720deg); opacity: 0; }
+        }
+        @keyframes checkPop {
+          0%   { transform: scale(0); opacity: 0; }
+          60%  { transform: scale(1.15); opacity: 1; }
+          80%  { transform: scale(0.95); }
+          100% { transform: scale(1); opacity: 1; }
+        }
+        @keyframes cardSlideUp {
+          0%   { transform: translateY(40px); opacity: 0; }
+          100% { transform: translateY(0); opacity: 1; }
+        }
+        @keyframes checkDraw {
+          0%   { stroke-dashoffset: 50; }
+          100% { stroke-dashoffset: 0; }
+        }
+      `}</style>
+
+      {/* 撒花 */}
+      <div style={{ position: 'absolute', inset: 0, pointerEvents: 'none', overflow: 'hidden' }}>
+        {pieces.map((p, i) => (
+          <div key={i} style={{
+            position: 'absolute',
+            left: `${p.x}%`,
+            top: '-10px',
+            width: p.shape === 2 ? p.size * 0.6 : p.size,
+            height: p.shape === 2 ? p.size * 1.6 : p.size,
+            borderRadius: p.shape === 0 ? '50%' : p.shape === 1 ? 2 : 1,
+            background: p.color,
+            animation: `confettiFall ${p.dur}s ${p.delay}s ease-in both`,
+            transform: `rotate(${p.rotate}deg)`,
+          }} />
+        ))}
+      </div>
+
+      {/* 卡片 */}
+      <div onClick={e => e.stopPropagation()} style={{
+        background: '#fff', borderRadius: 20, padding: '32px 28px 24px',
+        maxWidth: 300, width: '88%', textAlign: 'center',
+        boxShadow: '0 12px 40px rgba(0,0,0,.2)',
+        animation: 'cardSlideUp 0.4s cubic-bezier(0.34,1.56,0.64,1) both',
+      }}>
+        {/* 打勾圓圈 */}
+        <div style={{
+          width: 64, height: 64, borderRadius: '50%',
+          background: 'linear-gradient(135deg,#EAF3DE,#D4F0B8)',
+          border: '2px solid #86C566',
+          display: 'flex', alignItems: 'center', justifyContent: 'center',
+          margin: '0 auto 16px',
+          animation: 'checkPop 0.5s 0.15s cubic-bezier(0.34,1.56,0.64,1) both',
+        }}>
+          <svg width="30" height="30" viewBox="0 0 30 30" fill="none">
+            <path
+              d="M6 15 L12 21 L24 9"
+              stroke="#388E3C"
+              strokeWidth="3"
+              strokeLinecap="round"
+              strokeLinejoin="round"
+              strokeDasharray="50"
+              strokeDashoffset="0"
+              style={{ animation: 'checkDraw 0.4s 0.35s ease both' }}
+            />
+          </svg>
+        </div>
+
+        <div style={{ fontSize: 18, fontWeight: 800, color: '#2D1A00', marginBottom: 6 }}>兌換成功！</div>
+        <div style={{ fontSize: 13, color: '#888', marginBottom: 4, lineHeight: 1.5 }}>{product.name}</div>
+        <div style={{ fontSize: 12, color: '#E07B00', fontWeight: 600, marginBottom: 6 }}>
+          <i className="fa-solid fa-coins" style={{ fontSize: 10, marginRight: 3 }}></i>
+          已扣除 {product.price} 點
+        </div>
+        <div style={{ fontSize: 11, color: '#bbb', marginBottom: 20, padding: '8px 12px', background: '#FFFBF2', borderRadius: 8, border: '0.5px solid #F5E8C8' }}>
+          商品已進入「我的物品」，可前往申請出貨
+        </div>
+        <button onClick={onClose} style={{
+          width: '100%', padding: 12,
+          background: 'linear-gradient(135deg,#BA7517,#D4A94A)',
+          border: 'none', borderRadius: 10, fontSize: 14, fontWeight: 700,
+          color: '#fff', cursor: 'pointer',
+        }}>確定</button>
+      </div>
+    </div>
+  )
+}
+
 export default function ShopPage() {
   const { member, setMember } = useAuth()
   const [products, setProducts] = useState([])
@@ -99,7 +205,7 @@ export default function ShopPage() {
   const [shopOrders, setShopOrders] = useState([])
   const [loading, setLoading] = useState(true)
   const [productsError, setProductsError] = useState(null)
-  const [activeTier, setActiveTier] = useState(null) // 進入的商城
+  const [activeTier, setActiveTier] = useState(null)
   const [confirmProduct, setConfirmProduct] = useState(null)
   const [buying, setBuying] = useState(false)
   const [showPointsLog, setShowPointsLog] = useState(false)
@@ -128,18 +234,15 @@ export default function ShopPage() {
     setBuying(true)
     try {
       const newPoints = member.shop_points - confirmProduct.price
-      // 扣點
       await supabase.from('members').update({ shop_points: newPoints }).eq('id', member.id)
-      // 扣庫存
       await supabase.from('shop_products').update({ stock: confirmProduct.stock - 1 }).eq('id', confirmProduct.id)
-      // 訂單紀錄
       await supabase.from('shop_orders').insert({
         member_id: member.id,
         product_id: confirmProduct.id,
         product_name: confirmProduct.name,
         points_spent: confirmProduct.price,
+        status: 'pending',
       })
-      // 點數紀錄
       await supabase.from('points_logs').insert({
         member_id: member.id,
         points: -confirmProduct.price,
@@ -164,7 +267,6 @@ export default function ShopPage() {
     page: { maxWidth: 390, margin: '0 auto', background: '#FFFBF2', minHeight: '100vh', display: 'flex', flexDirection: 'column' },
   }
 
-  // 商城內部頁面
   if (activeTier) {
     const cfg = TIER_CONFIG[activeTier]
     const tierProds = tierProducts(activeTier)
@@ -172,7 +274,6 @@ export default function ShopPage() {
     return (
       <div style={S.page}>
         <div style={{ flex: 1, overflowY: 'auto' }}>
-          {/* Header */}
           <div style={{ background: isVip ? '#1A1A1A' : 'linear-gradient(160deg,#FFFBF2 0%,#FFF5DC 60%,#FFEDBB 100%)', padding: '18px 20px 16px', borderBottom: `0.5px solid ${cfg.divider}` }}>
             <div style={{ display: 'flex', alignItems: 'center', gap: 12, marginBottom: 14 }}>
               <button onClick={() => setActiveTier(null)} style={{ width: 32, height: 32, borderRadius: '50%', border: `0.5px solid ${cfg.divider}`, background: isVip ? '#222' : '#fff', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
@@ -192,7 +293,6 @@ export default function ShopPage() {
             </div>
           </div>
 
-          {/* 商品 Grid */}
           <div style={{ padding: '14px 16px 28px' }}>
             {productsError ? (
               <div style={{ textAlign: 'center', padding: '48px 20px', color: '#A32D2D' }}>
@@ -244,7 +344,6 @@ export default function ShopPage() {
         </div>
         <BottomNav />
 
-        {/* 確認購買彈窗 */}
         {confirmProduct && (
           <div onClick={() => setConfirmProduct(null)} style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.45)', zIndex: 200, display: 'flex', alignItems: 'flex-end', justifyContent: 'center' }}>
             <div onClick={e => e.stopPropagation()} style={{ width: '100%', maxWidth: 390, background: '#fff', borderRadius: '16px 16px 0 0', padding: '0 0 32px' }}>
@@ -302,29 +401,14 @@ export default function ShopPage() {
           </div>
         )}
 
-        {/* 兌換成功 */}
-        {successProduct && (
-          <div onClick={() => setSuccessProduct(null)} style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.5)', zIndex: 300, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-            <div onClick={e => e.stopPropagation()} style={{ background: '#fff', borderRadius: 18, padding: '28px 24px', maxWidth: 300, width: '90%', textAlign: 'center', boxShadow: '0 8px 32px rgba(0,0,0,.2)' }}>
-              <div style={{ width: 56, height: 56, borderRadius: '50%', background: '#EAF3DE', display: 'flex', alignItems: 'center', justifyContent: 'center', margin: '0 auto 14px' }}>
-                <i className="fa-solid fa-check" style={{ fontSize: 24, color: '#388E3C' }}></i>
-              </div>
-              <div style={{ fontSize: 17, fontWeight: 800, color: '#2D1A00', marginBottom: 6 }}>兌換成功！</div>
-              <div style={{ fontSize: 13, color: '#888', marginBottom: 6 }}>{successProduct.name}</div>
-              <div style={{ fontSize: 12, color: '#E07B00', marginBottom: 20 }}>已扣除 {successProduct.price} 點</div>
-              <button onClick={() => setSuccessProduct(null)} style={{ width: '100%', padding: 12, background: 'linear-gradient(135deg,#BA7517,#D4A94A)', border: 'none', borderRadius: 10, fontSize: 14, fontWeight: 700, color: '#fff', cursor: 'pointer' }}>確定</button>
-            </div>
-          </div>
-        )}
+        {successProduct && <SuccessOverlay product={successProduct} onClose={() => setSuccessProduct(null)} />}
       </div>
     )
   }
 
-  // 商城主頁
   return (
     <div style={S.page}>
       <div style={{ flex: 1, overflowY: 'auto' }}>
-        {/* Hero */}
         <div style={{ background: 'linear-gradient(160deg,#FFFBF2 0%,#FFF5DC 60%,#FFEDBB 100%)', padding: '18px 20px 16px', borderBottom: '0.5px solid #F5E8C8' }}>
           <div style={{ fontSize: 9, color: '#BA7517', fontWeight: 600, letterSpacing: '0.1em', opacity: 0.6, marginBottom: 8 }}>W/NA PTCG × HUGO COLLECTIONS</div>
           <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 14 }}>
@@ -358,7 +442,7 @@ export default function ShopPage() {
               <i className="fa-solid fa-clock-rotate-left" style={{ fontSize: 11 }}></i>點數紀錄
             </button>
             <button onClick={() => setShowOrders(true)} style={{ flex: 1, padding: 8, background: '#FFFBF2', border: '0.5px solid #F5E8C8', borderRadius: 8, fontSize: 11, color: '#BA7517', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 5 }}>
-              <i className="fa-solid fa-receipt" style={{ fontSize: 11 }}></i>消費紀錄
+              <i className="fa-solid fa-receipt" style={{ fontSize: 11 }}></i>我的物品
             </button>
           </div>
         </div>
@@ -376,7 +460,6 @@ export default function ShopPage() {
             const count = tierProducts(tier).length
             return (
               <div key={tier} style={{ margin: '0 16px 12px', borderRadius: 16, overflow: 'hidden', background: cfg.cardBg, border: `1.5px solid ${cfg.cardBorder}` }}>
-                {/* Header */}
                 <div style={{ padding: '14px 16px 12px', display: 'flex', alignItems: 'center', gap: 12 }}>
                   <div style={{ width: 44, height: 44, borderRadius: 12, background: cfg.iconBg, border: isVip ? '1px solid #B8860B' : 'none', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
                     <i className={cfg.icon} style={{ fontSize: 20, color: cfg.iconColor }}></i>
@@ -393,9 +476,7 @@ export default function ShopPage() {
                     {accessible ? '開放中' : '等級不足'}
                   </div>
                 </div>
-                {/* Divider */}
                 <div style={{ height: '0.5px', margin: '0 16px', background: cfg.divider }} />
-                {/* Footer */}
                 {accessible ? (
                   <div style={{ padding: '11px 16px', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
                     <div style={{ fontSize: 11, color: isVip ? '#555' : '#bbb', display: 'flex', alignItems: 'center', gap: 5 }}>
@@ -449,33 +530,39 @@ export default function ShopPage() {
         </div>
       )}
 
-      {/* 消費紀錄 Sheet */}
+      {/* 我的物品 Sheet */}
       {showOrders && (
         <div onClick={() => setShowOrders(false)} style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.4)', zIndex: 100, display: 'flex', alignItems: 'flex-end', justifyContent: 'center' }}>
           <div onClick={e => e.stopPropagation()} style={{ width: '100%', maxWidth: 390, maxHeight: '80vh', background: '#fff', borderRadius: '16px 16px 0 0', display: 'flex', flexDirection: 'column' }}>
             <div style={{ width: 36, height: 4, borderRadius: 2, background: '#f0e8d0', margin: '12px auto 0', flexShrink: 0 }} />
             <div style={{ padding: '12px 20px 8px', borderBottom: '0.5px solid #f5f0e8', display: 'flex', justifyContent: 'space-between', flexShrink: 0 }}>
-              <div style={{ fontSize: 15, fontWeight: 700, color: '#2D1A00' }}><i className="fa-solid fa-receipt" style={{ color: '#E07B00', marginRight: 7 }}></i>消費紀錄</div>
+              <div style={{ fontSize: 15, fontWeight: 700, color: '#2D1A00' }}><i className="fa-solid fa-box" style={{ color: '#E07B00', marginRight: 7 }}></i>我的物品</div>
               <span style={{ fontSize: 11, color: '#bbb' }}>{shopOrders.length} 筆</span>
             </div>
             <div style={{ overflowY: 'auto', padding: '8px 20px 32px' }}>
               {shopOrders.length === 0 ? (
-                <div style={{ textAlign: 'center', padding: 32, color: '#bbb', fontSize: 13 }}>尚無消費紀錄</div>
-              ) : shopOrders.map(order => (
-                <div key={order.id} style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '11px 0', borderBottom: '0.5px solid #f5f0e8' }}>
-                  <div style={{ width: 44, height: 44, borderRadius: 8, overflow: 'hidden', flexShrink: 0, border: '0.5px solid #F5E8C8', background: '#FFF8EE', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                    {order.shop_products?.image_url
-                      ? <img src={order.shop_products.image_url} alt="" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
-                      : <i className="fa-solid fa-gift" style={{ fontSize: 18, color: '#D4A94A', opacity: 0.5 }}></i>
-                    }
+                <div style={{ textAlign: 'center', padding: 32, color: '#bbb', fontSize: 13 }}>尚無兌換紀錄</div>
+              ) : shopOrders.map(order => {
+                const sc = STATUS_CONFIG[order.status] || STATUS_CONFIG.pending
+                return (
+                  <div key={order.id} style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '12px 0', borderBottom: '0.5px solid #f5f0e8' }}>
+                    <div style={{ width: 48, height: 48, borderRadius: 10, overflow: 'hidden', flexShrink: 0, border: '0.5px solid #F5E8C8', background: '#FFF8EE', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                      {order.shop_products?.image_url
+                        ? <img src={order.shop_products.image_url} alt="" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+                        : <i className="fa-solid fa-gift" style={{ fontSize: 20, color: '#D4A94A', opacity: 0.5 }}></i>
+                      }
+                    </div>
+                    <div style={{ flex: 1 }}>
+                      <div style={{ fontSize: 13, fontWeight: 600, color: '#111' }}>{order.product_name}</div>
+                      <div style={{ fontSize: 11, color: '#bbb', marginTop: 1 }}>{new Date(order.created_at).toLocaleDateString('zh-TW')}</div>
+                      <div style={{ fontSize: 10, fontWeight: 600, color: '#E24B4A', marginTop: 2 }}>-{order.points_spent} 點</div>
+                    </div>
+                    <span style={{ fontSize: 10, fontWeight: 600, padding: '3px 10px', borderRadius: 99, background: sc.bg, color: sc.color, flexShrink: 0 }}>
+                      {sc.label}
+                    </span>
                   </div>
-                  <div style={{ flex: 1 }}>
-                    <div style={{ fontSize: 13, fontWeight: 600, color: '#111' }}>{order.product_name}</div>
-                    <div style={{ fontSize: 11, color: '#bbb', marginTop: 1 }}>{new Date(order.created_at).toLocaleDateString('zh-TW')}</div>
-                  </div>
-                  <div style={{ fontSize: 13, fontWeight: 700, color: '#E24B4A' }}>-{order.points_spent} 點</div>
-                </div>
-              ))}
+                )
+              })}
             </div>
           </div>
         </div>
