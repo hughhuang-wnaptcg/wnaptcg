@@ -329,11 +329,16 @@ export default function HomePage() {
 
         {/* 每日新聞 */}
         {news && (
-          <div style={{ padding: '12px 20px', borderBottom: '1px solid #f5f0e8' }}>
-            <div style={{ fontSize: 11, fontWeight: 500, color: '#888', display: 'flex', alignItems: 'center', gap: 5, marginBottom: 8 }}>
-              <i className="fa-solid fa-newspaper" style={{ fontSize: 13, color: '#BA7517' }}></i>每日新聞
+          <div style={{ padding: '16px 20px 0' }}>
+            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 10 }}>
+              <div style={S.secLeft}>
+                <span style={S.typeBadge('linear-gradient(135deg,#185FA5,#378ADD)')}>
+                  <i className="fa-solid fa-newspaper"></i>
+                </span>
+                每日新聞
+              </div>
             </div>
-            <div style={{ border: '1px solid #f0e8d0', borderRadius: 8, overflow: 'hidden', display: 'flex', cursor: news?.body ? 'pointer' : 'default', background: 'linear-gradient(135deg,#fdfaf4,#fff)' }} onClick={() => news?.body && setNewsModal(true)}>
+            <div style={{ border: '1px solid #f0e8d0', borderRadius: 12, overflow: 'hidden', display: 'flex', cursor: news?.body ? 'pointer' : 'default', background: 'linear-gradient(135deg,#fdfaf4,#fff)', marginBottom: 4 }} onClick={() => news?.body && setNewsModal(true)}>
               <div style={{ width: 80, minHeight: 64, background: 'linear-gradient(135deg,#f5ede0,#f0e8d0)', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
                 {news.image_url ? <img src={news.image_url} alt="news" style={{ width: '100%', height: '100%', objectFit: 'cover' }} /> : <i className="fa-solid fa-image" style={{ fontSize: 20, color: '#D4A94A' }}></i>}
               </div>
@@ -348,7 +353,21 @@ export default function HomePage() {
 
         <div style={{ padding: '16px 20px 0' }}>
 
-          {/* 戰績牆 */}
+          {/* 排行榜入口 ← 移到最前 */}
+          <div
+            onClick={() => setShowLeaderboard(true)}
+            style={{ display: 'flex', alignItems: 'center', gap: 12, padding: '11px 14px', background: 'linear-gradient(135deg,#FFF8EE,#FFFBF2)', border: '1px solid #F5E8C8', borderRadius: 12, cursor: 'pointer', marginBottom: 16, boxShadow: '0 2px 8px rgba(186,117,23,.07)' }}>
+            <div style={{ width: 34, height: 34, borderRadius: 10, background: 'linear-gradient(135deg,#BA7517,#D4A94A)', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
+              <i className="fa-solid fa-ranking-star" style={{ fontSize: 15, color: '#fff' }}></i>
+            </div>
+            <div style={{ flex: 1 }}>
+              <div style={{ fontSize: 13, fontWeight: 700, color: '#2D1A00' }}>積分排行榜</div>
+              <div style={{ fontSize: 10, color: '#bbb', marginTop: 1 }}>查看會員積分排名 →</div>
+            </div>
+            <i className="fa-solid fa-chevron-right" style={{ fontSize: 11, color: '#D4A94A' }}></i>
+          </div>
+
+          {/* 戰績牆 ← 移到排行榜後面 */}
           <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 10 }}>
             <div style={S.secLeft}>
               <span style={S.typeBadge('linear-gradient(135deg,#BA7517,#D4A94A)')}><i className="fa-solid fa-trophy"></i></span>
@@ -356,7 +375,7 @@ export default function HomePage() {
             </div>
             <span style={{ fontSize: 11, color: '#ccc', cursor: 'pointer' }} onClick={() => navigate('/wall')}>全部 →</span>
           </div>
-          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3,1fr)', gap: 7, marginBottom: 10 }}>
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3,1fr)', gap: 7, marginBottom: 16 }}>
             {recentCards.map((card, idx) => (
               <div key={card.id} onClick={() => navigate('/wall')} style={S.card}>
                 <div style={{ aspectRatio: '3/4', background: '#f8f5f0', display: 'flex', alignItems: 'center', justifyContent: 'center', position: 'relative', overflow: 'hidden' }}>
@@ -370,20 +389,6 @@ export default function HomePage() {
                 </div>
               </div>
             ))}
-          </div>
-
-          {/* 排行榜入口 */}
-          <div
-            onClick={() => setShowLeaderboard(true)}
-            style={{ display: 'flex', alignItems: 'center', gap: 12, padding: '11px 14px', background: 'linear-gradient(135deg,#FFF8EE,#FFFBF2)', border: '1px solid #F5E8C8', borderRadius: 12, cursor: 'pointer', marginBottom: 16, boxShadow: '0 2px 8px rgba(186,117,23,.07)' }}>
-            <div style={{ width: 34, height: 34, borderRadius: 10, background: 'linear-gradient(135deg,#BA7517,#D4A94A)', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
-              <i className="fa-solid fa-ranking-star" style={{ fontSize: 15, color: '#fff' }}></i>
-            </div>
-            <div style={{ flex: 1 }}>
-              <div style={{ fontSize: 13, fontWeight: 700, color: '#2D1A00' }}>積分排行榜</div>
-              <div style={{ fontSize: 10, color: '#bbb', marginTop: 1 }}>查看會員積分排名 →</div>
-            </div>
-            <i className="fa-solid fa-chevron-right" style={{ fontSize: 11, color: '#D4A94A' }}></i>
           </div>
 
           {/* Boss */}
