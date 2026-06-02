@@ -152,26 +152,13 @@ export default function ShopPage() {
     if (confirmQty < 1) return
     setBuying(true)
     try {
-      const newPoints = member.shop_points - totalCost
-      await supabase.from('members').update({ shop_points: newPoints }).eq('id', member.id)
-      await supabase.from('shop_products').update({ stock: confirmProduct.stock - confirmQty }).eq('id', confirmProduct.id)
-
-      // 每個數量建立一筆訂單
-      const orderRows = Array.from({ length: confirmQty }, () => ({
-        member_id: member.id,
-        product_id: confirmProduct.id,
-        product_name: confirmProduct.name,
-        points_spent: confirmProduct.price,
-        status: 'pending',
-      }))
-      await supabase.from('shop_orders').insert(orderRows)
-      await supabase.from('points_logs').insert({
-        member_id: member.id,
-        points: -totalCost,
-        type: 'shop',
-        note: `兌換：${confirmProduct.name} × ${confirmQty}`,
+      const { data, error } = await supabase.rpc('purchase_shop_product', {
+        p_product_id: confirmProduct.id,
+        p_quantity: confirmQty,
       })
-      setMember({ ...member, shop_points: newPoints })
+      if (error) throw error
+
+      setMember({ ...member, shop_points: data.shop_points })
       setSuccessProduct(confirmProduct)
       setSuccessQty(confirmQty)
       setConfirmProduct(null)
@@ -186,7 +173,11 @@ export default function ShopPage() {
     if (selectedIds.length === 0) return
     setRequesting(true)
     try {
-      await supabase.from('shop_orders').update({ status: 'shipping_requested' }).in('id', selectedIds)
+      const { error } = await supabase.rpc('request_shop_order_shipping', {
+        p_order_ids: selectedIds,
+      })
+      if (error) throw error
+
       setSelectedIds([])
       setRequestSuccess(true)
       await fetchData()
