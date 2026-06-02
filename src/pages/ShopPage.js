@@ -5,58 +5,25 @@ import BottomNav from '../components/BottomNav'
 
 const TIER_CONFIG = {
   general: {
-    key: 'general',
-    name: '一般商城',
-    icon: 'fa-solid fa-store',
-    iconColor: '#E07B00',
-    cardBg: '#fff',
-    cardBorder: '#F5E8C8',
-    headerBg: 'linear-gradient(135deg,#FAEEDA,#FFF3D0)',
-    iconBg: 'linear-gradient(135deg,#FAEEDA,#FFF3D0)',
-    badgeOpen: { bg: '#FFF3E0', color: '#E07B00' },
-    badgeLocked: { bg: '#f5f5f5', color: '#bbb' },
-    lockColor: '#CBD5E1',
-    lockTextColor: '#94A3B8',
-    divider: '#F5E8C8',
-    enterColor: '#E07B00',
-    allowedLevels: ['精靈球', '超級球'],
-    lockMsg: '精靈球以上即可進入',
+    key: 'general', name: '一般商城', icon: 'fa-solid fa-store', iconColor: '#E07B00',
+    cardBg: '#fff', cardBorder: '#F5E8C8', iconBg: 'linear-gradient(135deg,#FAEEDA,#FFF3D0)',
+    badgeOpen: { bg: '#FFF3E0', color: '#E07B00' }, badgeLocked: { bg: '#f5f5f5', color: '#bbb' },
+    lockColor: '#CBD5E1', lockTextColor: '#94A3B8', divider: '#F5E8C8', enterColor: '#E07B00',
+    allowedLevels: ['精靈球', '超級球'], lockMsg: '精靈球以上即可進入',
   },
   premium: {
-    key: 'premium',
-    name: '高級商城',
-    icon: 'fa-solid fa-gem',
-    iconColor: '#3B82F6',
-    cardBg: '#fff',
-    cardBorder: '#CBD5E1',
-    headerBg: 'linear-gradient(135deg,#E8EFF6,#CBD5E1)',
-    iconBg: 'linear-gradient(135deg,#E8EFF6,#CBD5E1)',
-    badgeOpen: { bg: '#EFF6FF', color: '#3B82F6' },
-    badgeLocked: { bg: '#EFF6FF', color: '#3B82F6' },
-    lockColor: '#CBD5E1',
-    lockTextColor: '#94A3B8',
-    divider: '#E2E8F0',
-    enterColor: '#3B82F6',
-    allowedLevels: ['高級球', '豪華球', '貴重球', '究極球'],
-    lockMsg: '升至高級球以上即可進入',
+    key: 'premium', name: '高級商城', icon: 'fa-solid fa-gem', iconColor: '#3B82F6',
+    cardBg: '#fff', cardBorder: '#CBD5E1', iconBg: 'linear-gradient(135deg,#E8EFF6,#CBD5E1)',
+    badgeOpen: { bg: '#EFF6FF', color: '#3B82F6' }, badgeLocked: { bg: '#EFF6FF', color: '#3B82F6' },
+    lockColor: '#CBD5E1', lockTextColor: '#94A3B8', divider: '#E2E8F0', enterColor: '#3B82F6',
+    allowedLevels: ['高級球', '豪華球', '貴重球', '究極球'], lockMsg: '升至高級球以上即可進入',
   },
   vip: {
-    key: 'vip',
-    name: 'VIP 商城',
-    icon: 'fa-solid fa-crown',
-    iconColor: '#F5D060',
-    cardBg: '#1A1A1A',
-    cardBorder: '#B8860B',
-    headerBg: '#2A2A1A',
-    iconBg: '#2A2A1A',
-    badgeOpen: { bg: '#2A2200', color: '#F5D060' },
-    badgeLocked: { bg: '#2A2200', color: '#F5D060' },
-    lockColor: '#B8860B',
-    lockTextColor: '#666',
-    divider: '#B8860B44',
-    enterColor: '#F5D060',
-    allowedLevels: ['大師球'],
-    lockMsg: '僅大師球會員可進入',
+    key: 'vip', name: 'VIP 商城', icon: 'fa-solid fa-crown', iconColor: '#F5D060',
+    cardBg: '#1A1A1A', cardBorder: '#B8860B', iconBg: '#2A2A1A',
+    badgeOpen: { bg: '#2A2200', color: '#F5D060' }, badgeLocked: { bg: '#2A2200', color: '#F5D060' },
+    lockColor: '#B8860B', lockTextColor: '#666', divider: '#B8860B44', enterColor: '#F5D060',
+    allowedLevels: ['大師球'], lockMsg: '僅大師球會員可進入',
   },
 }
 
@@ -72,15 +39,8 @@ const POKEBALL_SVG = {
 
 function BallTag({ level, cls }) {
   return (
-    <span style={{
-      display: 'inline-flex', alignItems: 'center', gap: 4,
-      fontSize: 10, padding: '2px 8px 2px 3px', borderRadius: 99,
-      background: cls === 'vip' ? '#222' : cls === 'plat' ? '#F8FAFC' : '#FFFBF2',
-      color: cls === 'vip' ? '#A0956A' : cls === 'plat' ? '#64748B' : '#BA7517',
-      border: `0.5px solid ${cls === 'vip' ? '#B8860B55' : cls === 'plat' ? '#E2E8F0' : '#F5E8C8'}`,
-    }}>
-      <span dangerouslySetInnerHTML={{ __html: POKEBALL_SVG[level] }} style={{ display: 'inline-flex', alignItems: 'center' }} />
-      {level}
+    <span style={{ display: 'inline-flex', alignItems: 'center', gap: 4, fontSize: 10, padding: '2px 8px 2px 3px', borderRadius: 99, background: cls === 'vip' ? '#222' : cls === 'plat' ? '#F8FAFC' : '#FFFBF2', color: cls === 'vip' ? '#A0956A' : cls === 'plat' ? '#64748B' : '#BA7517', border: `0.5px solid ${cls === 'vip' ? '#B8860B55' : cls === 'plat' ? '#E2E8F0' : '#F5E8C8'}` }}>
+      <span dangerouslySetInnerHTML={{ __html: POKEBALL_SVG[level] }} style={{ display: 'inline-flex', alignItems: 'center' }} />{level}
     </span>
   )
 }
@@ -89,23 +49,19 @@ function canAccess(memberLevel, tier) {
   return TIER_CONFIG[tier].allowedLevels.includes(memberLevel)
 }
 
-function SuccessOverlay({ product, onClose }) {
+function SuccessOverlay({ product, qty, onClose }) {
   const COLORS = ['#BA7517','#E24B4A','#378ADD','#06C755','#FAC775','#F85888','#7038F8','#78C850','#FF6B00','#00CFFF']
   const pieces = Array.from({ length: 28 }, (_, i) => ({
-    color: COLORS[i % COLORS.length],
-    x: 10 + Math.random() * 80,
-    delay: Math.random() * 0.5,
-    dur: 0.8 + Math.random() * 0.6,
-    size: 5 + Math.random() * 6,
-    rotate: Math.random() * 360,
-    shape: i % 3,
+    color: COLORS[i % COLORS.length], x: 10 + Math.random() * 80,
+    delay: Math.random() * 0.5, dur: 0.8 + Math.random() * 0.6,
+    size: 5 + Math.random() * 6, rotate: Math.random() * 360, shape: i % 3,
   }))
   return (
     <div onClick={onClose} style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.5)', zIndex: 300, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
       <style>{`
-        @keyframes confettiFall { 0%{transform:translateY(-20px) rotate(0deg);opacity:1} 100%{transform:translateY(280px) rotate(720deg);opacity:0} }
-        @keyframes checkPop { 0%{transform:scale(0);opacity:0} 60%{transform:scale(1.15);opacity:1} 80%{transform:scale(0.95)} 100%{transform:scale(1);opacity:1} }
-        @keyframes cardSlideUp { 0%{transform:translateY(40px);opacity:0} 100%{transform:translateY(0);opacity:1} }
+        @keyframes confettiFall{0%{transform:translateY(-20px) rotate(0deg);opacity:1}100%{transform:translateY(280px) rotate(720deg);opacity:0}}
+        @keyframes checkPop{0%{transform:scale(0);opacity:0}60%{transform:scale(1.15);opacity:1}80%{transform:scale(0.95)}100%{transform:scale(1);opacity:1}}
+        @keyframes cardSlideUp{0%{transform:translateY(40px);opacity:0}100%{transform:translateY(0);opacity:1}}
       `}</style>
       <div style={{ position: 'absolute', inset: 0, pointerEvents: 'none', overflow: 'hidden' }}>
         {pieces.map((p, i) => (
@@ -117,9 +73,9 @@ function SuccessOverlay({ product, onClose }) {
           <i className="fa-solid fa-check" style={{ fontSize: 26, color: '#388E3C' }}></i>
         </div>
         <div style={{ fontSize: 18, fontWeight: 800, color: '#2D1A00', marginBottom: 6 }}>兌換成功！</div>
-        <div style={{ fontSize: 13, color: '#888', marginBottom: 4 }}>{product.name}</div>
+        <div style={{ fontSize: 13, color: '#888', marginBottom: 4 }}>{product.name} × {qty}</div>
         <div style={{ fontSize: 12, color: '#E07B00', fontWeight: 600, marginBottom: 6 }}>
-          <i className="fa-solid fa-coins" style={{ fontSize: 10, marginRight: 3 }}></i>已扣除 {product.price} 點
+          <i className="fa-solid fa-coins" style={{ fontSize: 10, marginRight: 3 }}></i>已扣除 {product.price * qty} 點
         </div>
         <div style={{ fontSize: 11, color: '#bbb', marginBottom: 20, padding: '8px 12px', background: '#FFFBF2', borderRadius: 8, border: '0.5px solid #F5E8C8' }}>
           商品已進入「我的物品」，可前往申請出貨
@@ -136,15 +92,18 @@ export default function ShopPage() {
   const [pointsLogs, setPointsLogs] = useState([])
   const [pendingOrders, setPendingOrders] = useState([])
   const [shippedOrders, setShippedOrders] = useState([])
+  const [purchasedCounts, setPurchasedCounts] = useState({}) // product_id -> count
   const [loading, setLoading] = useState(true)
   const [productsError, setProductsError] = useState(null)
   const [activeTier, setActiveTier] = useState(null)
   const [confirmProduct, setConfirmProduct] = useState(null)
+  const [confirmQty, setConfirmQty] = useState(1)
   const [buying, setBuying] = useState(false)
   const [showPointsLog, setShowPointsLog] = useState(false)
   const [showMyItems, setShowMyItems] = useState(false)
   const [showShipped, setShowShipped] = useState(false)
   const [successProduct, setSuccessProduct] = useState(null)
+  const [successQty, setSuccessQty] = useState(1)
   const [selectedIds, setSelectedIds] = useState([])
   const [requesting, setRequesting] = useState(false)
   const [requestSuccess, setRequestSuccess] = useState(false)
@@ -156,39 +115,65 @@ export default function ShopPage() {
     const [{ data: prods, error: pe }, { data: logs }, { data: allOrders }] = await Promise.all([
       supabase.from('shop_products').select('*').eq('is_active', true).order('created_at', { ascending: false }),
       supabase.from('points_logs').select('*').eq('member_id', member.id).order('created_at', { ascending: false }).limit(30),
-      supabase.from('shop_orders').select('*, shop_products(name, image_url)').eq('member_id', member.id).order('created_at', { ascending: false }).limit(100),
+      supabase.from('shop_orders').select('*, shop_products(name, image_url)').eq('member_id', member.id).order('created_at', { ascending: false }).limit(200),
     ])
     setProductsError(pe)
     setProducts(prods || [])
     setPointsLogs(logs || [])
-    setPendingOrders((allOrders || []).filter(o => o.status === 'pending'))
-    setShippedOrders((allOrders || []).filter(o => o.status === 'shipped'))
+    const all = allOrders || []
+    setPendingOrders(all.filter(o => o.status === 'pending' || o.status === 'shipping_requested'))
+    setShippedOrders(all.filter(o => o.status === 'shipped'))
+
+    // 計算每個商品已購買幾個（未取消）
+    const counts = {}
+    all.filter(o => o.status !== 'cancelled').forEach(o => {
+      counts[o.product_id] = (counts[o.product_id] || 0) + 1
+    })
+    setPurchasedCounts(counts)
     setLoading(false)
+  }
+
+  function openConfirm(prod) {
+    setConfirmProduct(prod)
+    setConfirmQty(1)
+  }
+
+  // 計算這個商品還能買幾個
+  function remainingAllowance(prod) {
+    const max = prod.max_per_member || 1
+    const bought = purchasedCounts[prod.id] || 0
+    return Math.max(0, max - bought)
   }
 
   async function handleBuy() {
     if (!confirmProduct || !member) return
-    if (member.shop_points < confirmProduct.price) return
+    const totalCost = confirmProduct.price * confirmQty
+    if (member.shop_points < totalCost) return
+    if (confirmQty < 1) return
     setBuying(true)
     try {
-      const newPoints = member.shop_points - confirmProduct.price
+      const newPoints = member.shop_points - totalCost
       await supabase.from('members').update({ shop_points: newPoints }).eq('id', member.id)
-      await supabase.from('shop_products').update({ stock: confirmProduct.stock - 1 }).eq('id', confirmProduct.id)
-      await supabase.from('shop_orders').insert({
+      await supabase.from('shop_products').update({ stock: confirmProduct.stock - confirmQty }).eq('id', confirmProduct.id)
+
+      // 每個數量建立一筆訂單
+      const orderRows = Array.from({ length: confirmQty }, () => ({
         member_id: member.id,
         product_id: confirmProduct.id,
         product_name: confirmProduct.name,
         points_spent: confirmProduct.price,
         status: 'pending',
-      })
+      }))
+      await supabase.from('shop_orders').insert(orderRows)
       await supabase.from('points_logs').insert({
         member_id: member.id,
-        points: -confirmProduct.price,
+        points: -totalCost,
         type: 'shop',
-        note: `兌換：${confirmProduct.name}`,
+        note: `兌換：${confirmProduct.name} × ${confirmQty}`,
       })
       setMember({ ...member, shop_points: newPoints })
       setSuccessProduct(confirmProduct)
+      setSuccessQty(confirmQty)
       setConfirmProduct(null)
       await fetchData()
     } catch (err) {
@@ -201,9 +186,7 @@ export default function ShopPage() {
     if (selectedIds.length === 0) return
     setRequesting(true)
     try {
-      await supabase.from('shop_orders')
-        .update({ status: 'shipping_requested' })
-        .in('id', selectedIds)
+      await supabase.from('shop_orders').update({ status: 'shipping_requested' }).in('id', selectedIds)
       setSelectedIds([])
       setRequestSuccess(true)
       await fetchData()
@@ -263,12 +246,21 @@ export default function ShopPage() {
               <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2,1fr)', gap: 10 }}>
                 {tierProds.map(prod => {
                   const soldOut = prod.stock <= 0
+                  const remaining = remainingAllowance(prod)
+                  const maxed = remaining <= 0
+                  const disabled = soldOut || maxed
                   return (
-                    <div key={prod.id} onClick={() => !soldOut && setConfirmProduct(prod)}
-                      style={{ background: isVip ? '#222' : '#fff', border: `0.5px solid ${cfg.divider}`, borderRadius: 14, overflow: 'hidden', cursor: soldOut ? 'not-allowed' : 'pointer', opacity: soldOut ? 0.5 : 1, boxShadow: isVip ? 'none' : '0 2px 10px rgba(186,117,23,.07)' }}>
+                    <div key={prod.id} onClick={() => !disabled && openConfirm(prod)}
+                      style={{ background: isVip ? '#222' : '#fff', border: `0.5px solid ${cfg.divider}`, borderRadius: 14, overflow: 'hidden', cursor: disabled ? 'not-allowed' : 'pointer', opacity: disabled ? 0.5 : 1, boxShadow: isVip ? 'none' : '0 2px 10px rgba(186,117,23,.07)' }}>
                       <div style={{ aspectRatio: '1', background: isVip ? '#1A1A1A' : '#FFF8EE', display: 'flex', alignItems: 'center', justifyContent: 'center', position: 'relative', overflow: 'hidden' }}>
                         {prod.image_url ? <img src={prod.image_url} alt="" style={{ width: '100%', height: '100%', objectFit: 'cover' }} /> : <i className="fa-solid fa-gift" style={{ fontSize: 36, color: isVip ? '#B8860B' : '#D4A94A', opacity: 0.4 }}></i>}
                         {soldOut && <div style={{ position: 'absolute', inset: 0, background: 'rgba(0,0,0,0.4)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}><span style={{ fontSize: 12, fontWeight: 700, color: '#fff', background: 'rgba(0,0,0,0.6)', padding: '4px 10px', borderRadius: 8 }}>已售完</span></div>}
+                        {!soldOut && maxed && <div style={{ position: 'absolute', inset: 0, background: 'rgba(0,0,0,0.4)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}><span style={{ fontSize: 12, fontWeight: 700, color: '#fff', background: 'rgba(0,0,0,0.6)', padding: '4px 10px', borderRadius: 8 }}>已達上限</span></div>}
+                        {(prod.max_per_member || 1) > 1 && !disabled && (
+                          <div style={{ position: 'absolute', top: 6, right: 6, fontSize: 9, fontWeight: 700, background: 'rgba(0,0,0,0.55)', color: '#fff', padding: '2px 6px', borderRadius: 99 }}>
+                            已買 {purchasedCounts[prod.id] || 0}/{prod.max_per_member}
+                          </div>
+                        )}
                       </div>
                       <div style={{ padding: '10px 10px 12px' }}>
                         <div style={{ fontSize: 12, fontWeight: 600, color: isVip ? '#E8D5A0' : '#2D1A00', marginBottom: 4 }}>{prod.name}</div>
@@ -287,55 +279,79 @@ export default function ShopPage() {
         </div>
         <BottomNav />
 
-        {confirmProduct && (
-          <div onClick={() => setConfirmProduct(null)} style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.45)', zIndex: 200, display: 'flex', alignItems: 'flex-end', justifyContent: 'center' }}>
-            <div onClick={e => e.stopPropagation()} style={{ width: '100%', maxWidth: 390, background: '#fff', borderRadius: '16px 16px 0 0', padding: '0 0 32px' }}>
-              <div style={{ width: 36, height: 4, borderRadius: 2, background: '#f0e8d0', margin: '12px auto 16px' }} />
-              <div style={{ padding: '0 20px' }}>
-                <div style={{ fontSize: 16, fontWeight: 800, color: '#2D1A00', marginBottom: 4 }}>確認兌換</div>
-                <div style={{ fontSize: 12, color: '#bbb', marginBottom: 18 }}>點數扣除後無法退還，請確認後再兌換</div>
-                <div style={{ display: 'flex', gap: 14, padding: 14, background: '#FFFBF2', borderRadius: 12, border: '0.5px solid #F5E8C8', marginBottom: 16 }}>
-                  <div style={{ width: 64, height: 64, borderRadius: 10, background: '#FFF5E0', overflow: 'hidden', flexShrink: 0, display: 'flex', alignItems: 'center', justifyContent: 'center', border: '0.5px solid #F5E8C8' }}>
-                    {confirmProduct.image_url ? <img src={confirmProduct.image_url} alt="" style={{ width: '100%', height: '100%', objectFit: 'cover' }} /> : <i className="fa-solid fa-gift" style={{ fontSize: 28, color: '#D4A94A', opacity: 0.5 }}></i>}
+        {/* 確認兌換 */}
+        {confirmProduct && (() => {
+          const remaining = remainingAllowance(confirmProduct)
+          const maxQty = Math.min(remaining, confirmProduct.stock)
+          const totalCost = confirmProduct.price * confirmQty
+          const canAfford = (member.shop_points || 0) >= totalCost
+          return (
+            <div onClick={() => setConfirmProduct(null)} style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.45)', zIndex: 200, display: 'flex', alignItems: 'flex-end', justifyContent: 'center' }}>
+              <div onClick={e => e.stopPropagation()} style={{ width: '100%', maxWidth: 390, background: '#fff', borderRadius: '16px 16px 0 0', padding: '0 0 32px' }}>
+                <div style={{ width: 36, height: 4, borderRadius: 2, background: '#f0e8d0', margin: '12px auto 16px' }} />
+                <div style={{ padding: '0 20px' }}>
+                  <div style={{ fontSize: 16, fontWeight: 800, color: '#2D1A00', marginBottom: 4 }}>確認兌換</div>
+                  <div style={{ fontSize: 12, color: '#bbb', marginBottom: 18 }}>點數扣除後無法退還，請確認後再兌換</div>
+                  <div style={{ display: 'flex', gap: 14, padding: 14, background: '#FFFBF2', borderRadius: 12, border: '0.5px solid #F5E8C8', marginBottom: 16 }}>
+                    <div style={{ width: 64, height: 64, borderRadius: 10, background: '#FFF5E0', overflow: 'hidden', flexShrink: 0, display: 'flex', alignItems: 'center', justifyContent: 'center', border: '0.5px solid #F5E8C8' }}>
+                      {confirmProduct.image_url ? <img src={confirmProduct.image_url} alt="" style={{ width: '100%', height: '100%', objectFit: 'cover' }} /> : <i className="fa-solid fa-gift" style={{ fontSize: 28, color: '#D4A94A', opacity: 0.5 }}></i>}
+                    </div>
+                    <div style={{ flex: 1 }}>
+                      <div style={{ fontSize: 14, fontWeight: 700, color: '#2D1A00', marginBottom: 4 }}>{confirmProduct.name}</div>
+                      {confirmProduct.description && <div style={{ fontSize: 11, color: '#bbb', marginBottom: 6 }}>{confirmProduct.description}</div>}
+                      <div style={{ fontSize: 12, color: '#E07B00', fontWeight: 700 }}><i className="fa-solid fa-coins" style={{ fontSize: 10, marginRight: 3 }}></i>{confirmProduct.price} 點 / 個</div>
+                    </div>
                   </div>
-                  <div style={{ flex: 1 }}>
-                    <div style={{ fontSize: 14, fontWeight: 700, color: '#2D1A00', marginBottom: 4 }}>{confirmProduct.name}</div>
-                    {confirmProduct.description && <div style={{ fontSize: 11, color: '#bbb', marginBottom: 8 }}>{confirmProduct.description}</div>}
-                    <div style={{ fontSize: 13, fontWeight: 800, color: '#E07B00' }}><i className="fa-solid fa-coins" style={{ fontSize: 11, marginRight: 3 }}></i>{confirmProduct.price} 點</div>
+
+                  {/* 數量選擇 */}
+                  {maxQty > 1 && (
+                    <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '10px 14px', background: '#f8f5f0', borderRadius: 10, marginBottom: 14 }}>
+                      <span style={{ fontSize: 13, color: '#666' }}>兌換數量</span>
+                      <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
+                        <button onClick={() => setConfirmQty(q => Math.max(1, q - 1))}
+                          style={{ width: 28, height: 28, borderRadius: '50%', border: '1.5px solid #f0e8d0', background: '#fff', fontSize: 16, color: '#BA7517', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: 700 }}>−</button>
+                        <span style={{ fontSize: 16, fontWeight: 800, color: '#2D1A00', minWidth: 24, textAlign: 'center' }}>{confirmQty}</span>
+                        <button onClick={() => setConfirmQty(q => Math.min(maxQty, q + 1))}
+                          style={{ width: 28, height: 28, borderRadius: '50%', border: '1.5px solid #f0e8d0', background: '#fff', fontSize: 16, color: '#BA7517', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: 700 }}>＋</button>
+                      </div>
+                      <span style={{ fontSize: 11, color: '#bbb' }}>最多 {maxQty} 個</span>
+                    </div>
+                  )}
+
+                  <div style={{ background: '#f8f5f0', borderRadius: 10, padding: '10px 14px', marginBottom: 18 }}>
+                    <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 12, color: '#666', marginBottom: 4 }}>
+                      <span>目前點數</span><span style={{ fontWeight: 700, color: '#2D1A00' }}>{(member.shop_points || 0).toLocaleString()} 點</span>
+                    </div>
+                    <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 12, color: '#666', marginBottom: 4 }}>
+                      <span>兌換費用 × {confirmQty}</span><span style={{ fontWeight: 700, color: '#E24B4A' }}>-{totalCost} 點</span>
+                    </div>
+                    <div style={{ height: '0.5px', background: '#f0e8d0', margin: '6px 0' }} />
+                    <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 12, color: '#666' }}>
+                      <span>兌換後點數</span>
+                      <span style={{ fontWeight: 800, color: canAfford ? '#E07B00' : '#E24B4A' }}>
+                        {((member.shop_points || 0) - totalCost).toLocaleString()} 點
+                      </span>
+                    </div>
                   </div>
-                </div>
-                <div style={{ background: '#f8f5f0', borderRadius: 10, padding: '10px 14px', marginBottom: 18 }}>
-                  <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 12, color: '#666', marginBottom: 4 }}>
-                    <span>目前點數</span><span style={{ fontWeight: 700, color: '#2D1A00' }}>{(member.shop_points || 0).toLocaleString()} 點</span>
+                  {!canAfford && (
+                    <div style={{ background: '#FCEBEB', border: '0.5px solid #F09595', borderRadius: 8, padding: '8px 12px', fontSize: 12, color: '#A32D2D', marginBottom: 14, display: 'flex', alignItems: 'center', gap: 6 }}>
+                      <i className="fa-solid fa-triangle-exclamation"></i> 點數不足，無法兌換
+                    </div>
+                  )}
+                  <div style={{ display: 'flex', gap: 8 }}>
+                    <button onClick={() => setConfirmProduct(null)} style={{ flex: 1, padding: 12, border: '0.5px solid #f0e8d0', borderRadius: 10, fontSize: 14, color: '#888', background: '#fdfaf4', cursor: 'pointer' }}>取消</button>
+                    <button onClick={handleBuy} disabled={buying || !canAfford}
+                      style={{ flex: 2, padding: 12, background: buying || !canAfford ? '#ccc' : 'linear-gradient(135deg,#BA7517,#D4A94A)', border: 'none', borderRadius: 10, fontSize: 14, fontWeight: 700, color: '#fff', cursor: buying || !canAfford ? 'not-allowed' : 'pointer' }}>
+                      {buying ? '處理中...' : `確認兌換${confirmQty > 1 ? ` × ${confirmQty}` : ''}`}
+                    </button>
                   </div>
-                  <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 12, color: '#666', marginBottom: 4 }}>
-                    <span>兌換費用</span><span style={{ fontWeight: 700, color: '#E24B4A' }}>-{confirmProduct.price} 點</span>
-                  </div>
-                  <div style={{ height: '0.5px', background: '#f0e8d0', margin: '6px 0' }} />
-                  <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 12, color: '#666' }}>
-                    <span>兌換後點數</span>
-                    <span style={{ fontWeight: 800, color: (member.shop_points || 0) - confirmProduct.price >= 0 ? '#E07B00' : '#E24B4A' }}>
-                      {((member.shop_points || 0) - confirmProduct.price).toLocaleString()} 點
-                    </span>
-                  </div>
-                </div>
-                {(member.shop_points || 0) < confirmProduct.price && (
-                  <div style={{ background: '#FCEBEB', border: '0.5px solid #F09595', borderRadius: 8, padding: '8px 12px', fontSize: 12, color: '#A32D2D', marginBottom: 14, display: 'flex', alignItems: 'center', gap: 6 }}>
-                    <i className="fa-solid fa-triangle-exclamation"></i> 點數不足，無法兌換
-                  </div>
-                )}
-                <div style={{ display: 'flex', gap: 8 }}>
-                  <button onClick={() => setConfirmProduct(null)} style={{ flex: 1, padding: 12, border: '0.5px solid #f0e8d0', borderRadius: 10, fontSize: 14, color: '#888', background: '#fdfaf4', cursor: 'pointer' }}>取消</button>
-                  <button onClick={handleBuy} disabled={buying || (member.shop_points || 0) < confirmProduct.price}
-                    style={{ flex: 2, padding: 12, background: buying || (member.shop_points || 0) < confirmProduct.price ? '#ccc' : 'linear-gradient(135deg,#BA7517,#D4A94A)', border: 'none', borderRadius: 10, fontSize: 14, fontWeight: 700, color: '#fff', cursor: 'pointer' }}>
-                    {buying ? '處理中...' : '確認兌換'}
-                  </button>
                 </div>
               </div>
             </div>
-          </div>
-        )}
-        {successProduct && <SuccessOverlay product={successProduct} onClose={() => setSuccessProduct(null)} />}
+          )
+        })()}
+
+        {successProduct && <SuccessOverlay product={successProduct} qty={successQty} onClose={() => setSuccessProduct(null)} />}
       </div>
     )
   }
@@ -435,7 +451,7 @@ export default function ShopPage() {
         </div>
       </div>
 
-      {/* 點數紀錄 Sheet */}
+      {/* 點數紀錄 */}
       {showPointsLog && (
         <div onClick={() => setShowPointsLog(false)} style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.4)', zIndex: 100, display: 'flex', alignItems: 'flex-end', justifyContent: 'center' }}>
           <div onClick={e => e.stopPropagation()} style={{ width: '100%', maxWidth: 390, maxHeight: '80vh', background: '#fff', borderRadius: '16px 16px 0 0', display: 'flex', flexDirection: 'column' }}>
@@ -463,7 +479,7 @@ export default function ShopPage() {
         </div>
       )}
 
-      {/* 我的物品 Sheet */}
+      {/* 我的物品 */}
       {showMyItems && (
         <div onClick={() => { setShowMyItems(false); setSelectedIds([]) }} style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.4)', zIndex: 100, display: 'flex', alignItems: 'flex-end', justifyContent: 'center' }}>
           <div onClick={e => e.stopPropagation()} style={{ width: '100%', maxWidth: 390, maxHeight: '80vh', background: '#fff', borderRadius: '16px 16px 0 0', display: 'flex', flexDirection: 'column' }}>
@@ -474,42 +490,38 @@ export default function ShopPage() {
             </div>
             {pendingOrders.length > 0 && (
               <div style={{ padding: '8px 20px', background: '#FFFBF2', borderBottom: '0.5px solid #f5f0e8', fontSize: 11, color: '#BA7517', display: 'flex', alignItems: 'center', gap: 6, flexShrink: 0 }}>
-                <i className="fa-solid fa-circle-info" style={{ fontSize: 11 }}></i>
-                勾選商品後點「申請出貨」，後台將安排出貨
+                <i className="fa-solid fa-circle-info" style={{ fontSize: 11 }}></i>勾選商品後點「申請出貨」
               </div>
             )}
             <div style={{ overflowY: 'auto', padding: '8px 20px 100px', flex: 1 }}>
               {pendingOrders.length === 0 ? (
                 <div style={{ textAlign: 'center', padding: 40, color: '#bbb', fontSize: 13 }}>
-                  <i className="fa-solid fa-box-open" style={{ fontSize: 32, display: 'block', marginBottom: 10, opacity: 0.3 }}></i>
-                  目前沒有待出貨的物品
+                  <i className="fa-solid fa-box-open" style={{ fontSize: 32, display: 'block', marginBottom: 10, opacity: 0.3 }}></i>目前沒有待出貨的物品
                 </div>
               ) : pendingOrders.map(order => {
                 const checked = selectedIds.includes(order.id)
+                const isRequested = order.status === 'shipping_requested'
                 return (
-                  <div key={order.id} onClick={() => toggleSelect(order.id)}
-                    style={{ display: 'flex', alignItems: 'center', gap: 12, padding: '12px 0', borderBottom: '0.5px solid #f5f0e8', cursor: 'pointer' }}>
-                    <div style={{ width: 22, height: 22, borderRadius: 6, border: `2px solid ${checked ? '#BA7517' : '#ddd'}`, background: checked ? '#BA7517' : '#fff', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0, transition: 'all 0.15s' }}>
-                      {checked && <i className="fa-solid fa-check" style={{ fontSize: 11, color: '#fff' }}></i>}
+                  <div key={order.id} onClick={() => !isRequested && toggleSelect(order.id)}
+                    style={{ display: 'flex', alignItems: 'center', gap: 12, padding: '12px 0', borderBottom: '0.5px solid #f5f0e8', cursor: isRequested ? 'default' : 'pointer' }}>
+                    <div style={{ width: 22, height: 22, borderRadius: 6, border: `2px solid ${isRequested ? '#3B82F6' : checked ? '#BA7517' : '#ddd'}`, background: isRequested ? '#EFF6FF' : checked ? '#BA7517' : '#fff', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0, transition: 'all 0.15s' }}>
+                      {(checked || isRequested) && <i className="fa-solid fa-check" style={{ fontSize: 11, color: isRequested ? '#3B82F6' : '#fff' }}></i>}
                     </div>
                     <div style={{ width: 48, height: 48, borderRadius: 10, overflow: 'hidden', flexShrink: 0, border: '0.5px solid #F5E8C8', background: '#FFF8EE', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                      {order.shop_products?.image_url
-                        ? <img src={order.shop_products.image_url} alt="" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
-                        : <i className="fa-solid fa-gift" style={{ fontSize: 20, color: '#D4A94A', opacity: 0.5 }}></i>
-                      }
+                      {order.shop_products?.image_url ? <img src={order.shop_products.image_url} alt="" style={{ width: '100%', height: '100%', objectFit: 'cover' }} /> : <i className="fa-solid fa-gift" style={{ fontSize: 20, color: '#D4A94A', opacity: 0.5 }}></i>}
                     </div>
                     <div style={{ flex: 1 }}>
                       <div style={{ fontSize: 13, fontWeight: 600, color: '#111' }}>{order.product_name}</div>
                       <div style={{ fontSize: 11, color: '#bbb', marginTop: 2 }}>{new Date(order.created_at).toLocaleDateString('zh-TW')} 兌換</div>
                       <div style={{ fontSize: 10, fontWeight: 600, color: '#E24B4A', marginTop: 1 }}>-{order.points_spent} 點</div>
                     </div>
-                    <span style={{ fontSize: 10, fontWeight: 600, padding: '3px 8px', borderRadius: 99, background: '#FFF3E0', color: '#E07B00', flexShrink: 0 }}>待出貨</span>
+                    <span style={{ fontSize: 10, fontWeight: 600, padding: '3px 8px', borderRadius: 99, background: isRequested ? '#EFF6FF' : '#FFF3E0', color: isRequested ? '#3B82F6' : '#E07B00', flexShrink: 0 }}>
+                      {isRequested ? '申請中' : '待出貨'}
+                    </span>
                   </div>
                 )
               })}
             </div>
-
-            {/* 底部申請出貨按鈕 */}
             {pendingOrders.length > 0 && (
               <div style={{ padding: '12px 20px 24px', borderTop: '0.5px solid #f5f0e8', background: '#fff', flexShrink: 0 }}>
                 {requestSuccess && (
@@ -518,17 +530,15 @@ export default function ShopPage() {
                   </div>
                 )}
                 <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 10 }}>
-                  <span style={{ fontSize: 12, color: '#888' }}>
-                    {selectedIds.length > 0 ? `已選 ${selectedIds.length} 件` : '請勾選要出貨的商品'}
-                  </span>
-                  <span onClick={() => setSelectedIds(selectedIds.length === pendingOrders.length ? [] : pendingOrders.map(o => o.id))}
-                    style={{ fontSize: 11, color: '#BA7517', cursor: 'pointer', fontWeight: 600 }}>
-                    {selectedIds.length === pendingOrders.length ? '取消全選' : '全選'}
+                  <span style={{ fontSize: 12, color: '#888' }}>{selectedIds.length > 0 ? `已選 ${selectedIds.length} 件` : '請勾選要出貨的商品'}</span>
+                  <span onClick={() => {
+                    const selectable = pendingOrders.filter(o => o.status === 'pending').map(o => o.id)
+                    setSelectedIds(selectedIds.length === selectable.length ? [] : selectable)
+                  }} style={{ fontSize: 11, color: '#BA7517', cursor: 'pointer', fontWeight: 600 }}>
+                    {selectedIds.length === pendingOrders.filter(o => o.status === 'pending').length ? '取消全選' : '全選'}
                   </span>
                 </div>
-                <button
-                  onClick={handleRequestShipping}
-                  disabled={selectedIds.length === 0 || requesting}
+                <button onClick={handleRequestShipping} disabled={selectedIds.length === 0 || requesting}
                   style={{ width: '100%', padding: 13, background: selectedIds.length === 0 || requesting ? '#ccc' : 'linear-gradient(135deg,#BA7517,#D4A94A)', border: 'none', borderRadius: 12, fontSize: 14, fontWeight: 700, color: '#fff', cursor: selectedIds.length === 0 ? 'not-allowed' : 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 7 }}>
                   <i className="fa-solid fa-truck"></i>
                   {requesting ? '申請中...' : `申請出貨${selectedIds.length > 0 ? `（${selectedIds.length} 件）` : ''}`}
@@ -539,7 +549,7 @@ export default function ShopPage() {
         </div>
       )}
 
-      {/* 出貨紀錄 Sheet */}
+      {/* 出貨紀錄 */}
       {showShipped && (
         <div onClick={() => setShowShipped(false)} style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.4)', zIndex: 100, display: 'flex', alignItems: 'flex-end', justifyContent: 'center' }}>
           <div onClick={e => e.stopPropagation()} style={{ width: '100%', maxWidth: 390, maxHeight: '80vh', background: '#fff', borderRadius: '16px 16px 0 0', display: 'flex', flexDirection: 'column' }}>
@@ -551,22 +561,16 @@ export default function ShopPage() {
             <div style={{ overflowY: 'auto', padding: '8px 20px 32px' }}>
               {shippedOrders.length === 0 ? (
                 <div style={{ textAlign: 'center', padding: 40, color: '#bbb', fontSize: 13 }}>
-                  <i className="fa-solid fa-truck" style={{ fontSize: 32, display: 'block', marginBottom: 10, opacity: 0.2 }}></i>
-                  尚無出貨紀錄
+                  <i className="fa-solid fa-truck" style={{ fontSize: 32, display: 'block', marginBottom: 10, opacity: 0.2 }}></i>尚無出貨紀錄
                 </div>
               ) : shippedOrders.map(order => (
                 <div key={order.id} style={{ display: 'flex', alignItems: 'center', gap: 12, padding: '12px 0', borderBottom: '0.5px solid #f5f0e8' }}>
                   <div style={{ width: 48, height: 48, borderRadius: 10, overflow: 'hidden', flexShrink: 0, border: '0.5px solid #F5E8C8', background: '#FFF8EE', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                    {order.shop_products?.image_url
-                      ? <img src={order.shop_products.image_url} alt="" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
-                      : <i className="fa-solid fa-gift" style={{ fontSize: 20, color: '#D4A94A', opacity: 0.5 }}></i>
-                    }
+                    {order.shop_products?.image_url ? <img src={order.shop_products.image_url} alt="" style={{ width: '100%', height: '100%', objectFit: 'cover' }} /> : <i className="fa-solid fa-gift" style={{ fontSize: 20, color: '#D4A94A', opacity: 0.5 }}></i>}
                   </div>
                   <div style={{ flex: 1 }}>
                     <div style={{ fontSize: 13, fontWeight: 600, color: '#111' }}>{order.product_name}</div>
-                    <div style={{ fontSize: 11, color: '#bbb', marginTop: 2 }}>
-                      {order.shipped_at ? `${new Date(order.shipped_at).toLocaleDateString('zh-TW')} 出貨` : '已出貨'}
-                    </div>
+                    <div style={{ fontSize: 11, color: '#bbb', marginTop: 2 }}>{order.shipped_at ? `${new Date(order.shipped_at).toLocaleDateString('zh-TW')} 出貨` : '已出貨'}</div>
                     <div style={{ fontSize: 10, fontWeight: 600, color: '#E24B4A', marginTop: 1 }}>-{order.points_spent} 點</div>
                   </div>
                   <span style={{ fontSize: 10, fontWeight: 600, padding: '3px 8px', borderRadius: 99, background: '#EAF3DE', color: '#388E3C', flexShrink: 0 }}>已出貨</span>
