@@ -21,6 +21,16 @@ const GRADING_STATUS = {
   sold:      { label: '已售出', color: '#757575', bg: '#F5F5F5' },
 }
 
+// 可自訂頭貼的最低等級索引（高級球 = index 2）
+const CUSTOM_AVATAR_MIN_LEVEL = '高級球'
+
+function canUploadCustomAvatar(level) {
+  const levelNames = LEVELS.map(l => l.name)
+  const idx = levelNames.indexOf(level)
+  const minIdx = levelNames.indexOf(CUSTOM_AVATAR_MIN_LEVEL)
+  return idx >= minIdx
+}
+
 export default function ProfilePage() {
   const { member, setMember, signOut } = useAuth()
   const [profileTab, setProfileTab] = useState('home') // 'home' | 'mine'
@@ -28,13 +38,13 @@ export default function ProfilePage() {
   const [weekLogins, setWeekLogins] = useState([])
   const [shippingOrders, setShippingOrders] = useState([])
   const [gradings, setGradings] = useState([])
-  const [myCards, setMyCards] = useState([]) // 持有卡片，供選展示用
-  const [showcaseCards, setShowcaseCards] = useState([]) // 展示卡詳情
+  const [myCards, setMyCards] = useState([])
+  const [showcaseCards, setShowcaseCards] = useState([])
   const [showSettings, setShowSettings] = useState(false)
   const [showBenefits, setShowBenefits] = useState(false)
   const [showShipping, setShowShipping] = useState(false)
   const [showGrading, setShowGrading] = useState(false)
-  const [showCardPicker, setShowCardPicker] = useState(null) // slot index 0~2
+  const [showCardPicker, setShowCardPicker] = useState(null)
   const [editName, setEditName] = useState('')
   const [editAvatar, setEditAvatar] = useState('')
   const [defaultAvatars, setDefaultAvatars] = useState([])
@@ -83,13 +93,11 @@ export default function ProfilePage() {
       try { setDefaultAvatars(JSON.parse(avatarSetting.value) || []) } catch (e) { setDefaultAvatars([]) }
     }
 
-    // 持有卡片
     const { data: ownedData } = await supabase.from('card_owners')
       .select('id, card_id, cards(id, name, rarity, series, image_url)')
       .eq('member_id', member.id)
     setMyCards(ownedData || [])
 
-    // 展示卡
     await fetchShowcase(member.showcase_cards || [])
   }
 
@@ -98,14 +106,12 @@ export default function ProfilePage() {
     const { data } = await supabase.from('card_owners')
       .select('id, card_id, cards(id, name, rarity, series, image_url)')
       .in('id', cardOwnerIds)
-    // 保持順序
     const ordered = cardOwnerIds.map(coid => data?.find(d => d.id === coid) || null)
     setShowcaseCards(ordered)
   }
 
   async function handleSelectShowcase(slotIndex, cardOwnerId) {
     const current = [...(member.showcase_cards || [])]
-    // 補足3格
     while (current.length < 3) current.push(null)
     current[slotIndex] = cardOwnerId
     const cleaned = current.map(v => v || null)
@@ -162,6 +168,7 @@ export default function ProfilePage() {
 
   if (!member) return null
 
+  const canCustomAvatar = canUploadCustomAvatar(member.level)
   const nextLevel = getNextLevel(member.points)
   const currentLevelMin = LEVELS.slice().reverse().find(l => member.points >= l.min)?.min || 0
   const levelProgress = nextLevel ? Math.round((member.points - currentLevelMin) / (nextLevel.min - currentLevelMin) * 100) : 100
@@ -186,9 +193,7 @@ export default function ProfilePage() {
     tabBtn: (active) => ({ flex: 1, padding: '10px 0', fontSize: 13, fontWeight: active ? 600 : 400, color: active ? '#E07B00' : '#bbb', textAlign: 'center', cursor: 'pointer', background: 'none', border: 'none', borderBottom: active ? '2px solid #E07B00' : '2px solid transparent' }),
   }
 
-  // 展示卡 slot（補足3格）
   const showcaseSlots = [0, 1, 2].map(i => showcaseCards[i] || null)
-  // 已在展示的 card_owner ids
   const showcaseIds = (member.showcase_cards || [])
 
   return (
@@ -637,6 +642,8 @@ export default function ProfilePage() {
             <div style={{ width: 36, height: 4, borderRadius: 2, background: '#f0e8d0', margin: '0 auto 16px' }} />
             <div style={{ fontSize: 16, fontWeight: 600, color: '#111', marginBottom: 4 }}>設定</div>
             <div style={{ fontSize: 12, color: '#bbb', marginBottom: 18 }}>#{String(member.member_no || '0').padStart(4, '0')}</div>
+
+            {/* 頭貼區塊 */}
             <div style={{ marginBottom: 16 }}>
               <label style={{ fontSize: 12, color: '#999', display: 'block', marginBottom: 8 }}>頭貼</label>
               <div style={{ display: 'flex', alignItems: 'center', gap: 12, marginBottom: 10 }}>
@@ -646,13 +653,29 @@ export default function ProfilePage() {
                 }
                 <div style={{ flex: 1 }}>
                   <input ref={avatarFileRef} type="file" accept="image/*" onChange={handleAvatarUpload} style={{ display: 'none' }} />
-                  <button onClick={() => !avatarUploading && avatarFileRef.current?.click()} disabled={avatarUploading}
-                    style={{ width: '100%', padding: '8px 10px', background: '#FFFBF2', border: '0.5px solid #FAC775', borderRadius: 8, fontSize: 12, color: '#BA7517', cursor: avatarUploading ? 'not-allowed' : 'pointer', marginBottom: 5 }}>
-                    {avatarUploading ? '上傳中...' : '上傳自訂頭貼'}
-                  </button>
+
+                  {/* 自訂上傳：高級球以上才可用 */}
+                  {canCustomAvatar ? (
+                    <button
+                      onClick={() => !avatarUploading && avatarFileRef.current?.click()}
+                      disabled={avatarUploading}
+                      style={{ width: '100%', padding: '8px 10px', background: '#FFFBF2', border: '0.5px solid #FAC775', borderRadius: 8, fontSize: 12, color: '#BA7517', cursor: avatarUploading ? 'not-allowed' : 'pointer', marginBottom: 5 }}>
+                      {avatarUploading ? '上傳中...' : '上傳自訂頭貼'}
+                    </button>
+                  ) : (
+                    <div style={{ width: '100%', padding: '8px 10px', background: '#f8f5f0', border: '0.5px solid #e8e0d5', borderRadius: 8, fontSize: 12, color: '#bbb', marginBottom: 5, display: 'flex', alignItems: 'center', gap: 6 }}>
+                      <i className="fa-solid fa-lock" style={{ fontSize: 11, color: '#D4A94A' }}></i>
+                      <span>升至</span>
+                      <span style={{ color: '#E24B4A', fontWeight: 600 }}>{CUSTOM_AVATAR_MIN_LEVEL}</span>
+                      <span>後可上傳自訂頭貼</span>
+                    </div>
+                  )}
+
                   <button onClick={() => setEditAvatar('')} style={{ width: '100%', padding: '6px 10px', background: '#fff', border: 'none', fontSize: 11, color: '#999', cursor: 'pointer' }}>移除頭貼</button>
                 </div>
               </div>
+
+              {/* 預設頭貼選擇（所有人皆可選） */}
               {defaultAvatars.length > 0 && (
                 <>
                   <div style={{ fontSize: 11, color: '#bbb', marginBottom: 7 }}>或選擇基本頭貼</div>
@@ -665,11 +688,14 @@ export default function ProfilePage() {
                 </>
               )}
             </div>
+
+            {/* 暱稱 */}
             <div style={{ marginBottom: 16 }}>
               <label style={{ fontSize: 12, color: '#999', display: 'block', marginBottom: 6 }}>暱稱</label>
               <input value={editName} onChange={e => setEditName(e.target.value)} placeholder="輸入你的暱稱"
                 style={{ width: '100%', padding: '10px 12px', border: '0.5px solid #f0e8d0', borderRadius: 8, fontSize: 14, color: '#111', outline: 'none', background: '#fdfaf4', boxSizing: 'border-box' }} />
             </div>
+
             <button onClick={handleSaveSettings} disabled={saving || avatarUploading || !editName.trim()}
               style={{ width: '100%', padding: 12, background: (saving || avatarUploading || !editName.trim()) ? '#f0ebe3' : 'linear-gradient(135deg,#FAEEDA,#FFF3D0)', border: '0.5px solid #FAC775', borderRadius: 10, fontSize: 14, fontWeight: 500, color: (saving || avatarUploading || !editName.trim()) ? '#ccc' : '#8B5A00', cursor: 'pointer', marginBottom: 10 }}>
               {saving ? '儲存中...' : '儲存設定'}
@@ -711,7 +737,6 @@ export default function ProfilePage() {
                     {isCurrentLevel && (
                       <div style={{ position: 'absolute', top: 6, right: 10, fontSize: 9, fontWeight: 700, background: '#E07B00', color: '#fff', padding: '2px 7px', borderRadius: 99 }}>目前等級</div>
                     )}
-                    {/* 球種圖示 */}
                     <div style={{ flexShrink: 0 }}>
                       <PokeballIcon level={lv.name} size={36} />
                     </div>
