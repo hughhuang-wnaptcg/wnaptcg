@@ -9,14 +9,14 @@ const TIER_CONFIG = {
     cardBg: '#fff', cardBorder: '#F5E8C8', iconBg: 'linear-gradient(135deg,#FAEEDA,#FFF3D0)',
     badgeOpen: { bg: '#FFF3E0', color: '#E07B00' }, badgeLocked: { bg: '#f5f5f5', color: '#bbb' },
     lockColor: '#CBD5E1', lockTextColor: '#94A3B8', divider: '#F5E8C8', enterColor: '#E07B00',
-    allowedLevels: ['精靈球', '超級球'], lockMsg: '精靈球以上即可進入',
+    allowedLevels: ['精靈球', '超級球', '高級球', '豪華球', '貴重球', '究極球', '大師球'], lockMsg: '所有會員皆可進入',
   },
   premium: {
     key: 'premium', name: '高級商城', icon: 'fa-solid fa-gem', iconColor: '#3B82F6',
     cardBg: '#fff', cardBorder: '#CBD5E1', iconBg: 'linear-gradient(135deg,#E8EFF6,#CBD5E1)',
     badgeOpen: { bg: '#EFF6FF', color: '#3B82F6' }, badgeLocked: { bg: '#EFF6FF', color: '#3B82F6' },
     lockColor: '#CBD5E1', lockTextColor: '#94A3B8', divider: '#E2E8F0', enterColor: '#3B82F6',
-    allowedLevels: ['高級球', '豪華球', '貴重球', '究極球'], lockMsg: '升至高級球以上即可進入',
+    allowedLevels: ['高級球', '豪華球', '貴重球', '究極球', '大師球'], lockMsg: '升至高級球以上即可進入',
   },
   vip: {
     key: 'vip', name: 'VIP 商城', icon: 'fa-solid fa-crown', iconColor: '#F5D060',
