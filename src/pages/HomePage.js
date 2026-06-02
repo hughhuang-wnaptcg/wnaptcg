@@ -77,6 +77,7 @@ export default function HomePage() {
   const [todayPoints, setTodayPoints] = useState(0)
   const [showWeekCelebration, setShowWeekCelebration] = useState(false)
   const [showLeaderboard, setShowLeaderboard] = useState(false)
+  const [menuItemCount, setMenuItemCount] = useState(0)
 
   const [shippingModal, setShippingModal] = useState(false)
   const [cancelModal, setCancelModal] = useState(false)
@@ -102,13 +103,15 @@ export default function HomePage() {
   }, [loginResult])
 
   const fetchData = useCallback(async () => {
-    const [{ data: bossData }, { data: cardsData }, { data: settingsData }] = await Promise.all([
+    const [{ data: bossData }, { data: cardsData }, { data: settingsData }, { data: menuData }] = await Promise.all([
       supabase.from('boss_challenges').select('*').eq('is_active', true).single(),
       supabase.from('cards').select('*').order('created_at', { ascending: false }).limit(3),
       supabase.from('settings').select('*'),
+      supabase.from('menu_items').select('id').eq('is_active', true).gt('stock', 0),
     ])
     setBoss(bossData)
     setRecentCards(cardsData || [])
+    setMenuItemCount((menuData || []).length)
     if (settingsData) {
       const s = {}
       settingsData.forEach(d => { try { s[d.key] = JSON.parse(d.value) } catch(e) { s[d.key] = d.value } })
@@ -353,10 +356,9 @@ export default function HomePage() {
 
         <div style={{ padding: '16px 20px 0' }}>
 
-          {/* 排行榜入口 ← 移到最前 */}
-          <div
-            onClick={() => setShowLeaderboard(true)}
-            style={{ display: 'flex', alignItems: 'center', gap: 12, padding: '11px 14px', background: 'linear-gradient(135deg,#FFF8EE,#FFFBF2)', border: '1px solid #F5E8C8', borderRadius: 12, cursor: 'pointer', marginBottom: 16, boxShadow: '0 2px 8px rgba(186,117,23,.07)' }}>
+          {/* 排行榜入口 */}
+          <div onClick={() => setShowLeaderboard(true)}
+            style={{ display: 'flex', alignItems: 'center', gap: 12, padding: '11px 14px', background: 'linear-gradient(135deg,#FFF8EE,#FFFBF2)', border: '1px solid #F5E8C8', borderRadius: 12, cursor: 'pointer', marginBottom: 10, boxShadow: '0 2px 8px rgba(186,117,23,.07)' }}>
             <div style={{ width: 34, height: 34, borderRadius: 10, background: 'linear-gradient(135deg,#BA7517,#D4A94A)', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
               <i className="fa-solid fa-ranking-star" style={{ fontSize: 15, color: '#fff' }}></i>
             </div>
@@ -367,7 +369,28 @@ export default function HomePage() {
             <i className="fa-solid fa-chevron-right" style={{ fontSize: 11, color: '#D4A94A' }}></i>
           </div>
 
-          {/* 戰績牆 ← 移到排行榜後面 */}
+          {/* 本日菜單入口 */}
+          <div
+            onClick={() => navigate('/shop?tab=menu')}
+            style={{ display: 'flex', alignItems: 'center', gap: 12, padding: '11px 14px', background: 'linear-gradient(135deg,#F0FFF4,#ECFDF5)', border: '1px solid #86C566', borderRadius: 12, cursor: 'pointer', marginBottom: 16, boxShadow: '0 2px 8px rgba(56,142,60,.08)' }}>
+            <div style={{ width: 34, height: 34, borderRadius: 10, background: 'linear-gradient(135deg,#388E3C,#66BB6A)', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
+              <i className="fa-solid fa-utensils" style={{ fontSize: 15, color: '#fff' }}></i>
+            </div>
+            <div style={{ flex: 1 }}>
+              <div style={{ fontSize: 13, fontWeight: 700, color: '#1B5E20' }}>本日菜單</div>
+              <div style={{ fontSize: 10, color: '#66BB6A', marginTop: 1 }}>
+                {menuItemCount > 0 ? `今日 ${menuItemCount} 項商品供應中 →` : '今日菜單更新中 →'}
+              </div>
+            </div>
+            {menuItemCount > 0 && (
+              <span style={{ fontSize: 10, fontWeight: 700, background: '#388E3C', color: '#fff', padding: '2px 8px', borderRadius: 99 }}>
+                {menuItemCount} 項
+              </span>
+            )}
+            <i className="fa-solid fa-chevron-right" style={{ fontSize: 11, color: '#66BB6A' }}></i>
+          </div>
+
+          {/* 戰績牆 */}
           <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 10 }}>
             <div style={S.secLeft}>
               <span style={S.typeBadge('linear-gradient(135deg,#BA7517,#D4A94A)')}><i className="fa-solid fa-trophy"></i></span>
