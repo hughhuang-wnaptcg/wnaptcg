@@ -45,6 +45,24 @@ function BallTag({ level, cls }) {
   )
 }
 
+function AccessTag({ tier }) {
+  if (tier === 'general') {
+    return (
+      <span style={{ display: 'inline-flex', alignItems: 'center', fontSize: 10, padding: '3px 8px', borderRadius: 99, background: '#FFFBF2', color: '#BA7517', border: '0.5px solid #F5E8C8' }}>
+        所有會員
+      </span>
+    )
+  }
+
+  const isVip = tier === 'vip'
+  return (
+    <span style={{ display: 'inline-flex', alignItems: 'center', gap: 4, fontSize: 10, padding: '2px 8px 2px 3px', borderRadius: 99, background: isVip ? '#222' : '#F8FAFC', color: isVip ? '#A0956A' : '#64748B', border: `0.5px solid ${isVip ? '#B8860B55' : '#E2E8F0'}` }}>
+      <span dangerouslySetInnerHTML={{ __html: POKEBALL_SVG[isVip ? '大師球' : '高級球'] }} style={{ display: 'inline-flex', alignItems: 'center' }} />
+      {isVip ? '大師球限定' : '高級球以上'}
+    </span>
+  )
+}
+
 function canAccess(memberLevel, tier) {
   return TIER_CONFIG[tier].allowedLevels.includes(memberLevel)
 }
@@ -412,8 +430,8 @@ export default function ShopPage() {
                   </div>
                   <div style={{ flex: 1 }}>
                     <div style={{ fontSize: 15, fontWeight: 700, color: isVip ? '#F5D060' : '#2D1A00' }}>{cfg.name}</div>
-                    <div style={{ marginTop: 6, display: 'flex', flexWrap: 'wrap', gap: 4 }}>
-                      {cfg.allowedLevels.map(lv => <BallTag key={lv} level={lv} cls={isVip ? 'vip' : tier === 'premium' ? 'plat' : 'cream'} />)}
+                    <div style={{ marginTop: 6 }}>
+                      <AccessTag tier={tier} />
                     </div>
                   </div>
                   <div style={{ fontSize: 10, padding: '3px 10px', borderRadius: 99, fontWeight: 600, background: accessible ? cfg.badgeOpen.bg : cfg.badgeLocked.bg, color: accessible ? cfg.badgeOpen.color : cfg.badgeLocked.color, border: isVip ? '0.5px solid #B8860B' : 'none', flexShrink: 0 }}>
