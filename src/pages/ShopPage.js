@@ -292,8 +292,13 @@ export default function ShopPage() {
       const { error: itemsErr } = await supabase.from('menu_order_items').insert(items)
       if (itemsErr) throw itemsErr
 
+      // 用 RPC 在 server 端原子性扣庫存，避免 RLS 限制造成靜默失敗
       for (const c of cart) {
-        await supabase.from('menu_items').update({ stock: c.item.stock - c.quantity }).eq('id', c.item.id)
+        const { error: stockErr } = await supabase.rpc('decrement_menu_stock', {
+          p_item_id: c.item.id,
+          p_quantity: c.quantity,
+        })
+        if (stockErr) throw stockErr
       }
 
       const successData = { ...order, items, order_no: order.order_no }
