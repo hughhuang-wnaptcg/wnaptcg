@@ -202,6 +202,21 @@ export default function ShopPage() {
     else if (tab === 'live' || tab === 'menu') setMainTab('live')
   }, [searchParams])
 
+  // 問題2：Realtime 訂閱 — 後台改訂單狀態時前台自動刷新
+  useEffect(() => {
+    if (!member) return
+    const channel = supabase
+      .channel('menu_orders_realtime')
+      .on('postgres_changes', {
+        event: '*',
+        schema: 'public',
+        table: 'menu_orders',
+        filter: `member_id=eq.${member.id}`,
+      }, () => { fetchLiveData() })
+      .subscribe()
+    return () => { supabase.removeChannel(channel) }
+  }, [member])
+
   async function fetchShopData() {
     setLoading(true)
     const [{ data: prods, error: pe }, { data: logs }, { data: allOrders }] = await Promise.all([
@@ -270,38 +285,32 @@ export default function ShopPage() {
     if (cart.length === 0 || !member) return
     setCheckingOut(true)
     try {
-      // 訂單層 dine_type 傳 'mixed' 表示品項各自有設定
-      const { data: order, error: orderErr } = await supabase.from('menu_orders').insert({
-        member_id: member.id,
-        dine_type: 'mixed',
-        total_amount: cartTotal,
-        status: 'pending',
-      }).select().single()
-      if (orderErr) throw orderErr
-
-      // 品項層帶入各自的 dine_type
-      const items = cart.map(c => ({
-        order_id: order.id,
+      // 問題1：改用單一 atomic RPC，解決競態問題
+      // checkout_menu_order 在 DB 層用 FOR UPDATE 鎖定庫存，統一建立訂單+品項+扣庫存
+      const p_items = cart.map(c => ({
         item_id: c.item.id,
         item_name: c.item.name,
         item_price: c.item.price,
         quantity: c.quantity,
-        subtotal: c.item.price * c.quantity,
         dine_type: c.dine_type,
       }))
-      const { error: itemsErr } = await supabase.from('menu_order_items').insert(items)
-      if (itemsErr) throw itemsErr
+      const { data: result, error: rpcErr } = await supabase.rpc('checkout_menu_order', {
+        p_member_id: member.id,
+        p_items: p_items,
+      })
+      if (rpcErr) throw rpcErr
 
-      // 用 RPC 在 server 端原子性扣庫存，避免 RLS 限制造成靜默失敗
-      for (const c of cart) {
-        const { error: stockErr } = await supabase.rpc('decrement_menu_stock', {
-          p_item_id: c.item.id,
-          p_quantity: c.quantity,
-        })
-        if (stockErr) throw stockErr
+      // 組裝 successData 供 Overlay 顯示
+      const successData = {
+        order_no: result.order_no,
+        total_amount: result.total_amount,
+        items: cart.map(c => ({
+          item_name: c.item.name,
+          quantity: c.quantity,
+          subtotal: c.item.price * c.quantity,
+          dine_type: c.dine_type,
+        })),
       }
-
-      const successData = { ...order, items, order_no: order.order_no }
       setCart([])
       setShowCart(false)
       setOrderSuccess(successData)
