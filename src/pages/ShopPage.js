@@ -4,8 +4,7 @@ import { useAuth } from '../hooks/useAuth'
 import { useSearchParams } from 'react-router-dom'
 import BottomNav from '../components/BottomNav'
 
-// ─── 原本商城相關 ───────────────────────────────────────────────
-
+// ─── 商城 Tier 設定 ────────────────────────────────────────────
 const TIER_CONFIG = {
   general: {
     key: 'general', name: '一般商城', icon: 'fa-solid fa-store', iconColor: '#E07B00',
@@ -57,6 +56,7 @@ function canAccess(memberLevel, tier) {
   return TIER_CONFIG[tier].allowedLevels.includes(memberLevel)
 }
 
+// ─── 商城兌換成功 Overlay ──────────────────────────────────────
 function SuccessOverlay({ product, qty, onClose }) {
   const COLORS = ['#BA7517','#E24B4A','#378ADD','#06C755','#FAC775','#F85888','#7038F8','#78C850','#FF6B00','#00CFFF']
   const pieces = Array.from({ length: 28 }, (_, i) => ({
@@ -94,40 +94,67 @@ function SuccessOverlay({ product, qty, onClose }) {
   )
 }
 
-// ─── 訂單成功 Overlay ──────────────────────────────────────────
+// ─── 直播下單成功 Overlay ──────────────────────────────────────
 function OrderSuccessOverlay({ order, onClose }) {
+  const COLORS = ['#E24B4A','#BA7517','#378ADD','#7038F8','#FAC775','#78C850']
+  const pieces = Array.from({ length: 20 }, (_, i) => ({
+    color: COLORS[i % COLORS.length], x: 5 + Math.random() * 90,
+    delay: Math.random() * 0.4, dur: 0.7 + Math.random() * 0.5,
+    size: 5 + Math.random() * 5,
+  }))
   return (
-    <div onClick={onClose} style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.5)', zIndex: 300, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-      <style>{`@keyframes orderPop{0%{transform:scale(0.8);opacity:0}100%{transform:scale(1);opacity:1}}`}</style>
-      <div onClick={e => e.stopPropagation()} style={{ background: '#fff', borderRadius: 20, padding: '28px 24px 20px', maxWidth: 300, width: '88%', textAlign: 'center', boxShadow: '0 12px 40px rgba(0,0,0,.2)', animation: 'orderPop 0.4s cubic-bezier(0.34,1.56,0.64,1) both' }}>
-        <div style={{ width: 60, height: 60, borderRadius: '50%', background: 'linear-gradient(135deg,#DCFCE7,#BBF7D0)', border: '2px solid #86C566', display: 'flex', alignItems: 'center', justifyContent: 'center', margin: '0 auto 14px' }}>
-          <i className="fa-solid fa-check" style={{ fontSize: 24, color: '#16A34A' }}></i>
+    <div onClick={onClose} style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.55)', zIndex: 300, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+      <style>{`
+        @keyframes orderConfetti{0%{transform:translateY(-10px) rotate(0);opacity:1}100%{transform:translateY(260px) rotate(540deg);opacity:0}}
+        @keyframes orderPop{0%{transform:scale(0.7) translateY(20px);opacity:0}70%{transform:scale(1.04);opacity:1}100%{transform:scale(1);opacity:1}}
+        @keyframes liveBadgePulse{0%,100%{opacity:1}50%{opacity:0.6}}
+      `}</style>
+      <div style={{ position: 'absolute', inset: 0, pointerEvents: 'none', overflow: 'hidden' }}>
+        {pieces.map((p, i) => (
+          <div key={i} style={{ position: 'absolute', left: `${p.x}%`, top: '-8px', width: p.size, height: p.size, borderRadius: 2, background: p.color, animation: `orderConfetti ${p.dur}s ${p.delay}s ease-in both` }} />
+        ))}
+      </div>
+      <div onClick={e => e.stopPropagation()} style={{ background: '#fff', borderRadius: 20, padding: '28px 24px 22px', maxWidth: 310, width: '88%', textAlign: 'center', boxShadow: '0 16px 48px rgba(0,0,0,.25)', animation: 'orderPop 0.45s cubic-bezier(0.34,1.56,0.64,1) both' }}>
+        {/* 頂部 LIVE 標記 */}
+        <div style={{ display: 'inline-flex', alignItems: 'center', gap: 5, background: 'linear-gradient(135deg,#E24B4A,#c0392b)', borderRadius: 99, padding: '4px 12px', marginBottom: 16 }}>
+          <div style={{ width: 6, height: 6, borderRadius: '50%', background: '#fff', animation: 'liveBadgePulse 1s infinite' }} />
+          <span style={{ fontSize: 11, fontWeight: 800, color: '#fff', letterSpacing: '0.08em' }}>LIVE 下單成功</span>
         </div>
-        <div style={{ fontSize: 17, fontWeight: 800, color: '#14532D', marginBottom: 6 }}>訂單已送出！</div>
-        <div style={{ fontSize: 12, color: '#888', marginBottom: 14 }}>訂單編號 #{String(order.order_no).padStart(4, '0')}</div>
-        <div style={{ background: '#F0FFF4', border: '0.5px solid #86C566', borderRadius: 10, padding: '10px 14px', marginBottom: 18, textAlign: 'left' }}>
+        {/* 訂單號 */}
+        <div style={{ fontSize: 28, fontWeight: 900, color: '#1a1a1a', marginBottom: 4, letterSpacing: '-0.5px' }}>
+          #{String(order.order_no).padStart(4, '0')}
+        </div>
+        <div style={{ fontSize: 11, color: '#bbb', marginBottom: 18 }}>訂單編號已記錄</div>
+        {/* 明細 */}
+        <div style={{ background: '#FAFAFA', border: '1px solid #F0F0F0', borderRadius: 12, padding: '12px 14px', marginBottom: 18, textAlign: 'left' }}>
           {order.items.map((item, i) => (
-            <div key={i} style={{ display: 'flex', justifyContent: 'space-between', fontSize: 12, color: '#333', marginBottom: i < order.items.length - 1 ? 4 : 0 }}>
-              <span>{item.item_name} × {item.quantity}</span>
-              <span style={{ fontWeight: 600 }}>${item.subtotal}</span>
+            <div key={i} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', fontSize: 13, color: '#333', marginBottom: i < order.items.length - 1 ? 6 : 0 }}>
+              <span style={{ fontWeight: 500 }}>{item.item_name}</span>
+              <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                <span style={{ fontSize: 11, color: '#bbb' }}>× {item.quantity}</span>
+                <span style={{ fontWeight: 700, color: '#1a1a1a' }}>$ {item.subtotal}</span>
+              </div>
             </div>
           ))}
-          <div style={{ height: '0.5px', background: '#86C566', margin: '8px 0' }} />
-          <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 13, fontWeight: 700, color: '#14532D' }}>
-            <span>合計</span><span>${order.total_amount}</span>
+          <div style={{ height: 1, background: '#EBEBEB', margin: '10px 0' }} />
+          <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 14, fontWeight: 800, color: '#1a1a1a' }}>
+            <span>合計</span>
+            <span style={{ color: '#E24B4A' }}>$ {order.total_amount}</span>
           </div>
         </div>
-        <button onClick={onClose} style={{ width: '100%', padding: 12, background: 'linear-gradient(135deg,#388E3C,#66BB6A)', border: 'none', borderRadius: 10, fontSize: 14, fontWeight: 700, color: '#fff', cursor: 'pointer' }}>確定</button>
+        <button onClick={onClose} style={{ width: '100%', padding: 13, background: 'linear-gradient(135deg,#1a1a1a,#333)', border: 'none', borderRadius: 12, fontSize: 14, fontWeight: 700, color: '#fff', cursor: 'pointer', letterSpacing: '0.03em' }}>
+          確認
+        </button>
       </div>
     </div>
   )
 }
 
-// ─── 狀態設定 ──────────────────────────────────────────────────
+// ─── 訂單狀態設定 ──────────────────────────────────────────────
 const ORDER_STATUS = {
-  pending:    { label: '未出貨',  color: '#E07B00', bg: '#FFF3E0' },
+  pending:    { label: '待處理',  color: '#E07B00', bg: '#FFF3E0' },
   processing: { label: '處理中',  color: '#3B82F6', bg: '#EFF6FF' },
-  shipped:    { label: '已出貨',  color: '#7C3AED', bg: '#F5F3FF' },
+  shipped:    { label: '已完成',  color: '#7C3AED', bg: '#F5F3FF' },
   completed:  { label: '已完成',  color: '#16A34A', bg: '#F0FFF4' },
   cancelled:  { label: '已取消',  color: '#999',    bg: '#F5F5F5' },
 }
@@ -137,10 +164,10 @@ export default function ShopPage() {
   const { member, setMember } = useAuth()
   const [searchParams, setSearchParams] = useSearchParams()
 
-  // Tab: 'shop' | 'menu'
-  const [mainTab, setMainTab] = useState(searchParams.get('tab') === 'menu' ? 'menu' : 'shop')
+  // Tab 預設改為 'live'（直播下單區優先）
+  const [mainTab, setMainTab] = useState(searchParams.get('tab') === 'shop' ? 'shop' : 'live')
 
-  // ── 原本商城 state ──
+  // ── 商城 state ──
   const [products, setProducts] = useState([])
   const [pointsLogs, setPointsLogs] = useState([])
   const [pendingOrders, setPendingOrders] = useState([])
@@ -161,31 +188,30 @@ export default function ShopPage() {
   const [requesting, setRequesting] = useState(false)
   const [requestSuccess, setRequestSuccess] = useState(false)
 
-  // ── 本日菜單 state ──
-  const [menuItems, setMenuItems] = useState([])
-  const [menuLoading, setMenuLoading] = useState(false)
-  const [cart, setCart] = useState([]) // [{ item, quantity }]
-  const [dineType, setDineType] = useState('dine_in') // 'dine_in' | 'takeout'
+  // ── 直播下單區 state ──
+  const [liveItems, setLiveItems] = useState([])
+  const [liveLoading, setLiveLoading] = useState(false)
+  const [cart, setCart] = useState([])
   const [showCart, setShowCart] = useState(false)
   const [checkingOut, setCheckingOut] = useState(false)
   const [orderSuccess, setOrderSuccess] = useState(null)
-  const [myMenuOrders, setMyMenuOrders] = useState([])
+  const [myOrders, setMyOrders] = useState([])
   const [showMyOrders, setShowMyOrders] = useState(false)
 
   useEffect(() => {
     if (member) {
       fetchShopData()
-      fetchMenuData()
+      fetchLiveData()
     }
   }, [member])
 
-  // 當 URL query 改變時同步 tab
   useEffect(() => {
-    if (searchParams.get('tab') === 'menu') setMainTab('menu')
-    else if (searchParams.get('tab') === 'shop') setMainTab('shop')
+    const tab = searchParams.get('tab')
+    if (tab === 'shop') setMainTab('shop')
+    else if (tab === 'live' || tab === 'menu') setMainTab('live')
   }, [searchParams])
 
-  // ── 原本商城資料 ──
+  // ── 商城資料 ──
   async function fetchShopData() {
     setLoading(true)
     const [{ data: prods, error: pe }, { data: logs }, { data: allOrders }] = await Promise.all([
@@ -207,16 +233,16 @@ export default function ShopPage() {
     setLoading(false)
   }
 
-  // ── 本日菜單資料 ──
-  async function fetchMenuData() {
-    setMenuLoading(true)
+  // ── 直播下單區資料 ──
+  async function fetchLiveData() {
+    setLiveLoading(true)
     const [{ data: items }, { data: orders }] = await Promise.all([
       supabase.from('menu_items').select('*').eq('is_active', true).order('created_at', { ascending: true }),
       supabase.from('menu_orders').select('*, menu_order_items(*)').eq('member_id', member.id).order('created_at', { ascending: false }).limit(20),
     ])
-    setMenuItems(items || [])
-    setMyMenuOrders(orders || [])
-    setMenuLoading(false)
+    setLiveItems(items || [])
+    setMyOrders(orders || [])
+    setLiveLoading(false)
   }
 
   // ── 購物車操作 ──
@@ -224,8 +250,7 @@ export default function ShopPage() {
     setCart(prev => {
       const existing = prev.find(c => c.item.id === item.id)
       if (existing) {
-        const maxStock = item.stock
-        if (existing.quantity >= maxStock) return prev
+        if (existing.quantity >= item.stock) return prev
         return prev.map(c => c.item.id === item.id ? { ...c, quantity: c.quantity + 1 } : c)
       }
       return [...prev, { item, quantity: 1 }]
@@ -254,16 +279,14 @@ export default function ShopPage() {
     if (cart.length === 0 || !member) return
     setCheckingOut(true)
     try {
-      // 建立訂單主表
       const { data: order, error: orderErr } = await supabase.from('menu_orders').insert({
         member_id: member.id,
-        dine_type: dineType,
+        dine_type: 'takeout',
         total_amount: cartTotal,
         status: 'pending',
       }).select().single()
       if (orderErr) throw orderErr
 
-      // 建立訂單明細
       const items = cart.map(c => ({
         order_id: order.id,
         item_id: c.item.id,
@@ -275,7 +298,6 @@ export default function ShopPage() {
       const { error: itemsErr } = await supabase.from('menu_order_items').insert(items)
       if (itemsErr) throw itemsErr
 
-      // 扣庫存
       for (const c of cart) {
         await supabase.from('menu_items').update({ stock: c.item.stock - c.quantity }).eq('id', c.item.id)
       }
@@ -284,14 +306,14 @@ export default function ShopPage() {
       setCart([])
       setShowCart(false)
       setOrderSuccess(successData)
-      await fetchMenuData()
+      await fetchLiveData()
     } catch (err) {
       alert('下單失敗：' + err.message)
     }
     setCheckingOut(false)
   }
 
-  // ── 原本商城輔助 ──
+  // ── 商城輔助函式 ──
   function openConfirm(prod) { setConfirmProduct(prod); setConfirmQty(1) }
   function remainingAllowance(prod) {
     const max = prod.max_per_member || 1
@@ -331,7 +353,7 @@ export default function ShopPage() {
   const tierProducts = (tier) => products.filter(p => p.tier === tier)
   const S = { page: { maxWidth: 390, margin: '0 auto', background: '#FFFBF2', minHeight: '100vh', display: 'flex', flexDirection: 'column' } }
 
-  // ── 商城內部頁（進入某個 tier 後） ──
+  // ── 商城內部頁 ──
   if (activeTier) {
     const cfg = TIER_CONFIG[activeTier]
     const tierProds = tierProducts(activeTier)
@@ -471,59 +493,205 @@ export default function ShopPage() {
     )
   }
 
-  // ── 主頁面（Tab 切換） ──
+  // ══════════════════════════════════════════════════════════════
+  // ── 主頁面 ──
+  // ══════════════════════════════════════════════════════════════
   return (
     <div style={S.page}>
+      <style>{`
+        @keyframes liveDot{0%,100%{opacity:1;transform:scale(1)}50%{opacity:0.5;transform:scale(0.7)}}
+        @keyframes liveGlow{0%,100%{box-shadow:0 0 0 0 rgba(226,75,74,0.4)}50%{box-shadow:0 0 0 6px rgba(226,75,74,0)}}
+        @keyframes slideInItem{from{opacity:0;transform:translateY(12px)}to{opacity:1;transform:translateY(0)}}
+      `}</style>
       <div style={{ flex: 1, overflowY: 'auto' }}>
 
-        {/* Header */}
+        {/* ── Header ── */}
         <div style={{ background: 'linear-gradient(160deg,#FFFBF2 0%,#FFF5DC 60%,#FFEDBB 100%)', padding: '18px 20px 0', borderBottom: '0.5px solid #F5E8C8' }}>
           <div style={{ fontSize: 9, color: '#BA7517', fontWeight: 600, letterSpacing: '0.1em', opacity: 0.6, marginBottom: 8 }}>W/NA PTCG × HUGO COLLECTIONS</div>
           <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 14 }}>
             <div>
-              <div style={{ fontSize: 18, fontWeight: 800, color: '#2D1A00', display: 'flex', alignItems: 'center', gap: 7 }}>
-                {mainTab === 'shop'
-                  ? <><i className="fa-solid fa-store" style={{ fontSize: 15, color: '#E07B00' }}></i> 商城</>
-                  : <><i className="fa-solid fa-utensils" style={{ fontSize: 15, color: '#388E3C' }}></i> 本日菜單</>
-                }
-              </div>
+              {mainTab === 'live' ? (
+                <div style={{ fontSize: 18, fontWeight: 900, color: '#1a1a1a', display: 'flex', alignItems: 'center', gap: 8, letterSpacing: '-0.3px' }}>
+                  {/* LIVE 標記 */}
+                  <div style={{ display: 'inline-flex', alignItems: 'center', gap: 4, background: '#E24B4A', borderRadius: 6, padding: '3px 8px', animation: 'liveGlow 2s ease infinite' }}>
+                    <div style={{ width: 5, height: 5, borderRadius: '50%', background: '#fff', animation: 'liveDot 1s ease infinite' }} />
+                    <span style={{ fontSize: 10, fontWeight: 900, color: '#fff', letterSpacing: '0.1em' }}>LIVE</span>
+                  </div>
+                  直播下單區
+                </div>
+              ) : (
+                <div style={{ fontSize: 18, fontWeight: 800, color: '#2D1A00', display: 'flex', alignItems: 'center', gap: 7 }}>
+                  <i className="fa-solid fa-store" style={{ fontSize: 15, color: '#E07B00' }}></i>商城
+                </div>
+              )}
               <div style={{ fontSize: 11, color: '#bbb', marginTop: 3 }}>
-                {mainTab === 'shop' ? '使用點數兌換專屬好禮' : '選擇今日想吃的餐點'}
+                {mainTab === 'live' ? '選擇直播商品，立即下單' : '使用點數兌換專屬好禮'}
               </div>
             </div>
+            {/* 右側按鈕 */}
             {mainTab === 'shop' && (
               <div style={{ background: '#fff', border: '1.5px solid #FAC775', borderRadius: 12, padding: '8px 14px', textAlign: 'center' }}>
                 <div style={{ fontSize: 16, fontWeight: 800, color: '#E07B00' }}>{(member.shop_points || 0).toLocaleString()}</div>
                 <div style={{ fontSize: 9, color: '#bbb', marginTop: 1 }}>可用點數</div>
               </div>
             )}
-            {mainTab === 'menu' && (
+            {mainTab === 'live' && (
               <button onClick={() => setShowMyOrders(true)}
-                style={{ background: '#fff', border: '1.5px solid #86C566', borderRadius: 12, padding: '8px 14px', textAlign: 'center', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: 6 }}>
-                <i className="fa-solid fa-receipt" style={{ fontSize: 13, color: '#388E3C' }}></i>
+                style={{ background: '#fff', border: '1.5px solid #E0E0E0', borderRadius: 12, padding: '8px 14px', textAlign: 'center', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: 7 }}>
+                <i className="fa-solid fa-receipt" style={{ fontSize: 14, color: '#555' }}></i>
                 <div style={{ textAlign: 'left' }}>
-                  <div style={{ fontSize: 11, fontWeight: 700, color: '#388E3C' }}>我的訂單</div>
-                  <div style={{ fontSize: 9, color: '#bbb' }}>{myMenuOrders.length} 筆</div>
+                  <div style={{ fontSize: 11, fontWeight: 700, color: '#1a1a1a' }}>我的訂單</div>
+                  <div style={{ fontSize: 9, color: '#bbb' }}>{myOrders.length} 筆</div>
                 </div>
               </button>
             )}
           </div>
 
-          {/* Tab 切換 */}
+          {/* Tab 切換：直播下單區 在前，商城 在後 */}
           <div style={{ display: 'flex', gap: 0, borderBottom: '0.5px solid #F5E8C8' }}>
             {[
-              { key: 'shop', label: '商城', icon: 'fa-store', color: '#E07B00' },
-              { key: 'menu', label: '本日菜單', icon: 'fa-utensils', color: '#388E3C' },
+              { key: 'live',  label: '直播下單區', icon: 'fa-video',  activeColor: '#E24B4A', activeBg: 'rgba(226,75,74,0.06)' },
+              { key: 'shop',  label: '商城',       icon: 'fa-store',  activeColor: '#E07B00', activeBg: 'rgba(224,123,0,0.04)' },
             ].map(t => (
-              <button key={t.key} onClick={() => { setMainTab(t.key); setSearchParams(t.key === 'menu' ? { tab: 'menu' } : {}) }}
-                style={{ flex: 1, padding: '10px 0', border: 'none', background: 'transparent', fontSize: 13, fontWeight: mainTab === t.key ? 700 : 400, color: mainTab === t.key ? t.color : '#bbb', cursor: 'pointer', borderBottom: mainTab === t.key ? `2.5px solid ${t.color}` : '2.5px solid transparent', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 5 }}>
-                <i className={`fa-solid ${t.icon}`} style={{ fontSize: 12 }}></i>{t.label}
+              <button key={t.key}
+                onClick={() => { setMainTab(t.key); setSearchParams(t.key === 'shop' ? { tab: 'shop' } : {}) }}
+                style={{ flex: 1, padding: '10px 0', border: 'none', background: mainTab === t.key ? t.activeBg : 'transparent', fontSize: 13, fontWeight: mainTab === t.key ? 700 : 400, color: mainTab === t.key ? t.activeColor : '#bbb', cursor: 'pointer', borderBottom: mainTab === t.key ? `2.5px solid ${t.activeColor}` : '2.5px solid transparent', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 6, transition: 'all 0.2s' }}>
+                <i className={`fa-solid ${t.icon}`} style={{ fontSize: 12 }}></i>
+                {t.label}
+                {/* LIVE 動態小點 */}
+                {t.key === 'live' && liveItems.length > 0 && mainTab !== 'live' && (
+                  <span style={{ width: 6, height: 6, borderRadius: '50%', background: '#E24B4A', display: 'inline-block', animation: 'liveDot 1s ease infinite' }} />
+                )}
               </button>
             ))}
           </div>
         </div>
 
-        {/* ── 商城 Tab ── */}
+        {/* ══ 直播下單區 Tab ══ */}
+        {mainTab === 'live' && (
+          <div style={{ padding: '0 0 120px' }}>
+            {liveLoading ? (
+              <div style={{ padding: '60px 0', textAlign: 'center' }}>
+                {/* Skeleton loader */}
+                <style>{`@keyframes sk{0%{background-position:-300px 0}100%{background-position:300px 0}}`}</style>
+                <div style={{ padding: '0 16px', display: 'grid', gridTemplateColumns: 'repeat(2,1fr)', gap: 10 }}>
+                  {[0,1,2,3].map(i => (
+                    <div key={i} style={{ borderRadius: 14, overflow: 'hidden', border: '0.5px solid #F0F0F0' }}>
+                      <div style={{ aspectRatio: '1', background: 'linear-gradient(90deg,#f0f0f0 25%,#f8f8f8 50%,#f0f0f0 75%)', backgroundSize: '600px', animation: 'sk 1.4s ease infinite' }} />
+                      <div style={{ padding: '10px 10px 12px', background: '#fff' }}>
+                        <div style={{ height: 10, width: '70%', borderRadius: 4, background: 'linear-gradient(90deg,#f0f0f0 25%,#f8f8f8 50%,#f0f0f0 75%)', backgroundSize: '600px', animation: 'sk 1.4s ease infinite', marginBottom: 6 }} />
+                        <div style={{ height: 9, width: '45%', borderRadius: 4, background: 'linear-gradient(90deg,#f0f0f0 25%,#f8f8f8 50%,#f0f0f0 75%)', backgroundSize: '600px', animation: 'sk 1.4s ease infinite' }} />
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            ) : liveItems.length === 0 ? (
+              <div style={{ padding: '72px 32px', textAlign: 'center' }}>
+                <div style={{ width: 72, height: 72, borderRadius: '50%', background: '#F5F5F5', display: 'flex', alignItems: 'center', justifyContent: 'center', margin: '0 auto 16px' }}>
+                  <i className="fa-solid fa-video-slash" style={{ fontSize: 28, color: '#BDBDBD' }}></i>
+                </div>
+                <div style={{ fontSize: 15, fontWeight: 700, color: '#333', marginBottom: 6 }}>目前直播尚未開始</div>
+                <div style={{ fontSize: 12, color: '#bbb', lineHeight: 1.6 }}>商品上架後即可在此下單<br/>請關注直播通知</div>
+              </div>
+            ) : (
+              <>
+                {/* 直播狀態橫幅 */}
+                <div style={{ margin: '12px 16px 4px', padding: '10px 14px', background: 'linear-gradient(135deg,#1a1a1a,#2d2d2d)', borderRadius: 12, display: 'flex', alignItems: 'center', gap: 10 }}>
+                  <div style={{ width: 8, height: 8, borderRadius: '50%', background: '#E24B4A', animation: 'liveDot 1s ease infinite', flexShrink: 0 }} />
+                  <div style={{ flex: 1 }}>
+                    <div style={{ fontSize: 12, fontWeight: 700, color: '#fff' }}>直播進行中</div>
+                    <div style={{ fontSize: 10, color: 'rgba(255,255,255,0.45)', marginTop: 1 }}>{liveItems.length} 件商品上架中</div>
+                  </div>
+                  <div style={{ fontSize: 10, color: 'rgba(255,255,255,0.4)', display: 'flex', alignItems: 'center', gap: 4 }}>
+                    <i className="fa-solid fa-clock" style={{ fontSize: 9 }}></i>即時更新
+                  </div>
+                </div>
+
+                {/* 商品列表 */}
+                <div style={{ padding: '8px 16px 0', display: 'grid', gridTemplateColumns: 'repeat(2,1fr)', gap: 10 }}>
+                  {liveItems.map((item, idx) => {
+                    const soldOut = item.stock <= 0
+                    const cartItem = cart.find(c => c.item.id === item.id)
+                    const cartQty = cartItem ? cartItem.quantity : 0
+                    return (
+                      <div key={item.id}
+                        style={{ background: '#fff', border: `1px solid ${soldOut ? '#EEEEEE' : '#E8E8E8'}`, borderRadius: 14, overflow: 'hidden', opacity: soldOut ? 0.55 : 1, boxShadow: soldOut ? 'none' : '0 2px 12px rgba(0,0,0,0.06)', animation: `slideInItem 0.3s ${idx * 0.05}s ease both` }}>
+                        {/* 圖片區 */}
+                        <div style={{ aspectRatio: '1', background: '#F5F5F5', display: 'flex', alignItems: 'center', justifyContent: 'center', position: 'relative', overflow: 'hidden' }}>
+                          {item.image_url
+                            ? <img src={item.image_url} alt="" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+                            : (
+                              <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 6 }}>
+                                <i className="fa-solid fa-box-open" style={{ fontSize: 32, color: '#BDBDBD' }}></i>
+                              </div>
+                            )
+                          }
+                          {/* 售完遮罩 */}
+                          {soldOut && (
+                            <div style={{ position: 'absolute', inset: 0, background: 'rgba(255,255,255,0.75)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                              <div style={{ background: '#1a1a1a', color: '#fff', fontSize: 12, fontWeight: 700, padding: '5px 14px', borderRadius: 99 }}>已售完</div>
+                            </div>
+                          )}
+                          {/* 庫存角標 */}
+                          {!soldOut && item.stock <= 5 && (
+                            <div style={{ position: 'absolute', top: 7, right: 7, background: '#E24B4A', color: '#fff', fontSize: 9, fontWeight: 700, padding: '2px 7px', borderRadius: 99 }}>
+                              僅剩 {item.stock}
+                            </div>
+                          )}
+                          {!soldOut && item.stock > 5 && (
+                            <div style={{ position: 'absolute', top: 7, right: 7, background: 'rgba(0,0,0,0.45)', color: '#fff', fontSize: 9, padding: '2px 7px', borderRadius: 99 }}>
+                              剩 {item.stock}
+                            </div>
+                          )}
+                        </div>
+
+                        {/* 資訊區 */}
+                        <div style={{ padding: '10px 10px 12px' }}>
+                          <div style={{ fontSize: 12, fontWeight: 700, color: '#1a1a1a', marginBottom: 2, lineHeight: 1.4 }}>{item.name}</div>
+                          {item.description && <div style={{ fontSize: 10, color: '#9E9E9E', marginBottom: 6, lineHeight: 1.4 }}>{item.description}</div>}
+
+                          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginTop: 8 }}>
+                            <div style={{ fontSize: 15, fontWeight: 900, color: '#E24B4A', letterSpacing: '-0.3px' }}>
+                              $ {item.price}
+                            </div>
+
+                            {/* 數量控制 / 加入按鈕 */}
+                            {!soldOut && (
+                              cartQty > 0 ? (
+                                <div style={{ display: 'flex', alignItems: 'center', gap: 0, background: '#F5F5F5', borderRadius: 99, overflow: 'hidden' }}>
+                                  <button
+                                    onClick={() => updateCartQty(item.id, -1)}
+                                    style={{ width: 28, height: 28, border: 'none', background: 'transparent', fontSize: 16, color: '#333', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: 700 }}>
+                                    −
+                                  </button>
+                                  <span style={{ fontSize: 13, fontWeight: 800, color: '#1a1a1a', minWidth: 22, textAlign: 'center' }}>{cartQty}</span>
+                                  <button
+                                    onClick={() => addToCart(item)}
+                                    style={{ width: 28, height: 28, border: 'none', background: '#1a1a1a', fontSize: 16, color: '#fff', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: 700 }}>
+                                    ＋
+                                  </button>
+                                </div>
+                              ) : (
+                                <button
+                                  onClick={() => addToCart(item)}
+                                  style={{ padding: '6px 14px', background: '#1a1a1a', border: 'none', borderRadius: 99, fontSize: 11, fontWeight: 700, color: '#fff', cursor: 'pointer', letterSpacing: '0.02em' }}>
+                                  + 加入
+                                </button>
+                              )
+                            )}
+                          </div>
+                        </div>
+                      </div>
+                    )
+                  })}
+                </div>
+              </>
+            )}
+          </div>
+        )}
+
+        {/* ══ 商城 Tab ══ */}
         {mainTab === 'shop' && (
           <>
             <div style={{ padding: '14px 16px 10px' }}>
@@ -602,139 +770,67 @@ export default function ShopPage() {
             </div>
           </>
         )}
-
-        {/* ── 本日菜單 Tab ── */}
-        {mainTab === 'menu' && (
-          <div style={{ padding: '14px 16px 120px' }}>
-            {menuLoading ? (
-              <div style={{ textAlign: 'center', padding: '48px 0', color: '#bbb' }}>
-                <i className="fa-solid fa-spinner fa-spin" style={{ fontSize: 24, display: 'block', marginBottom: 10 }}></i>
-                <div style={{ fontSize: 13 }}>載入菜單中...</div>
-              </div>
-            ) : menuItems.length === 0 ? (
-              <div style={{ textAlign: 'center', padding: '60px 20px', color: '#bbb' }}>
-                <i className="fa-solid fa-utensils" style={{ fontSize: 36, display: 'block', marginBottom: 12, opacity: 0.3 }}></i>
-                <div style={{ fontSize: 14, fontWeight: 600, marginBottom: 6 }}>今日菜單尚未更新</div>
-                <div style={{ fontSize: 12 }}>請稍後再來查看</div>
-              </div>
-            ) : (
-              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2,1fr)', gap: 10 }}>
-                {menuItems.map(item => {
-                  const soldOut = item.stock <= 0
-                  const cartItem = cart.find(c => c.item.id === item.id)
-                  const cartQty = cartItem ? cartItem.quantity : 0
-                  return (
-                    <div key={item.id} style={{ background: '#fff', border: `0.5px solid ${soldOut ? '#f0f0f0' : '#e8f5e9'}`, borderRadius: 14, overflow: 'hidden', opacity: soldOut ? 0.6 : 1, boxShadow: '0 2px 10px rgba(56,142,60,.07)' }}>
-                      <div style={{ aspectRatio: '1', background: '#F1F8E9', display: 'flex', alignItems: 'center', justifyContent: 'center', position: 'relative', overflow: 'hidden' }}>
-                        {item.image_url
-                          ? <img src={item.image_url} alt="" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
-                          : <i className="fa-solid fa-bowl-food" style={{ fontSize: 36, color: '#81C784', opacity: 0.5 }}></i>
-                        }
-                        {soldOut && (
-                          <div style={{ position: 'absolute', inset: 0, background: 'rgba(0,0,0,0.45)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                            <span style={{ fontSize: 13, fontWeight: 700, color: '#fff', background: 'rgba(0,0,0,0.6)', padding: '5px 12px', borderRadius: 8 }}>售完</span>
-                          </div>
-                        )}
-                        <div style={{ position: 'absolute', top: 6, left: 6, display: 'flex', gap: 4 }}>
-                          {item.dine_in && <span style={{ fontSize: 8, fontWeight: 700, background: 'rgba(56,142,60,0.85)', color: '#fff', padding: '2px 6px', borderRadius: 99 }}>內用</span>}
-                          {item.takeout && <span style={{ fontSize: 8, fontWeight: 700, background: 'rgba(25,118,210,0.85)', color: '#fff', padding: '2px 6px', borderRadius: 99 }}>外帶</span>}
-                        </div>
-                        {!soldOut && <div style={{ position: 'absolute', top: 6, right: 6, fontSize: 9, background: 'rgba(0,0,0,0.45)', color: '#fff', padding: '2px 6px', borderRadius: 99 }}>剩 {item.stock}</div>}
-                      </div>
-                      <div style={{ padding: '10px 10px 12px' }}>
-                        <div style={{ fontSize: 12, fontWeight: 600, color: '#2D1A00', marginBottom: 3 }}>{item.name}</div>
-                        {item.description && <div style={{ fontSize: 10, color: '#bbb', marginBottom: 6, lineHeight: 1.4 }}>{item.description}</div>}
-                        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginTop: 6 }}>
-                          <div style={{ fontSize: 13, fontWeight: 800, color: '#388E3C' }}>$ {item.price}</div>
-                          {!soldOut && (
-                            cartQty > 0 ? (
-                              <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
-                                <button onClick={() => updateCartQty(item.id, -1)} style={{ width: 24, height: 24, borderRadius: '50%', border: '1.5px solid #86C566', background: '#fff', fontSize: 14, color: '#388E3C', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: 700 }}>−</button>
-                                <span style={{ fontSize: 14, fontWeight: 800, color: '#388E3C', minWidth: 20, textAlign: 'center' }}>{cartQty}</span>
-                                <button onClick={() => addToCart(item)} style={{ width: 24, height: 24, borderRadius: '50%', border: 'none', background: '#388E3C', fontSize: 14, color: '#fff', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: 700 }}>＋</button>
-                              </div>
-                            ) : (
-                              <button onClick={() => addToCart(item)}
-                                style={{ padding: '5px 12px', background: 'linear-gradient(135deg,#388E3C,#66BB6A)', border: 'none', borderRadius: 99, fontSize: 11, fontWeight: 700, color: '#fff', cursor: 'pointer' }}>
-                                加入
-                              </button>
-                            )
-                          )}
-                        </div>
-                      </div>
-                    </div>
-                  )
-                })}
-              </div>
-            )}
-          </div>
-        )}
       </div>
 
-      {/* ── 購物車固定按鈕（本日菜單 Tab） ── */}
-      {mainTab === 'menu' && cartCount > 0 && (
-        <div style={{ position: 'fixed', bottom: 72, left: '50%', transform: 'translateX(-50%)', width: '100%', maxWidth: 390, padding: '0 20px', zIndex: 50 }}>
+      {/* ── 購物車固定按鈕（直播下單區） ── */}
+      {mainTab === 'live' && cartCount > 0 && (
+        <div style={{ position: 'fixed', bottom: 72, left: '50%', transform: 'translateX(-50%)', width: '100%', maxWidth: 390, padding: '0 16px', zIndex: 50 }}>
           <button onClick={() => setShowCart(true)}
-            style={{ width: '100%', padding: '13px 20px', background: 'linear-gradient(135deg,#388E3C,#66BB6A)', border: 'none', borderRadius: 14, fontSize: 14, fontWeight: 700, color: '#fff', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'space-between', boxShadow: '0 4px 20px rgba(56,142,60,.35)' }}>
-            <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-              <i className="fa-solid fa-cart-shopping"></i>
-              <span style={{ background: 'rgba(255,255,255,0.25)', borderRadius: 99, padding: '1px 8px', fontSize: 12 }}>{cartCount}</span>
-              查看購物車
+            style={{ width: '100%', padding: '14px 20px', background: '#1a1a1a', border: 'none', borderRadius: 14, fontSize: 14, fontWeight: 700, color: '#fff', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'space-between', boxShadow: '0 6px 24px rgba(0,0,0,.3)' }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+              <div style={{ position: 'relative' }}>
+                <i className="fa-solid fa-cart-shopping" style={{ fontSize: 16 }}></i>
+                <span style={{ position: 'absolute', top: -6, right: -8, background: '#E24B4A', color: '#fff', borderRadius: 99, fontSize: 9, fontWeight: 900, padding: '1px 5px', minWidth: 16, textAlign: 'center' }}>{cartCount}</span>
+              </div>
+              <span>查看購物車</span>
             </div>
-            <span>$ {cartTotal}</span>
+            <span style={{ fontSize: 15, fontWeight: 900 }}>$ {cartTotal}</span>
           </button>
         </div>
       )}
 
       {/* ── 購物車 Sheet ── */}
       {showCart && (
-        <div onClick={() => setShowCart(false)} style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.4)', zIndex: 100, display: 'flex', alignItems: 'flex-end', justifyContent: 'center' }}>
-          <div onClick={e => e.stopPropagation()} style={{ width: '100%', maxWidth: 390, maxHeight: '85vh', background: '#fff', borderRadius: '16px 16px 0 0', display: 'flex', flexDirection: 'column' }}>
-            <div style={{ width: 36, height: 4, borderRadius: 2, background: '#e8f5e9', margin: '12px auto 0', flexShrink: 0 }} />
-            <div style={{ padding: '12px 20px 8px', borderBottom: '0.5px solid #e8f5e9', flexShrink: 0 }}>
-              <div style={{ fontSize: 16, fontWeight: 700, color: '#14532D', display: 'flex', alignItems: 'center', gap: 7 }}>
-                <i className="fa-solid fa-cart-shopping" style={{ color: '#388E3C' }}></i>購物車
-              </div>
-              {/* 用餐方式 */}
-              <div style={{ display: 'flex', gap: 8, marginTop: 12 }}>
-                {[{ key: 'dine_in', label: '內用', icon: 'fa-utensils' }, { key: 'takeout', label: '外帶', icon: 'fa-bag-shopping' }].map(d => (
-                  <button key={d.key} onClick={() => setDineType(d.key)}
-                    style={{ flex: 1, padding: '8px 0', borderRadius: 10, border: `1.5px solid ${dineType === d.key ? '#388E3C' : '#e0e0e0'}`, background: dineType === d.key ? '#F0FFF4' : '#fff', fontSize: 13, fontWeight: dineType === d.key ? 700 : 400, color: dineType === d.key ? '#388E3C' : '#999', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 6 }}>
-                    <i className={`fa-solid ${d.icon}`} style={{ fontSize: 12 }}></i>{d.label}
-                  </button>
-                ))}
+        <div onClick={() => setShowCart(false)} style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.5)', zIndex: 100, display: 'flex', alignItems: 'flex-end', justifyContent: 'center' }}>
+          <div onClick={e => e.stopPropagation()} style={{ width: '100%', maxWidth: 390, maxHeight: '85vh', background: '#fff', borderRadius: '20px 20px 0 0', display: 'flex', flexDirection: 'column' }}>
+            <div style={{ width: 36, height: 4, borderRadius: 2, background: '#E0E0E0', margin: '12px auto 0', flexShrink: 0 }} />
+            <div style={{ padding: '12px 20px 10px', borderBottom: '0.5px solid #F0F0F0', flexShrink: 0 }}>
+              <div style={{ fontSize: 16, fontWeight: 800, color: '#1a1a1a', display: 'flex', alignItems: 'center', gap: 8 }}>
+                <i className="fa-solid fa-cart-shopping" style={{ fontSize: 15 }}></i>購物車
+                <span style={{ fontSize: 12, fontWeight: 500, color: '#9E9E9E', marginLeft: 2 }}>{cartCount} 件</span>
               </div>
             </div>
-            <div style={{ overflowY: 'auto', flex: 1, padding: '8px 20px' }}>
+            <div style={{ overflowY: 'auto', flex: 1, padding: '4px 20px' }}>
               {cart.map(c => (
-                <div key={c.item.id} style={{ display: 'flex', alignItems: 'center', gap: 12, padding: '12px 0', borderBottom: '0.5px solid #f0f9f0' }}>
-                  <div style={{ width: 48, height: 48, borderRadius: 10, overflow: 'hidden', flexShrink: 0, background: '#F1F8E9', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                    {c.item.image_url ? <img src={c.item.image_url} alt="" style={{ width: '100%', height: '100%', objectFit: 'cover' }} /> : <i className="fa-solid fa-bowl-food" style={{ fontSize: 20, color: '#81C784' }}></i>}
+                <div key={c.item.id} style={{ display: 'flex', alignItems: 'center', gap: 12, padding: '13px 0', borderBottom: '0.5px solid #F5F5F5' }}>
+                  <div style={{ width: 52, height: 52, borderRadius: 10, overflow: 'hidden', flexShrink: 0, background: '#F5F5F5', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                    {c.item.image_url ? <img src={c.item.image_url} alt="" style={{ width: '100%', height: '100%', objectFit: 'cover' }} /> : <i className="fa-solid fa-box-open" style={{ fontSize: 20, color: '#BDBDBD' }}></i>}
                   </div>
-                  <div style={{ flex: 1 }}>
-                    <div style={{ fontSize: 13, fontWeight: 600, color: '#111' }}>{c.item.name}</div>
-                    <div style={{ fontSize: 12, color: '#388E3C', fontWeight: 700, marginTop: 2 }}>$ {c.item.price}</div>
+                  <div style={{ flex: 1, minWidth: 0 }}>
+                    <div style={{ fontSize: 13, fontWeight: 600, color: '#1a1a1a', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{c.item.name}</div>
+                    <div style={{ fontSize: 13, color: '#E24B4A', fontWeight: 800, marginTop: 2 }}>$ {c.item.price}</div>
                   </div>
-                  <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-                    <button onClick={() => updateCartQty(c.item.id, -1)} style={{ width: 26, height: 26, borderRadius: '50%', border: '1.5px solid #86C566', background: '#fff', fontSize: 14, color: '#388E3C', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>−</button>
-                    <span style={{ fontSize: 14, fontWeight: 700, color: '#111', minWidth: 20, textAlign: 'center' }}>{c.quantity}</span>
-                    <button onClick={() => updateCartQty(c.item.id, 1)} style={{ width: 26, height: 26, borderRadius: '50%', border: 'none', background: '#388E3C', fontSize: 14, color: '#fff', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>＋</button>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: 0, background: '#F5F5F5', borderRadius: 99, overflow: 'hidden', flexShrink: 0 }}>
+                    <button onClick={() => updateCartQty(c.item.id, -1)} style={{ width: 30, height: 30, border: 'none', background: 'transparent', fontSize: 16, color: '#333', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: 700 }}>−</button>
+                    <span style={{ fontSize: 13, fontWeight: 800, color: '#1a1a1a', minWidth: 24, textAlign: 'center' }}>{c.quantity}</span>
+                    <button onClick={() => updateCartQty(c.item.id, 1)} style={{ width: 30, height: 30, border: 'none', background: '#1a1a1a', fontSize: 16, color: '#fff', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: 700 }}>＋</button>
                   </div>
-                  <div style={{ textAlign: 'right', minWidth: 50 }}>
-                    <div style={{ fontSize: 13, fontWeight: 700, color: '#14532D' }}>$ {c.item.price * c.quantity}</div>
-                    <button onClick={() => removeFromCart(c.item.id)} style={{ fontSize: 10, color: '#bbb', background: 'none', border: 'none', cursor: 'pointer', padding: 0, marginTop: 2 }}>移除</button>
+                  <div style={{ textAlign: 'right', minWidth: 52, flexShrink: 0 }}>
+                    <div style={{ fontSize: 13, fontWeight: 800, color: '#1a1a1a' }}>$ {c.item.price * c.quantity}</div>
+                    <button onClick={() => removeFromCart(c.item.id)} style={{ fontSize: 10, color: '#BDBDBD', background: 'none', border: 'none', cursor: 'pointer', padding: 0, marginTop: 3 }}>移除</button>
                   </div>
                 </div>
               ))}
             </div>
-            <div style={{ padding: '12px 20px 28px', borderTop: '0.5px solid #e8f5e9', flexShrink: 0 }}>
-              <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 15, fontWeight: 800, color: '#14532D', marginBottom: 14 }}>
-                <span>總計</span><span>$ {cartTotal}</span>
+            <div style={{ padding: '14px 20px 28px', borderTop: '0.5px solid #F0F0F0', flexShrink: 0 }}>
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 14 }}>
+                <span style={{ fontSize: 13, color: '#9E9E9E' }}>訂單總計</span>
+                <span style={{ fontSize: 20, fontWeight: 900, color: '#E24B4A', letterSpacing: '-0.5px' }}>$ {cartTotal}</span>
               </div>
               <button onClick={handleCheckout} disabled={checkingOut || cart.length === 0}
-                style={{ width: '100%', padding: 14, background: checkingOut ? '#ccc' : 'linear-gradient(135deg,#388E3C,#66BB6A)', border: 'none', borderRadius: 12, fontSize: 15, fontWeight: 700, color: '#fff', cursor: checkingOut ? 'not-allowed' : 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8 }}>
-                <i className="fa-solid fa-check"></i>
-                {checkingOut ? '送出中...' : '確認結帳'}
+                style={{ width: '100%', padding: 15, background: checkingOut ? '#ccc' : '#1a1a1a', border: 'none', borderRadius: 13, fontSize: 15, fontWeight: 800, color: '#fff', cursor: checkingOut ? 'not-allowed' : 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8, letterSpacing: '0.02em' }}>
+                <i className="fa-solid fa-bolt" style={{ fontSize: 13 }}></i>
+                {checkingOut ? '送出中...' : '立即下單'}
               </button>
             </div>
           </div>
@@ -743,42 +839,40 @@ export default function ShopPage() {
 
       {/* ── 我的訂單 Sheet ── */}
       {showMyOrders && (
-        <div onClick={() => setShowMyOrders(false)} style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.4)', zIndex: 100, display: 'flex', alignItems: 'flex-end', justifyContent: 'center' }}>
-          <div onClick={e => e.stopPropagation()} style={{ width: '100%', maxWidth: 390, maxHeight: '85vh', background: '#fff', borderRadius: '16px 16px 0 0', display: 'flex', flexDirection: 'column' }}>
-            <div style={{ width: 36, height: 4, borderRadius: 2, background: '#e8f5e9', margin: '12px auto 0', flexShrink: 0 }} />
-            <div style={{ padding: '12px 20px 8px', borderBottom: '0.5px solid #e8f5e9', display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexShrink: 0 }}>
-              <div style={{ fontSize: 15, fontWeight: 700, color: '#14532D' }}>
-                <i className="fa-solid fa-receipt" style={{ color: '#388E3C', marginRight: 7 }}></i>我的訂單
+        <div onClick={() => setShowMyOrders(false)} style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.5)', zIndex: 100, display: 'flex', alignItems: 'flex-end', justifyContent: 'center' }}>
+          <div onClick={e => e.stopPropagation()} style={{ width: '100%', maxWidth: 390, maxHeight: '85vh', background: '#fff', borderRadius: '20px 20px 0 0', display: 'flex', flexDirection: 'column' }}>
+            <div style={{ width: 36, height: 4, borderRadius: 2, background: '#E0E0E0', margin: '12px auto 0', flexShrink: 0 }} />
+            <div style={{ padding: '12px 20px 10px', borderBottom: '0.5px solid #F0F0F0', display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexShrink: 0 }}>
+              <div style={{ fontSize: 15, fontWeight: 800, color: '#1a1a1a' }}>
+                <i className="fa-solid fa-receipt" style={{ marginRight: 8, color: '#555' }}></i>我的訂單
               </div>
-              <span style={{ fontSize: 11, color: '#bbb' }}>{myMenuOrders.length} 筆</span>
+              <span style={{ fontSize: 11, color: '#bbb' }}>{myOrders.length} 筆</span>
             </div>
             <div style={{ overflowY: 'auto', padding: '8px 20px 32px' }}>
-              {myMenuOrders.length === 0 ? (
-                <div style={{ textAlign: 'center', padding: '40px 0', color: '#bbb', fontSize: 13 }}>
-                  <i className="fa-solid fa-receipt" style={{ fontSize: 32, display: 'block', marginBottom: 10, opacity: 0.3 }}></i>尚無訂單
+              {myOrders.length === 0 ? (
+                <div style={{ textAlign: 'center', padding: '48px 0', color: '#bbb' }}>
+                  <i className="fa-solid fa-receipt" style={{ fontSize: 36, display: 'block', marginBottom: 12, opacity: 0.25 }}></i>
+                  <div style={{ fontSize: 13 }}>尚無訂單紀錄</div>
                 </div>
-              ) : myMenuOrders.map(order => {
+              ) : myOrders.map(order => {
                 const sc = ORDER_STATUS[order.status] || ORDER_STATUS.pending
                 return (
-                  <div key={order.id} style={{ padding: '14px 0', borderBottom: '0.5px solid #f0f9f0' }}>
+                  <div key={order.id} style={{ padding: '14px 0', borderBottom: '0.5px solid #F5F5F5' }}>
                     <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 8 }}>
                       <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-                        <span style={{ fontSize: 12, fontWeight: 700, color: '#14532D' }}>#{String(order.order_no).padStart(4, '0')}</span>
-                        <span style={{ fontSize: 10, padding: '2px 8px', borderRadius: 99, background: order.dine_type === 'dine_in' ? '#E8F5E9' : '#E3F2FD', color: order.dine_type === 'dine_in' ? '#388E3C' : '#1976D2', fontWeight: 600 }}>
-                          {order.dine_type === 'dine_in' ? '內用' : '外帶'}
-                        </span>
+                        <span style={{ fontSize: 13, fontWeight: 800, color: '#1a1a1a' }}>#{String(order.order_no).padStart(4, '0')}</span>
                       </div>
                       <span style={{ fontSize: 11, fontWeight: 700, padding: '3px 10px', borderRadius: 99, background: sc.bg, color: sc.color }}>{sc.label}</span>
                     </div>
                     {(order.menu_order_items || []).map((item, i) => (
-                      <div key={i} style={{ display: 'flex', justifyContent: 'space-between', fontSize: 12, color: '#555', marginBottom: 2 }}>
+                      <div key={i} style={{ display: 'flex', justifyContent: 'space-between', fontSize: 12, color: '#555', marginBottom: 3 }}>
                         <span>{item.item_name} × {item.quantity}</span>
-                        <span>$ {item.subtotal}</span>
+                        <span style={{ fontWeight: 600 }}>$ {item.subtotal}</span>
                       </div>
                     ))}
-                    <div style={{ display: 'flex', justifyContent: 'space-between', marginTop: 8 }}>
-                      <span style={{ fontSize: 11, color: '#bbb' }}>{new Date(order.created_at).toLocaleDateString('zh-TW')} {new Date(order.created_at).toLocaleTimeString('zh-TW', { hour: '2-digit', minute: '2-digit' })}</span>
-                      <span style={{ fontSize: 13, fontWeight: 800, color: '#388E3C' }}>$ {order.total_amount}</span>
+                    <div style={{ display: 'flex', justifyContent: 'space-between', marginTop: 8, paddingTop: 8, borderTop: '0.5px solid #F5F5F5' }}>
+                      <span style={{ fontSize: 10, color: '#bbb' }}>{new Date(order.created_at).toLocaleDateString('zh-TW')} {new Date(order.created_at).toLocaleTimeString('zh-TW', { hour: '2-digit', minute: '2-digit' })}</span>
+                      <span style={{ fontSize: 14, fontWeight: 900, color: '#E24B4A' }}>$ {order.total_amount}</span>
                     </div>
                   </div>
                 )
@@ -788,10 +882,10 @@ export default function ShopPage() {
         </div>
       )}
 
-      {/* 訂單成功 Overlay */}
+      {/* ── 訂單成功 Overlay ── */}
       {orderSuccess && <OrderSuccessOverlay order={orderSuccess} onClose={() => setOrderSuccess(null)} />}
 
-      {/* ── 原本商城的 Sheets ── */}
+      {/* ── 商城 Sheets ── */}
       {showPointsLog && (
         <div onClick={() => setShowPointsLog(false)} style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.4)', zIndex: 100, display: 'flex', alignItems: 'flex-end', justifyContent: 'center' }}>
           <div onClick={e => e.stopPropagation()} style={{ width: '100%', maxWidth: 390, maxHeight: '80vh', background: '#fff', borderRadius: '16px 16px 0 0', display: 'flex', flexDirection: 'column' }}>
