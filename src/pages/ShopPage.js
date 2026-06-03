@@ -115,17 +115,14 @@ function OrderSuccessOverlay({ order, onClose }) {
         ))}
       </div>
       <div onClick={e => e.stopPropagation()} style={{ background: '#fff', borderRadius: 20, padding: '28px 24px 22px', maxWidth: 310, width: '88%', textAlign: 'center', boxShadow: '0 16px 48px rgba(0,0,0,.25)', animation: 'orderPop 0.45s cubic-bezier(0.34,1.56,0.64,1) both' }}>
-        {/* 頂部 LIVE 標記 */}
         <div style={{ display: 'inline-flex', alignItems: 'center', gap: 5, background: 'linear-gradient(135deg,#E24B4A,#c0392b)', borderRadius: 99, padding: '4px 12px', marginBottom: 16 }}>
           <div style={{ width: 6, height: 6, borderRadius: '50%', background: '#fff', animation: 'liveBadgePulse 1s infinite' }} />
-          <span style={{ fontSize: 11, fontWeight: 800, color: '#fff', letterSpacing: '0.08em' }}>LIVE 下單成功</span>
+          <span style={{ fontSize: 11, fontWeight: 800, color: '#fff', letterSpacing: '0.08em' }}>下單成功</span>
         </div>
-        {/* 訂單號 */}
         <div style={{ fontSize: 28, fontWeight: 900, color: '#1a1a1a', marginBottom: 4, letterSpacing: '-0.5px' }}>
           #{String(order.order_no).padStart(4, '0')}
         </div>
         <div style={{ fontSize: 11, color: '#bbb', marginBottom: 18 }}>訂單編號已記錄</div>
-        {/* 明細 */}
         <div style={{ background: '#FAFAFA', border: '1px solid #F0F0F0', borderRadius: 12, padding: '12px 14px', marginBottom: 18, textAlign: 'left' }}>
           {order.items.map((item, i) => (
             <div key={i} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', fontSize: 13, color: '#333', marginBottom: i < order.items.length - 1 ? 6 : 0 }}>
@@ -164,7 +161,6 @@ export default function ShopPage() {
   const { member, setMember } = useAuth()
   const [searchParams, setSearchParams] = useSearchParams()
 
-  // Tab 預設改為 'live'（直播下單區優先）
   const [mainTab, setMainTab] = useState(searchParams.get('tab') === 'shop' ? 'shop' : 'live')
 
   // ── 商城 state ──
@@ -192,6 +188,7 @@ export default function ShopPage() {
   const [liveItems, setLiveItems] = useState([])
   const [liveLoading, setLiveLoading] = useState(false)
   const [cart, setCart] = useState([])
+  const [dineType, setDineType] = useState('dine_in')
   const [showCart, setShowCart] = useState(false)
   const [checkingOut, setCheckingOut] = useState(false)
   const [orderSuccess, setOrderSuccess] = useState(null)
@@ -281,7 +278,7 @@ export default function ShopPage() {
     try {
       const { data: order, error: orderErr } = await supabase.from('menu_orders').insert({
         member_id: member.id,
-        dine_type: 'takeout',
+        dine_type: dineType,
         total_amount: cartTotal,
         status: 'pending',
       }).select().single()
@@ -512,7 +509,6 @@ export default function ShopPage() {
             <div>
               {mainTab === 'live' ? (
                 <div style={{ fontSize: 18, fontWeight: 900, color: '#1a1a1a', display: 'flex', alignItems: 'center', gap: 8, letterSpacing: '-0.3px' }}>
-                  {/* LIVE 標記 */}
                   <div style={{ display: 'inline-flex', alignItems: 'center', gap: 4, background: '#E24B4A', borderRadius: 6, padding: '3px 8px', animation: 'liveGlow 2s ease infinite' }}>
                     <div style={{ width: 5, height: 5, borderRadius: '50%', background: '#fff', animation: 'liveDot 1s ease infinite' }} />
                     <span style={{ fontSize: 10, fontWeight: 900, color: '#fff', letterSpacing: '0.1em' }}>LIVE</span>
@@ -528,7 +524,6 @@ export default function ShopPage() {
                 {mainTab === 'live' ? '選擇直播商品，立即下單' : '使用點數兌換專屬好禮'}
               </div>
             </div>
-            {/* 右側按鈕 */}
             {mainTab === 'shop' && (
               <div style={{ background: '#fff', border: '1.5px solid #FAC775', borderRadius: 12, padding: '8px 14px', textAlign: 'center' }}>
                 <div style={{ fontSize: 16, fontWeight: 800, color: '#E07B00' }}>{(member.shop_points || 0).toLocaleString()}</div>
@@ -547,7 +542,7 @@ export default function ShopPage() {
             )}
           </div>
 
-          {/* Tab 切換：直播下單區 在前，商城 在後 */}
+          {/* Tab 切換 */}
           <div style={{ display: 'flex', gap: 0, borderBottom: '0.5px solid #F5E8C8' }}>
             {[
               { key: 'live',  label: '直播下單區', icon: 'fa-video',  activeColor: '#E24B4A', activeBg: 'rgba(226,75,74,0.06)' },
@@ -558,7 +553,6 @@ export default function ShopPage() {
                 style={{ flex: 1, padding: '10px 0', border: 'none', background: mainTab === t.key ? t.activeBg : 'transparent', fontSize: 13, fontWeight: mainTab === t.key ? 700 : 400, color: mainTab === t.key ? t.activeColor : '#bbb', cursor: 'pointer', borderBottom: mainTab === t.key ? `2.5px solid ${t.activeColor}` : '2.5px solid transparent', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 6, transition: 'all 0.2s' }}>
                 <i className={`fa-solid ${t.icon}`} style={{ fontSize: 12 }}></i>
                 {t.label}
-                {/* LIVE 動態小點 */}
                 {t.key === 'live' && liveItems.length > 0 && mainTab !== 'live' && (
                   <span style={{ width: 6, height: 6, borderRadius: '50%', background: '#E24B4A', display: 'inline-block', animation: 'liveDot 1s ease infinite' }} />
                 )}
@@ -572,7 +566,6 @@ export default function ShopPage() {
           <div style={{ padding: '0 0 120px' }}>
             {liveLoading ? (
               <div style={{ padding: '60px 0', textAlign: 'center' }}>
-                {/* Skeleton loader */}
                 <style>{`@keyframes sk{0%{background-position:-300px 0}100%{background-position:300px 0}}`}</style>
                 <div style={{ padding: '0 16px', display: 'grid', gridTemplateColumns: 'repeat(2,1fr)', gap: 10 }}>
                   {[0,1,2,3].map(i => (
@@ -591,102 +584,65 @@ export default function ShopPage() {
                 <div style={{ width: 72, height: 72, borderRadius: '50%', background: '#F5F5F5', display: 'flex', alignItems: 'center', justifyContent: 'center', margin: '0 auto 16px' }}>
                   <i className="fa-solid fa-video-slash" style={{ fontSize: 28, color: '#BDBDBD' }}></i>
                 </div>
-                <div style={{ fontSize: 15, fontWeight: 700, color: '#333', marginBottom: 6 }}>目前直播尚未開始</div>
+                <div style={{ fontSize: 15, fontWeight: 700, color: '#333', marginBottom: 6 }}>目前尚未有上架商品</div>
                 <div style={{ fontSize: 12, color: '#bbb', lineHeight: 1.6 }}>商品上架後即可在此下單<br/>請關注直播通知</div>
               </div>
             ) : (
-              <>
-                {/* 直播狀態橫幅 */}
-                <div style={{ margin: '12px 16px 4px', padding: '10px 14px', background: 'linear-gradient(135deg,#1a1a1a,#2d2d2d)', borderRadius: 12, display: 'flex', alignItems: 'center', gap: 10 }}>
-                  <div style={{ width: 8, height: 8, borderRadius: '50%', background: '#E24B4A', animation: 'liveDot 1s ease infinite', flexShrink: 0 }} />
-                  <div style={{ flex: 1 }}>
-                    <div style={{ fontSize: 12, fontWeight: 700, color: '#fff' }}>直播進行中</div>
-                    <div style={{ fontSize: 10, color: 'rgba(255,255,255,0.45)', marginTop: 1 }}>{liveItems.length} 件商品上架中</div>
-                  </div>
-                  <div style={{ fontSize: 10, color: 'rgba(255,255,255,0.4)', display: 'flex', alignItems: 'center', gap: 4 }}>
-                    <i className="fa-solid fa-clock" style={{ fontSize: 9 }}></i>即時更新
-                  </div>
-                </div>
-
-                {/* 商品列表 */}
-                <div style={{ padding: '8px 16px 0', display: 'grid', gridTemplateColumns: 'repeat(2,1fr)', gap: 10 }}>
-                  {liveItems.map((item, idx) => {
-                    const soldOut = item.stock <= 0
-                    const cartItem = cart.find(c => c.item.id === item.id)
-                    const cartQty = cartItem ? cartItem.quantity : 0
-                    return (
-                      <div key={item.id}
-                        style={{ background: '#fff', border: `1px solid ${soldOut ? '#EEEEEE' : '#E8E8E8'}`, borderRadius: 14, overflow: 'hidden', opacity: soldOut ? 0.55 : 1, boxShadow: soldOut ? 'none' : '0 2px 12px rgba(0,0,0,0.06)', animation: `slideInItem 0.3s ${idx * 0.05}s ease both` }}>
-                        {/* 圖片區 */}
-                        <div style={{ aspectRatio: '1', background: '#F5F5F5', display: 'flex', alignItems: 'center', justifyContent: 'center', position: 'relative', overflow: 'hidden' }}>
-                          {item.image_url
-                            ? <img src={item.image_url} alt="" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
-                            : (
-                              <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 6 }}>
-                                <i className="fa-solid fa-box-open" style={{ fontSize: 32, color: '#BDBDBD' }}></i>
-                              </div>
-                            )
-                          }
-                          {/* 售完遮罩 */}
-                          {soldOut && (
-                            <div style={{ position: 'absolute', inset: 0, background: 'rgba(255,255,255,0.75)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                              <div style={{ background: '#1a1a1a', color: '#fff', fontSize: 12, fontWeight: 700, padding: '5px 14px', borderRadius: 99 }}>已售完</div>
-                            </div>
-                          )}
-                          {/* 庫存角標 */}
-                          {!soldOut && item.stock <= 5 && (
-                            <div style={{ position: 'absolute', top: 7, right: 7, background: '#E24B4A', color: '#fff', fontSize: 9, fontWeight: 700, padding: '2px 7px', borderRadius: 99 }}>
-                              僅剩 {item.stock}
-                            </div>
-                          )}
-                          {!soldOut && item.stock > 5 && (
-                            <div style={{ position: 'absolute', top: 7, right: 7, background: 'rgba(0,0,0,0.45)', color: '#fff', fontSize: 9, padding: '2px 7px', borderRadius: 99 }}>
-                              剩 {item.stock}
-                            </div>
-                          )}
-                        </div>
-
-                        {/* 資訊區 */}
-                        <div style={{ padding: '10px 10px 12px' }}>
-                          <div style={{ fontSize: 12, fontWeight: 700, color: '#1a1a1a', marginBottom: 2, lineHeight: 1.4 }}>{item.name}</div>
-                          {item.description && <div style={{ fontSize: 10, color: '#9E9E9E', marginBottom: 6, lineHeight: 1.4 }}>{item.description}</div>}
-
-                          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginTop: 8 }}>
-                            <div style={{ fontSize: 15, fontWeight: 900, color: '#E24B4A', letterSpacing: '-0.3px' }}>
-                              $ {item.price}
-                            </div>
-
-                            {/* 數量控制 / 加入按鈕 */}
-                            {!soldOut && (
-                              cartQty > 0 ? (
-                                <div style={{ display: 'flex', alignItems: 'center', gap: 0, background: '#F5F5F5', borderRadius: 99, overflow: 'hidden' }}>
-                                  <button
-                                    onClick={() => updateCartQty(item.id, -1)}
-                                    style={{ width: 28, height: 28, border: 'none', background: 'transparent', fontSize: 16, color: '#333', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: 700 }}>
-                                    −
-                                  </button>
-                                  <span style={{ fontSize: 13, fontWeight: 800, color: '#1a1a1a', minWidth: 22, textAlign: 'center' }}>{cartQty}</span>
-                                  <button
-                                    onClick={() => addToCart(item)}
-                                    style={{ width: 28, height: 28, border: 'none', background: '#1a1a1a', fontSize: 16, color: '#fff', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: 700 }}>
-                                    ＋
-                                  </button>
-                                </div>
-                              ) : (
-                                <button
-                                  onClick={() => addToCart(item)}
-                                  style={{ padding: '6px 14px', background: '#1a1a1a', border: 'none', borderRadius: 99, fontSize: 11, fontWeight: 700, color: '#fff', cursor: 'pointer', letterSpacing: '0.02em' }}>
-                                  + 加入
-                                </button>
-                              )
-                            )}
+              <div style={{ padding: '12px 16px 0', display: 'grid', gridTemplateColumns: 'repeat(2,1fr)', gap: 10 }}>
+                {liveItems.map((item, idx) => {
+                  const soldOut = item.stock <= 0
+                  const cartItem = cart.find(c => c.item.id === item.id)
+                  const cartQty = cartItem ? cartItem.quantity : 0
+                  return (
+                    <div key={item.id}
+                      style={{ background: '#fff', border: `1px solid ${soldOut ? '#EEEEEE' : '#E8E8E8'}`, borderRadius: 14, overflow: 'hidden', opacity: soldOut ? 0.55 : 1, boxShadow: soldOut ? 'none' : '0 2px 12px rgba(0,0,0,0.06)', animation: `slideInItem 0.3s ${idx * 0.05}s ease both` }}>
+                      <div style={{ aspectRatio: '1', background: '#F5F5F5', display: 'flex', alignItems: 'center', justifyContent: 'center', position: 'relative', overflow: 'hidden' }}>
+                        {item.image_url
+                          ? <img src={item.image_url} alt="" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+                          : <i className="fa-solid fa-box-open" style={{ fontSize: 32, color: '#BDBDBD' }}></i>
+                        }
+                        {soldOut && (
+                          <div style={{ position: 'absolute', inset: 0, background: 'rgba(255,255,255,0.75)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                            <div style={{ background: '#1a1a1a', color: '#fff', fontSize: 12, fontWeight: 700, padding: '5px 14px', borderRadius: 99 }}>已售完</div>
                           </div>
+                        )}
+                        {!soldOut && item.stock <= 5 && (
+                          <div style={{ position: 'absolute', top: 7, right: 7, background: '#E24B4A', color: '#fff', fontSize: 9, fontWeight: 700, padding: '2px 7px', borderRadius: 99 }}>
+                            僅剩 {item.stock}
+                          </div>
+                        )}
+                        {!soldOut && item.stock > 5 && (
+                          <div style={{ position: 'absolute', top: 7, right: 7, background: 'rgba(0,0,0,0.45)', color: '#fff', fontSize: 9, padding: '2px 7px', borderRadius: 99 }}>
+                            剩 {item.stock}
+                          </div>
+                        )}
+                      </div>
+                      <div style={{ padding: '10px 10px 12px' }}>
+                        <div style={{ fontSize: 12, fontWeight: 700, color: '#1a1a1a', marginBottom: 2, lineHeight: 1.4 }}>{item.name}</div>
+                        {item.description && <div style={{ fontSize: 10, color: '#9E9E9E', marginBottom: 6, lineHeight: 1.4 }}>{item.description}</div>}
+                        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginTop: 8 }}>
+                          <div style={{ fontSize: 15, fontWeight: 900, color: '#E24B4A', letterSpacing: '-0.3px' }}>
+                            $ {item.price}
+                          </div>
+                          {!soldOut && (
+                            cartQty > 0 ? (
+                              <div style={{ display: 'flex', alignItems: 'center', gap: 0, background: '#F5F5F5', borderRadius: 99, overflow: 'hidden' }}>
+                                <button onClick={() => updateCartQty(item.id, -1)} style={{ width: 28, height: 28, border: 'none', background: 'transparent', fontSize: 16, color: '#333', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: 700 }}>−</button>
+                                <span style={{ fontSize: 13, fontWeight: 800, color: '#1a1a1a', minWidth: 22, textAlign: 'center' }}>{cartQty}</span>
+                                <button onClick={() => addToCart(item)} style={{ width: 28, height: 28, border: 'none', background: '#1a1a1a', fontSize: 16, color: '#fff', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: 700 }}>＋</button>
+                              </div>
+                            ) : (
+                              <button onClick={() => addToCart(item)} style={{ padding: '6px 14px', background: '#1a1a1a', border: 'none', borderRadius: 99, fontSize: 11, fontWeight: 700, color: '#fff', cursor: 'pointer', letterSpacing: '0.02em' }}>
+                                + 加入
+                              </button>
+                            )
+                          )}
                         </div>
                       </div>
-                    )
-                  })}
-                </div>
-              </>
+                    </div>
+                  )
+                })}
+              </div>
             )}
           </div>
         )}
@@ -722,12 +678,10 @@ export default function ShopPage() {
                 </button>
               </div>
             </div>
-
             <div style={{ padding: '0 16px 4px', fontSize: 11, color: '#bbb', display: 'flex', alignItems: 'center', gap: 6 }}>
               <i className="fa-solid fa-circle-info" style={{ color: '#E07B00' }}></i>
               你的等級：{member.level} · 目前可進入{canAccess(member.level, 'vip') ? 'VIP 商城' : canAccess(member.level, 'premium') ? '高級商城' : '一般商城'}
             </div>
-
             <div style={{ padding: '0 0 28px' }}>
               {['general', 'premium', 'vip'].map(tier => {
                 const cfg = TIER_CONFIG[tier]
@@ -772,7 +726,7 @@ export default function ShopPage() {
         )}
       </div>
 
-      {/* ── 購物車固定按鈕（直播下單區） ── */}
+      {/* ── 購物車固定按鈕 ── */}
       {mainTab === 'live' && cartCount > 0 && (
         <div style={{ position: 'fixed', bottom: 72, left: '50%', transform: 'translateX(-50%)', width: '100%', maxWidth: 390, padding: '0 16px', zIndex: 50 }}>
           <button onClick={() => setShowCart(true)}
@@ -792,7 +746,7 @@ export default function ShopPage() {
       {/* ── 購物車 Sheet ── */}
       {showCart && (
         <div onClick={() => setShowCart(false)} style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.5)', zIndex: 100, display: 'flex', alignItems: 'flex-end', justifyContent: 'center' }}>
-          <div onClick={e => e.stopPropagation()} style={{ width: '100%', maxWidth: 390, maxHeight: '85vh', background: '#fff', borderRadius: '20px 20px 0 0', display: 'flex', flexDirection: 'column' }}>
+          <div onClick={e => e.stopPropagation()} style={{ width: '100%', maxWidth: 390, maxHeight: '90vh', background: '#fff', borderRadius: '20px 20px 0 0', display: 'flex', flexDirection: 'column' }}>
             <div style={{ width: 36, height: 4, borderRadius: 2, background: '#E0E0E0', margin: '12px auto 0', flexShrink: 0 }} />
             <div style={{ padding: '12px 20px 10px', borderBottom: '0.5px solid #F0F0F0', flexShrink: 0 }}>
               <div style={{ fontSize: 16, fontWeight: 800, color: '#1a1a1a', display: 'flex', alignItems: 'center', gap: 8 }}>
@@ -800,6 +754,61 @@ export default function ShopPage() {
                 <span style={{ fontSize: 12, fontWeight: 500, color: '#9E9E9E', marginLeft: 2 }}>{cartCount} 件</span>
               </div>
             </div>
+
+            {/* ── 取貨方式選擇 ── */}
+            <div style={{ padding: '12px 20px', borderBottom: '0.5px solid #F0F0F0', flexShrink: 0 }}>
+              <div style={{ fontSize: 12, fontWeight: 700, color: '#1a1a1a', marginBottom: 10 }}>取貨方式</div>
+              <div style={{ display: 'flex', gap: 8 }}>
+                {[
+                  {
+                    key: 'dine_in',
+                    label: '直播現拆',
+                    icon: 'fa-video',
+                    desc: '直播時現場開封',
+                    hint: '主播在直播中為您拆開',
+                    activeColor: '#E24B4A',
+                    activeBorder: '#E24B4A',
+                    activeBg: '#FFF5F5',
+                  },
+                  {
+                    key: 'takeout',
+                    label: '寄送到府',
+                    icon: 'fa-box',
+                    desc: '未拆封直接寄出',
+                    hint: '原封不動寄到您手中',
+                    activeColor: '#1a1a1a',
+                    activeBorder: '#1a1a1a',
+                    activeBg: '#F5F5F5',
+                  },
+                ].map(opt => {
+                  const active = dineType === opt.key
+                  return (
+                    <button key={opt.key} onClick={() => setDineType(opt.key)}
+                      style={{ flex: 1, padding: '10px 10px 10px', borderRadius: 12, border: `1.5px solid ${active ? opt.activeBorder : '#E8E8E8'}`, background: active ? opt.activeBg : '#fff', cursor: 'pointer', textAlign: 'left', transition: 'all 0.15s' }}>
+                      <div style={{ display: 'flex', alignItems: 'center', gap: 6, marginBottom: 5 }}>
+                        <div style={{ width: 28, height: 28, borderRadius: 8, background: active ? opt.activeColor : '#F0F0F0', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0, transition: 'background 0.15s' }}>
+                          <i className={`fa-solid ${opt.icon}`} style={{ fontSize: 12, color: active ? '#fff' : '#BDBDBD' }}></i>
+                        </div>
+                        <span style={{ fontSize: 13, fontWeight: 700, color: active ? opt.activeColor : '#9E9E9E' }}>{opt.label}</span>
+                        {active && <i className="fa-solid fa-circle-check" style={{ fontSize: 13, color: opt.activeColor, marginLeft: 'auto' }}></i>}
+                      </div>
+                      <div style={{ fontSize: 10, color: active ? (opt.key === 'dine_in' ? '#E24B4A' : '#555') : '#BDBDBD', lineHeight: 1.5, paddingLeft: 2 }}>{opt.hint}</div>
+                    </button>
+                  )
+                })}
+              </div>
+              {/* 說明提示 */}
+              <div style={{ marginTop: 8, padding: '8px 12px', background: dineType === 'dine_in' ? '#FFF5F5' : '#F5F5F5', borderRadius: 8, display: 'flex', alignItems: 'flex-start', gap: 7 }}>
+                <i className={`fa-solid ${dineType === 'dine_in' ? 'fa-circle-play' : 'fa-truck'}`} style={{ fontSize: 11, color: dineType === 'dine_in' ? '#E24B4A' : '#757575', marginTop: 1, flexShrink: 0 }}></i>
+                <span style={{ fontSize: 11, color: dineType === 'dine_in' ? '#c0392b' : '#757575', lineHeight: 1.55 }}>
+                  {dineType === 'dine_in'
+                    ? '主播將在直播中為您現場開封，開封後無法退換，請確認直播時間再下單。'
+                    : '商品將以原封不動方式寄出，適合想自行保留或收藏的觀眾。'}
+                </span>
+              </div>
+            </div>
+
+            {/* 購物車品項 */}
             <div style={{ overflowY: 'auto', flex: 1, padding: '4px 20px' }}>
               {cart.map(c => (
                 <div key={c.item.id} style={{ display: 'flex', alignItems: 'center', gap: 12, padding: '13px 0', borderBottom: '0.5px solid #F5F5F5' }}>
@@ -822,6 +831,8 @@ export default function ShopPage() {
                 </div>
               ))}
             </div>
+
+            {/* 結帳區 */}
             <div style={{ padding: '14px 20px 28px', borderTop: '0.5px solid #F0F0F0', flexShrink: 0 }}>
               <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 14 }}>
                 <span style={{ fontSize: 13, color: '#9E9E9E' }}>訂單總計</span>
@@ -853,167 +864,4 @@ export default function ShopPage() {
                 <div style={{ textAlign: 'center', padding: '48px 0', color: '#bbb' }}>
                   <i className="fa-solid fa-receipt" style={{ fontSize: 36, display: 'block', marginBottom: 12, opacity: 0.25 }}></i>
                   <div style={{ fontSize: 13 }}>尚無訂單紀錄</div>
-                </div>
-              ) : myOrders.map(order => {
-                const sc = ORDER_STATUS[order.status] || ORDER_STATUS.pending
-                return (
-                  <div key={order.id} style={{ padding: '14px 0', borderBottom: '0.5px solid #F5F5F5' }}>
-                    <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 8 }}>
-                      <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-                        <span style={{ fontSize: 13, fontWeight: 800, color: '#1a1a1a' }}>#{String(order.order_no).padStart(4, '0')}</span>
-                      </div>
-                      <span style={{ fontSize: 11, fontWeight: 700, padding: '3px 10px', borderRadius: 99, background: sc.bg, color: sc.color }}>{sc.label}</span>
-                    </div>
-                    {(order.menu_order_items || []).map((item, i) => (
-                      <div key={i} style={{ display: 'flex', justifyContent: 'space-between', fontSize: 12, color: '#555', marginBottom: 3 }}>
-                        <span>{item.item_name} × {item.quantity}</span>
-                        <span style={{ fontWeight: 600 }}>$ {item.subtotal}</span>
-                      </div>
-                    ))}
-                    <div style={{ display: 'flex', justifyContent: 'space-between', marginTop: 8, paddingTop: 8, borderTop: '0.5px solid #F5F5F5' }}>
-                      <span style={{ fontSize: 10, color: '#bbb' }}>{new Date(order.created_at).toLocaleDateString('zh-TW')} {new Date(order.created_at).toLocaleTimeString('zh-TW', { hour: '2-digit', minute: '2-digit' })}</span>
-                      <span style={{ fontSize: 14, fontWeight: 900, color: '#E24B4A' }}>$ {order.total_amount}</span>
-                    </div>
-                  </div>
-                )
-              })}
-            </div>
-          </div>
-        </div>
-      )}
-
-      {/* ── 訂單成功 Overlay ── */}
-      {orderSuccess && <OrderSuccessOverlay order={orderSuccess} onClose={() => setOrderSuccess(null)} />}
-
-      {/* ── 商城 Sheets ── */}
-      {showPointsLog && (
-        <div onClick={() => setShowPointsLog(false)} style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.4)', zIndex: 100, display: 'flex', alignItems: 'flex-end', justifyContent: 'center' }}>
-          <div onClick={e => e.stopPropagation()} style={{ width: '100%', maxWidth: 390, maxHeight: '80vh', background: '#fff', borderRadius: '16px 16px 0 0', display: 'flex', flexDirection: 'column' }}>
-            <div style={{ width: 36, height: 4, borderRadius: 2, background: '#f0e8d0', margin: '12px auto 0', flexShrink: 0 }} />
-            <div style={{ padding: '12px 20px 8px', borderBottom: '0.5px solid #f5f0e8', display: 'flex', justifyContent: 'space-between', flexShrink: 0 }}>
-              <div style={{ fontSize: 15, fontWeight: 700, color: '#2D1A00' }}><i className="fa-solid fa-clock-rotate-left" style={{ color: '#E07B00', marginRight: 7 }}></i>點數紀錄</div>
-              <span style={{ fontSize: 11, color: '#bbb' }}>{pointsLogs.length} 筆</span>
-            </div>
-            <div style={{ overflowY: 'auto', padding: '8px 20px 32px' }}>
-              {pointsLogs.length === 0 ? <div style={{ textAlign: 'center', padding: 32, color: '#bbb', fontSize: 13 }}>尚無紀錄</div>
-                : pointsLogs.map(log => (
-                  <div key={log.id} style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '11px 0', borderBottom: '0.5px solid #f5f0e8' }}>
-                    <div style={{ width: 34, height: 34, borderRadius: 8, background: log.points > 0 ? '#EAF3DE' : '#FCEBEB', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
-                      <i className={`fa-solid ${log.points > 0 ? 'fa-arrow-up' : 'fa-arrow-down'}`} style={{ fontSize: 13, color: log.points > 0 ? '#388E3C' : '#E24B4A' }}></i>
-                    </div>
-                    <div style={{ flex: 1 }}>
-                      <div style={{ fontSize: 13, fontWeight: 500, color: '#111' }}>{log.note || log.type}</div>
-                      <div style={{ fontSize: 11, color: '#bbb', marginTop: 1 }}>{new Date(log.created_at).toLocaleDateString('zh-TW')}</div>
-                    </div>
-                    <div style={{ fontSize: 14, fontWeight: 700, color: log.points > 0 ? '#388E3C' : '#E24B4A' }}>{log.points > 0 ? '+' : ''}{log.points}</div>
-                  </div>
-                ))}
-            </div>
-          </div>
-        </div>
-      )}
-
-      {showMyItems && (
-        <div onClick={() => { setShowMyItems(false); setSelectedIds([]) }} style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.4)', zIndex: 100, display: 'flex', alignItems: 'flex-end', justifyContent: 'center' }}>
-          <div onClick={e => e.stopPropagation()} style={{ width: '100%', maxWidth: 390, maxHeight: '80vh', background: '#fff', borderRadius: '16px 16px 0 0', display: 'flex', flexDirection: 'column' }}>
-            <div style={{ width: 36, height: 4, borderRadius: 2, background: '#f0e8d0', margin: '12px auto 0', flexShrink: 0 }} />
-            <div style={{ padding: '12px 20px 8px', borderBottom: '0.5px solid #f5f0e8', display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexShrink: 0 }}>
-              <div style={{ fontSize: 15, fontWeight: 700, color: '#2D1A00' }}><i className="fa-solid fa-box" style={{ color: '#E07B00', marginRight: 7 }}></i>我的物品</div>
-              <span style={{ fontSize: 11, color: '#bbb' }}>{pendingOrders.length} 件待出貨</span>
-            </div>
-            {pendingOrders.length > 0 && (
-              <div style={{ padding: '8px 20px', background: '#FFFBF2', borderBottom: '0.5px solid #f5f0e8', fontSize: 11, color: '#BA7517', display: 'flex', alignItems: 'center', gap: 6, flexShrink: 0 }}>
-                <i className="fa-solid fa-circle-info" style={{ fontSize: 11 }}></i>勾選商品後點「申請出貨」
-              </div>
-            )}
-            <div style={{ overflowY: 'auto', padding: '8px 20px 100px', flex: 1 }}>
-              {pendingOrders.length === 0 ? (
-                <div style={{ textAlign: 'center', padding: 40, color: '#bbb', fontSize: 13 }}>
-                  <i className="fa-solid fa-box-open" style={{ fontSize: 32, display: 'block', marginBottom: 10, opacity: 0.3 }}></i>目前沒有待出貨的物品
-                </div>
-              ) : pendingOrders.map(order => {
-                const checked = selectedIds.includes(order.id)
-                const isRequested = order.status === 'shipping_requested'
-                return (
-                  <div key={order.id} onClick={() => !isRequested && toggleSelect(order.id)}
-                    style={{ display: 'flex', alignItems: 'center', gap: 12, padding: '12px 0', borderBottom: '0.5px solid #f5f0e8', cursor: isRequested ? 'default' : 'pointer' }}>
-                    <div style={{ width: 22, height: 22, borderRadius: 6, border: `2px solid ${isRequested ? '#3B82F6' : checked ? '#BA7517' : '#ddd'}`, background: isRequested ? '#EFF6FF' : checked ? '#BA7517' : '#fff', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
-                      {(checked || isRequested) && <i className="fa-solid fa-check" style={{ fontSize: 11, color: isRequested ? '#3B82F6' : '#fff' }}></i>}
-                    </div>
-                    <div style={{ width: 48, height: 48, borderRadius: 10, overflow: 'hidden', flexShrink: 0, border: '0.5px solid #F5E8C8', background: '#FFF8EE', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                      {order.shop_products?.image_url ? <img src={order.shop_products.image_url} alt="" style={{ width: '100%', height: '100%', objectFit: 'cover' }} /> : <i className="fa-solid fa-gift" style={{ fontSize: 20, color: '#D4A94A', opacity: 0.5 }}></i>}
-                    </div>
-                    <div style={{ flex: 1 }}>
-                      <div style={{ fontSize: 13, fontWeight: 600, color: '#111' }}>{order.product_name}</div>
-                      <div style={{ fontSize: 11, color: '#bbb', marginTop: 2 }}>{new Date(order.created_at).toLocaleDateString('zh-TW')} 兌換</div>
-                      <div style={{ fontSize: 10, fontWeight: 600, color: '#E24B4A', marginTop: 1 }}>-{order.points_spent} 點</div>
-                    </div>
-                    <span style={{ fontSize: 10, fontWeight: 600, padding: '3px 8px', borderRadius: 99, background: isRequested ? '#EFF6FF' : '#FFF3E0', color: isRequested ? '#3B82F6' : '#E07B00', flexShrink: 0 }}>
-                      {isRequested ? '申請中' : '待出貨'}
-                    </span>
-                  </div>
-                )
-              })}
-            </div>
-            {pendingOrders.length > 0 && (
-              <div style={{ padding: '12px 20px 24px', borderTop: '0.5px solid #f5f0e8', background: '#fff', flexShrink: 0 }}>
-                {requestSuccess && (
-                  <div style={{ background: '#EAF3DE', border: '0.5px solid #86C566', borderRadius: 8, padding: '8px 12px', fontSize: 12, color: '#388E3C', marginBottom: 10, display: 'flex', alignItems: 'center', gap: 6 }}>
-                    <i className="fa-solid fa-circle-check"></i> 申請成功！後台將盡快安排出貨
-                  </div>
-                )}
-                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 10 }}>
-                  <span style={{ fontSize: 12, color: '#888' }}>{selectedIds.length > 0 ? `已選 ${selectedIds.length} 件` : '請勾選要出貨的商品'}</span>
-                  <span onClick={() => {
-                    const selectable = pendingOrders.filter(o => o.status === 'pending').map(o => o.id)
-                    setSelectedIds(selectedIds.length === selectable.length ? [] : selectable)
-                  }} style={{ fontSize: 11, color: '#BA7517', cursor: 'pointer', fontWeight: 600 }}>
-                    {selectedIds.length === pendingOrders.filter(o => o.status === 'pending').length ? '取消全選' : '全選'}
-                  </span>
-                </div>
-                <button onClick={handleRequestShipping} disabled={selectedIds.length === 0 || requesting}
-                  style={{ width: '100%', padding: 13, background: selectedIds.length === 0 || requesting ? '#ccc' : 'linear-gradient(135deg,#BA7517,#D4A94A)', border: 'none', borderRadius: 12, fontSize: 14, fontWeight: 700, color: '#fff', cursor: selectedIds.length === 0 ? 'not-allowed' : 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 7 }}>
-                  <i className="fa-solid fa-truck"></i>
-                  {requesting ? '申請中...' : `申請出貨${selectedIds.length > 0 ? `（${selectedIds.length} 件）` : ''}`}
-                </button>
-              </div>
-            )}
-          </div>
-        </div>
-      )}
-
-      {showShipped && (
-        <div onClick={() => setShowShipped(false)} style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.4)', zIndex: 100, display: 'flex', alignItems: 'flex-end', justifyContent: 'center' }}>
-          <div onClick={e => e.stopPropagation()} style={{ width: '100%', maxWidth: 390, maxHeight: '80vh', background: '#fff', borderRadius: '16px 16px 0 0', display: 'flex', flexDirection: 'column' }}>
-            <div style={{ width: 36, height: 4, borderRadius: 2, background: '#f0e8d0', margin: '12px auto 0', flexShrink: 0 }} />
-            <div style={{ padding: '12px 20px 8px', borderBottom: '0.5px solid #f5f0e8', display: 'flex', justifyContent: 'space-between', flexShrink: 0 }}>
-              <div style={{ fontSize: 15, fontWeight: 700, color: '#2D1A00' }}><i className="fa-solid fa-truck" style={{ color: '#388E3C', marginRight: 7 }}></i>出貨紀錄</div>
-              <span style={{ fontSize: 11, color: '#bbb' }}>{shippedOrders.length} 筆</span>
-            </div>
-            <div style={{ overflowY: 'auto', padding: '8px 20px 32px' }}>
-              {shippedOrders.length === 0 ? (
-                <div style={{ textAlign: 'center', padding: 40, color: '#bbb', fontSize: 13 }}>
-                  <i className="fa-solid fa-truck" style={{ fontSize: 32, display: 'block', marginBottom: 10, opacity: 0.2 }}></i>尚無出貨紀錄
-                </div>
-              ) : shippedOrders.map(order => (
-                <div key={order.id} style={{ display: 'flex', alignItems: 'center', gap: 12, padding: '12px 0', borderBottom: '0.5px solid #f5f0e8' }}>
-                  <div style={{ width: 48, height: 48, borderRadius: 10, overflow: 'hidden', flexShrink: 0, border: '0.5px solid #F5E8C8', background: '#FFF8EE', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                    {order.shop_products?.image_url ? <img src={order.shop_products.image_url} alt="" style={{ width: '100%', height: '100%', objectFit: 'cover' }} /> : <i className="fa-solid fa-gift" style={{ fontSize: 20, color: '#D4A94A', opacity: 0.5 }}></i>}
-                  </div>
-                  <div style={{ flex: 1 }}>
-                    <div style={{ fontSize: 13, fontWeight: 600, color: '#111' }}>{order.product_name}</div>
-                    <div style={{ fontSize: 11, color: '#bbb', marginTop: 2 }}>{order.shipped_at ? `${new Date(order.shipped_at).toLocaleDateString('zh-TW')} 出貨` : '已出貨'}</div>
-                    <div style={{ fontSize: 10, fontWeight: 600, color: '#E24B4A', marginTop: 1 }}>-{order.points_spent} 點</div>
-                  </div>
-                  <span style={{ fontSize: 10, fontWeight: 600, padding: '3px 8px', borderRadius: 99, background: '#EAF3DE', color: '#388E3C', flexShrink: 0 }}>已出貨</span>
-                </div>
-              ))}
-            </div>
-          </div>
-        </div>
-      )}
-
-      <BottomNav />
-    </div>
-  )
-}
+            
