@@ -148,6 +148,16 @@ function OrderSuccessOverlay({ order, onClose }) {
   )
 }
 
+const LOG_TYPE_LABEL = {
+  login: '每日登入',
+  streak_bonus: '7日全勤獎勵',
+  makeup: '補簽（積分扣除）',
+  purchase: '兌換商品',
+  shop_purchase: '商城兌換',
+  admin: '管理員調整',
+  event: '活動獎勵',
+}
+
 const ORDER_STATUS = {
   pending:    { label: '待處理', color: '#E07B00', bg: '#FFF3E0' },
   processing: { label: '處理中', color: '#3B82F6', bg: '#EFF6FF' },
@@ -187,6 +197,7 @@ export default function ShopPage() {
   const [liveLoading, setLiveLoading] = useState(false)
   const [cart, setCart] = useState([])
   const [showCart, setShowCart] = useState(false)
+  const [cartFading, setCartFading] = useState(false)
   const [checkingOut, setCheckingOut] = useState(false)
   const [orderSuccess, setOrderSuccess] = useState(null)
   const [myOrders, setMyOrders] = useState([])
@@ -280,6 +291,11 @@ export default function ShopPage() {
   const cartTotal = cart.reduce((sum, c) => sum + c.item.price * c.quantity, 0)
   const cartCount = cart.reduce((sum, c) => sum + c.quantity, 0)
 
+  function closeCart() {
+    setCartFading(true)
+    setTimeout(() => { setShowCart(false); setCartFading(false) }, 250)
+  }
+
   async function handleCheckout() {
     if (cart.length === 0 || !member) return
     setCheckingOut(true)
@@ -308,7 +324,7 @@ export default function ShopPage() {
         })),
       }
       setCart([])
-      setShowCart(false)
+      closeCart()
       setOrderSuccess(successData)
       await fetchLiveData()
     } catch (err) {
@@ -600,9 +616,10 @@ export default function ShopPage() {
                       style={{ background: '#fff', border: `1px solid ${soldOut ? '#EEEEEE' : '#E8E8E8'}`, borderRadius: 14, overflow: 'hidden', opacity: soldOut ? 0.55 : 1, boxShadow: soldOut ? 'none' : '0 2px 12px rgba(0,0,0,0.06)', animation: `slideInItem 0.3s ${idx * 0.05}s ease both` }}>
                       <div style={{ aspectRatio: '1', background: '#F5F5F5', display: 'flex', alignItems: 'center', justifyContent: 'center', position: 'relative', overflow: 'hidden' }}>
                         {item.image_url
-                          ? <img src={item.image_url} alt="" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
-                          : <i className="fa-solid fa-box-open" style={{ fontSize: 32, color: '#BDBDBD' }}></i>
-                        }
+                          ? <img src={item.image_url} alt="" style={{ width: '100%', height: '100%', objectFit: 'cover' }}
+                              onError={e => { e.target.style.display='none'; e.target.nextSibling.style.display='flex' }} />
+                          : null}
+                        <i className="fa-solid fa-box-open" style={{ fontSize: 32, color: '#BDBDBD', display: item.image_url ? 'none' : 'block' }}></i>
                         {soldOut && (
                           <div style={{ position: 'absolute', inset: 0, background: 'rgba(255,255,255,0.75)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
                             <div style={{ background: '#1a1a1a', color: '#fff', fontSize: 12, fontWeight: 700, padding: '5px 14px', borderRadius: 99 }}>已售完</div>
@@ -742,8 +759,8 @@ export default function ShopPage() {
 
       {/* 購物車 Sheet */}
       {showCart && (
-        <div onClick={() => setShowCart(false)} style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.5)', zIndex: 100, display: 'flex', alignItems: 'flex-end', justifyContent: 'center' }}>
-          <div onClick={e => e.stopPropagation()} style={{ width: '100%', maxWidth: 390, maxHeight: '90vh', background: '#fff', borderRadius: '20px 20px 0 0', display: 'flex', flexDirection: 'column' }}>
+        <div onClick={closeCart} style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.5)', zIndex: 100, display: 'flex', alignItems: 'flex-end', justifyContent: 'center', transition: 'opacity 0.25s', opacity: cartFading ? 0 : 1 }}>
+          <div onClick={e => e.stopPropagation()} style={{ width: '100%', maxWidth: 390, maxHeight: '90vh', background: '#fff', borderRadius: '20px 20px 0 0', display: 'flex', flexDirection: 'column', transition: 'transform 0.25s', transform: cartFading ? 'translateY(100%)' : 'translateY(0)' }}>
             <div style={{ width: 36, height: 4, borderRadius: 2, background: '#E0E0E0', margin: '12px auto 0', flexShrink: 0 }} />
             <div style={{ padding: '12px 20px 10px', borderBottom: '0.5px solid #F0F0F0', flexShrink: 0 }}>
               <div style={{ fontSize: 16, fontWeight: 800, color: '#1a1a1a', display: 'flex', alignItems: 'center', gap: 8 }}>
@@ -885,7 +902,10 @@ export default function ShopPage() {
                       <i className={`fa-solid ${log.points > 0 ? 'fa-arrow-up' : 'fa-arrow-down'}`} style={{ fontSize: 13, color: log.points > 0 ? '#388E3C' : '#E24B4A' }}></i>
                     </div>
                     <div style={{ flex: 1 }}>
-                      <div style={{ fontSize: 13, fontWeight: 500, color: '#111' }}>{log.note || log.type}</div>
+                      <div style={{ fontSize: 13, fontWeight: 500, color: '#111' }}>{log.note || LOG_TYPE_LABEL[log.type] || log.type}</div>
+                      {log.type === 'makeup' && (
+                        <div style={{ fontSize: 10, color: '#bbb', marginTop: 1 }}>扣除積分，非商城點數</div>
+                      )}
                       <div style={{ fontSize: 11, color: '#bbb', marginTop: 1 }}>{new Date(log.created_at).toLocaleDateString('zh-TW')}</div>
                     </div>
                     <div style={{ fontSize: 14, fontWeight: 700, color: log.points > 0 ? '#388E3C' : '#E24B4A' }}>{log.points > 0 ? '+' : ''}{log.points}</div>
