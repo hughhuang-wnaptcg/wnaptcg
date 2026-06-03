@@ -163,6 +163,7 @@ export default function ShopPage() {
   const [mainTab, setMainTab] = useState(searchParams.get('tab') === 'shop' ? 'shop' : 'live')
 
   const [products, setProducts] = useState([])
+  // BUG FIX #1: 改用正確的 point_logs 表（原本錯誤使用 points_logs）
   const [pointsLogs, setPointsLogs] = useState([])
   const [pendingOrders, setPendingOrders] = useState([])
   const [shippedOrders, setShippedOrders] = useState([])
@@ -184,7 +185,6 @@ export default function ShopPage() {
 
   const [liveItems, setLiveItems] = useState([])
   const [liveLoading, setLiveLoading] = useState(false)
-  // cart 結構: [{ item, quantity, dine_type: 'dine_in' | 'takeout' }]
   const [cart, setCart] = useState([])
   const [showCart, setShowCart] = useState(false)
   const [checkingOut, setCheckingOut] = useState(false)
@@ -202,7 +202,7 @@ export default function ShopPage() {
     else if (tab === 'live' || tab === 'menu') setMainTab('live')
   }, [searchParams])
 
-  // 問題2：Realtime 訂閱 — 後台改訂單狀態時前台自動刷新
+  // BUG FIX #3: Realtime 訂閱已在 Supabase Dashboard 對 menu_orders 開啟
   useEffect(() => {
     if (!member) return
     const channel = supabase
@@ -221,7 +221,8 @@ export default function ShopPage() {
     setLoading(true)
     const [{ data: prods, error: pe }, { data: logs }, { data: allOrders }] = await Promise.all([
       supabase.from('shop_products').select('*').eq('is_active', true).order('created_at', { ascending: false }),
-      supabase.from('points_logs').select('*').eq('member_id', member.id).order('created_at', { ascending: false }).limit(30),
+      // BUG FIX #1: 從 points_logs（舊表/錯誤）改為 point_logs（正確表）
+      supabase.from('point_logs').select('*').eq('member_id', member.id).order('created_at', { ascending: false }).limit(30),
       supabase.from('shop_orders').select('*, shop_products(name, image_url)').eq('member_id', member.id).order('created_at', { ascending: false }).limit(200),
     ])
     setProductsError(pe)
@@ -247,7 +248,6 @@ export default function ShopPage() {
     setLiveLoading(false)
   }
 
-  // ── 購物車：加入預設 dine_in ──
   function addToCart(item) {
     setCart(prev => {
       const existing = prev.find(c => c.item.id === item.id)
@@ -269,7 +269,6 @@ export default function ShopPage() {
     }).filter(Boolean))
   }
 
-  // ── 每項商品切換內用/外帶 ──
   function updateCartDineType(itemId, dineType) {
     setCart(prev => prev.map(c => c.item.id === itemId ? { ...c, dine_type: dineType } : c))
   }
@@ -285,8 +284,6 @@ export default function ShopPage() {
     if (cart.length === 0 || !member) return
     setCheckingOut(true)
     try {
-      // 問題1：改用單一 atomic RPC，解決競態問題
-      // checkout_menu_order 在 DB 層用 FOR UPDATE 鎖定庫存，統一建立訂單+品項+扣庫存
       const p_items = cart.map(c => ({
         item_id: c.item.id,
         item_name: c.item.name,
@@ -300,7 +297,6 @@ export default function ShopPage() {
       })
       if (rpcErr) throw rpcErr
 
-      // 組裝 successData 供 Overlay 顯示
       const successData = {
         order_no: result.order_no,
         total_amount: result.total_amount,
@@ -567,7 +563,7 @@ export default function ShopPage() {
           </div>
         </div>
 
-        {/* ══ 直播下單區 ══ */}
+        {/* 直播下單區 */}
         {mainTab === 'live' && (
           <div style={{ padding: '0 0 120px' }}>
             {liveLoading ? (
@@ -647,19 +643,20 @@ export default function ShopPage() {
           </div>
         )}
 
-        {/* ══ 商城 Tab ══ */}
+        {/* 商城 Tab */}
         {mainTab === 'shop' && (
           <>
             <div style={{ padding: '14px 16px 10px' }}>
+              {/* BUG FIX #2: 移除永遠顯示「計算中」的「即將到期」欄位，改為本月收支兩欄 */}
               <div style={{ display: 'flex', gap: 8, marginBottom: 10 }}>
                 {[
                   { label: '本月獲得', icon: 'fa-arrow-up', iconColor: '#78C850', value: `+${pointsLogs.filter(l => l.points > 0 && new Date(l.created_at).getMonth() === new Date().getMonth()).reduce((s, l) => s + l.points, 0)} 點` },
                   { label: '本月使用', icon: 'fa-arrow-down', iconColor: '#E24B4A', value: `-${Math.abs(pointsLogs.filter(l => l.points < 0 && new Date(l.created_at).getMonth() === new Date().getMonth()).reduce((s, l) => s + l.points, 0))} 點` },
-                  { label: '即將到期', icon: 'fa-clock', iconColor: '#E07B00', value: '計算中', isReg: true },
+                  { label: '累計點數', icon: 'fa-coins', iconColor: '#BA7517', value: `${(member.shop_points || 0).toLocaleString()} 點` },
                 ].map((s, i) => (
                   <div key={i} style={{ flex: 1, background: '#fff', border: '0.5px solid #F5E8C8', borderRadius: 10, padding: '8px 10px' }}>
                     <div style={{ fontSize: 10, color: '#bbb', display: 'flex', alignItems: 'center', gap: 4 }}>
-                      <i className={`fa-${s.isReg ? 'regular' : 'solid'} fa-${s.icon}`} style={{ fontSize: 9, color: s.iconColor }}></i>{s.label}
+                      <i className={`fa-solid fa-${s.icon}`} style={{ fontSize: 9, color: s.iconColor }}></i>{s.label}
                     </div>
                     <div style={{ fontSize: 13, fontWeight: 700, color: i === 2 ? '#E07B00' : '#2D1A00', marginTop: 2 }}>{s.value}</div>
                   </div>
@@ -754,12 +751,9 @@ export default function ShopPage() {
                 <span style={{ fontSize: 12, fontWeight: 500, color: '#9E9E9E', marginLeft: 2 }}>{cartCount} 件</span>
               </div>
             </div>
-
-            {/* 品項列表，每項各自有內用/外帶 */}
             <div style={{ overflowY: 'auto', flex: 1, padding: '0 20px' }}>
               {cart.map(c => (
                 <div key={c.item.id} style={{ padding: '14px 0', borderBottom: '0.5px solid #F5F5F5' }}>
-                  {/* 商品行 */}
                   <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 10 }}>
                     <div style={{ width: 48, height: 48, borderRadius: 10, overflow: 'hidden', flexShrink: 0, background: '#F5F5F5', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
                       {c.item.image_url ? <img src={c.item.image_url} alt="" style={{ width: '100%', height: '100%', objectFit: 'cover' }} /> : <i className="fa-solid fa-box-open" style={{ fontSize: 18, color: '#BDBDBD' }}></i>}
@@ -778,8 +772,6 @@ export default function ShopPage() {
                       <button onClick={() => removeFromCart(c.item.id)} style={{ fontSize: 10, color: '#BDBDBD', background: 'none', border: 'none', cursor: 'pointer', padding: 0, marginTop: 3 }}>移除</button>
                     </div>
                   </div>
-
-                  {/* 內用 / 外帶 切換（每項獨立） */}
                   <div style={{ display: 'flex', gap: 6 }}>
                     {[
                       { key: 'dine_in',  label: '內用', sub: '直播現場拆', icon: 'fa-users',   activeColor: '#E24B4A', activeBorder: '#E24B4A', activeBg: '#FCEBEB', activeText: '#A32D2D', activeSub: '#A32D2D' },
@@ -801,8 +793,6 @@ export default function ShopPage() {
                 </div>
               ))}
             </div>
-
-            {/* 結帳區 */}
             <div style={{ padding: '14px 20px 28px', borderTop: '0.5px solid #F0F0F0', flexShrink: 0 }}>
               <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 14 }}>
                 <span style={{ fontSize: 13, color: '#9E9E9E' }}>訂單總計</span>
@@ -810,8 +800,18 @@ export default function ShopPage() {
               </div>
               <button onClick={handleCheckout} disabled={checkingOut || cart.length === 0}
                 style={{ width: '100%', padding: 15, background: checkingOut ? '#ccc' : '#1a1a1a', border: 'none', borderRadius: 13, fontSize: 15, fontWeight: 800, color: '#fff', cursor: checkingOut ? 'not-allowed' : 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8, letterSpacing: '0.02em' }}>
-                <i className="fa-solid fa-bolt" style={{ fontSize: 13 }}></i>
-                {checkingOut ? '送出中...' : '立即下單'}
+                {checkingOut ? (
+                  <>
+                    <svg width="16" height="16" viewBox="0 0 16 16" fill="none" style={{ animation: 'spin 0.8s linear infinite' }}>
+                      <style>{`@keyframes spin{to{transform:rotate(360deg)}}`}</style>
+                      <circle cx="8" cy="8" r="6" stroke="rgba(255,255,255,0.3)" strokeWidth="2"/>
+                      <path d="M8 2 A6 6 0 0 1 14 8" stroke="#fff" strokeWidth="2" strokeLinecap="round"/>
+                    </svg>
+                    送出中...
+                  </>
+                ) : (
+                  <><i className="fa-solid fa-bolt" style={{ fontSize: 13 }}></i>立即下單</>
+                )}
               </button>
             </div>
           </div>
@@ -868,7 +868,7 @@ export default function ShopPage() {
 
       {orderSuccess && <OrderSuccessOverlay order={orderSuccess} onClose={() => setOrderSuccess(null)} />}
 
-      {/* 商城 Sheets */}
+      {/* 點數紀錄 Sheet */}
       {showPointsLog && (
         <div onClick={() => setShowPointsLog(false)} style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.4)', zIndex: 100, display: 'flex', alignItems: 'flex-end', justifyContent: 'center' }}>
           <div onClick={e => e.stopPropagation()} style={{ width: '100%', maxWidth: 390, maxHeight: '80vh', background: '#fff', borderRadius: '16px 16px 0 0', display: 'flex', flexDirection: 'column' }}>
@@ -896,6 +896,7 @@ export default function ShopPage() {
         </div>
       )}
 
+      {/* 我的物品 Sheet */}
       {showMyItems && (
         <div onClick={() => { setShowMyItems(false); setSelectedIds([]) }} style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.4)', zIndex: 100, display: 'flex', alignItems: 'flex-end', justifyContent: 'center' }}>
           <div onClick={e => e.stopPropagation()} style={{ width: '100%', maxWidth: 390, maxHeight: '80vh', background: '#fff', borderRadius: '16px 16px 0 0', display: 'flex', flexDirection: 'column' }}>
@@ -965,6 +966,7 @@ export default function ShopPage() {
         </div>
       )}
 
+      {/* 出貨紀錄 Sheet */}
       {showShipped && (
         <div onClick={() => setShowShipped(false)} style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.4)', zIndex: 100, display: 'flex', alignItems: 'flex-end', justifyContent: 'center' }}>
           <div onClick={e => e.stopPropagation()} style={{ width: '100%', maxWidth: 390, maxHeight: '80vh', background: '#fff', borderRadius: '16px 16px 0 0', display: 'flex', flexDirection: 'column' }}>
