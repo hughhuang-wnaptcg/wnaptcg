@@ -6,21 +6,21 @@ import BottomNav from '../components/BottomNav'
 
 const TIER_CONFIG = {
   general: {
-    key: 'general', name: '一般商城', icon: 'fa-solid fa-store', iconColor: '#E07B00',
+    key: 'general', name: '一般點數商城', icon: 'fa-solid fa-store', iconColor: '#E07B00',
     cardBg: '#fff', cardBorder: '#F5E8C8', iconBg: 'linear-gradient(135deg,#FAEEDA,#FFF3D0)',
     badgeOpen: { bg: '#FFF3E0', color: '#E07B00' }, badgeLocked: { bg: '#f5f5f5', color: '#bbb' },
     lockColor: '#CBD5E1', lockTextColor: '#94A3B8', divider: '#F5E8C8', enterColor: '#E07B00',
     allowedLevels: ['精靈球', '超級球', '高級球', '豪華球', '貴重球', '究極球', '大師球'], lockMsg: '所有會員皆可進入',
   },
   premium: {
-    key: 'premium', name: '高級商城', icon: 'fa-solid fa-gem', iconColor: '#3B82F6',
+    key: 'premium', name: '高級點數商城', icon: 'fa-solid fa-gem', iconColor: '#3B82F6',
     cardBg: '#fff', cardBorder: '#CBD5E1', iconBg: 'linear-gradient(135deg,#E8EFF6,#CBD5E1)',
     badgeOpen: { bg: '#EFF6FF', color: '#3B82F6' }, badgeLocked: { bg: '#EFF6FF', color: '#3B82F6' },
     lockColor: '#CBD5E1', lockTextColor: '#94A3B8', divider: '#E2E8F0', enterColor: '#3B82F6',
     allowedLevels: ['高級球', '豪華球', '貴重球', '究極球', '大師球'], lockMsg: '升至高級球以上即可進入',
   },
   vip: {
-    key: 'vip', name: 'VIP 商城', icon: 'fa-solid fa-crown', iconColor: '#F5D060',
+    key: 'vip', name: 'VIP 點數商城', icon: 'fa-solid fa-crown', iconColor: '#F5D060',
     cardBg: '#1A1A1A', cardBorder: '#B8860B', iconBg: '#2A2A1A',
     badgeOpen: { bg: '#2A2200', color: '#F5D060' }, badgeLocked: { bg: '#2A2200', color: '#F5D060' },
     lockColor: '#B8860B', lockTextColor: '#666', divider: '#B8860B44', enterColor: '#F5D060',
@@ -170,7 +170,7 @@ const LOG_TYPE_LABEL = {
   streak_bonus: '7日全勤獎勵',
   makeup: '補簽（積分扣除）',
   purchase: '兌換商品',
-  shop_purchase: '商城兌換',
+  shop_purchase: '點數商城兌換',
   admin: '管理員調整',
   event: '活動獎勵',
 }
@@ -558,7 +558,7 @@ export default function ShopPage() {
                 </div>
               ) : (
                 <div style={{ fontSize: 18, fontWeight: 800, color: '#2D1A00', display: 'flex', alignItems: 'center', gap: 7 }}>
-                  <i className="fa-solid fa-store" style={{ fontSize: 15, color: '#E07B00' }}></i>商城
+                  <i className="fa-solid fa-store" style={{ fontSize: 15, color: '#E07B00' }}></i>點數商城
                 </div>
               )}
               <div style={{ fontSize: 11, color: '#bbb', marginTop: 3 }}>
@@ -587,7 +587,7 @@ export default function ShopPage() {
           <div style={{ display: 'flex', gap: 0, borderBottom: '0.5px solid #F5E8C8' }}>
             {[
               { key: 'live', label: '直播下單區', icon: 'fa-video',  activeColor: '#E24B4A', activeBg: 'rgba(226,75,74,0.06)' },
-              { key: 'shop', label: '商城',       icon: 'fa-store',  activeColor: '#E07B00', activeBg: 'rgba(224,123,0,0.04)' },
+              { key: 'shop', label: '點數商城',       icon: 'fa-store',  activeColor: '#E07B00', activeBg: 'rgba(224,123,0,0.04)' },
             ].map(t => (
               <button key={t.key}
                 onClick={() => { setMainTab(t.key); setSearchParams(t.key === 'shop' ? { tab: 'shop' } : {}) }}
@@ -656,6 +656,9 @@ export default function ShopPage() {
                               onError={e => { e.target.style.display='none'; e.target.nextSibling.style.display='flex' }} />
                           : null}
                         <i className="fa-solid fa-box-open" style={{ fontSize: 32, color: '#BDBDBD', display: item.image_url ? 'none' : 'block' }}></i>
+                        <div style={{ position: 'absolute', top: 7, left: 7 }}>
+                          <ProductTag tag={item.product_tag} />
+                        </div>
                         {soldOut && (
                           <div style={{ position: 'absolute', inset: 0, background: 'rgba(255,255,255,0.75)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
                             <div style={{ background: '#1a1a1a', color: '#fff', fontSize: 12, fontWeight: 700, padding: '5px 14px', borderRadius: 99 }}>已售完</div>
@@ -730,7 +733,7 @@ export default function ShopPage() {
             </div>
             <div style={{ padding: '0 16px 4px', fontSize: 11, color: '#bbb', display: 'flex', alignItems: 'center', gap: 6 }}>
               <i className="fa-solid fa-circle-info" style={{ color: '#E07B00' }}></i>
-              你的等級：{member.level} · 目前可進入{canAccess(member.level, 'vip') ? 'VIP 商城' : canAccess(member.level, 'premium') ? '高級商城' : '一般商城'}
+              你的等級：{member.level} · 目前可進入{canAccess(member.level, 'vip') ? 'VIP 點數商城' : canAccess(member.level, 'premium') ? '高級點數商城' : '一般點數商城'}
             </div>
             <div style={{ padding: '0 0 28px' }}>
               {['general', 'premium', 'vip'].map(tier => {
@@ -759,7 +762,7 @@ export default function ShopPage() {
                           <i className="fa-solid fa-box-open" style={{ fontSize: 11, color: isVip ? '#B8860B' : '#D4A94A' }}></i>共 {count} 項商品
                         </div>
                         <div onClick={() => setActiveTier(tier)} style={{ fontSize: 12, color: cfg.enterColor, fontWeight: 700, display: 'flex', alignItems: 'center', gap: 4, cursor: 'pointer' }}>
-                          進入商城 <i className="fa-solid fa-chevron-right" style={{ fontSize: 10 }}></i>
+                          進入點數商城 <i className="fa-solid fa-chevron-right" style={{ fontSize: 10 }}></i>
                         </div>
                       </div>
                     ) : (
