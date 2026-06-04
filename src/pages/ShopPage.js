@@ -667,8 +667,8 @@ export default function ShopPage() {
               {/* BUG FIX #2: 移除永遠顯示「計算中」的「即將到期」欄位，改為本月收支兩欄 */}
               <div style={{ display: 'flex', gap: 8, marginBottom: 10 }}>
                 {[
-                  { label: '本月獲得', icon: 'fa-arrow-up', iconColor: '#78C850', value: `+${pointsLogs.filter(l => l.points > 0 && new Date(l.created_at).getMonth() === new Date().getMonth()).reduce((s, l) => s + l.points, 0)} 點` },
-                  { label: '本月使用', icon: 'fa-arrow-down', iconColor: '#E24B4A', value: `-${Math.abs(pointsLogs.filter(l => l.points < 0 && new Date(l.created_at).getMonth() === new Date().getMonth()).reduce((s, l) => s + l.points, 0))} 點` },
+                  { label: '本月獲得', icon: 'fa-arrow-up', iconColor: '#78C850', value: `+${pointsLogs.filter(l => l.points > 0 && new Date(l.created_at).getMonth() === new Date().getMonth() && new Date(l.created_at).getFullYear() === new Date().getFullYear()).reduce((s, l) => s + l.points, 0)} 點` },
+                  { label: '本月使用', icon: 'fa-arrow-down', iconColor: '#E24B4A', value: `-${Math.abs(pointsLogs.filter(l => l.points < 0 && new Date(l.created_at).getMonth() === new Date().getMonth() && new Date(l.created_at).getFullYear() === new Date().getFullYear()).reduce((s, l) => s + l.points, 0))} 點` },
                   { label: '累計點數', icon: 'fa-coins', iconColor: '#BA7517', value: `${(member.shop_points || 0).toLocaleString()} 點` },
                 ].map((s, i) => (
                   <div key={i} style={{ flex: 1, background: '#fff', border: '0.5px solid #F5E8C8', borderRadius: 10, padding: '8px 10px' }}>
