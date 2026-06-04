@@ -5,7 +5,7 @@ import { playClickSound, vibrate, VIBRATE } from '../lib/haptics'
 const NAV = [
   { path: '/',         icon: 'fa-solid fa-house',       label: '首頁' },
   { path: '/wall',     icon: 'fa-solid fa-trophy',      label: '戰績牆' },
-  { path: '/shop',     icon: 'fa-solid fa-store',       label: '點數商城' },
+  { path: '/shop',     icon: 'fa-solid fa-store',       label: '消費區' },
   { path: '/challenge',icon: 'fa-solid fa-shield',      label: '挑戰' },
   { path: '/profile',  icon: 'fa-solid fa-user',        label: '我的' },
 ]
