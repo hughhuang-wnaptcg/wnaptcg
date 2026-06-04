@@ -349,46 +349,43 @@ export default function HomePage() {
 
         <div style={{ padding: '16px 20px 0' }}>
 
-          {/* ── 直播下單區 + 積分排行榜 並排按鈕 ── */}
-          <div style={{ display: 'grid', gridTemplateColumns: '1fr auto', gap: 10, marginBottom: 16 }}>
+          {/* ── 直播下單區 + 積分排行榜 並排按鈕（方案 A：等高雙欄） ── */}
+          <style>{`@keyframes homeLiveDot{0%,100%{opacity:1;transform:scale(1)}50%{opacity:.45;transform:scale(.72)}}`}</style>
+          <div style={{ display: 'grid', gridTemplateColumns: '1fr 80px', gap: 8, marginBottom: 16 }}>
 
-            {/* 直播下單區 按鈕 */}
+            {/* 直播下單區 — 縱向排列 */}
             <div
               onClick={() => navigate('/shop?tab=live')}
-              style={{ background: 'linear-gradient(135deg,#1a1a1a,#2A2A2A)', border: '1px solid rgba(226,75,74,0.35)', borderRadius: 14, padding: '13px 14px', cursor: 'pointer', boxShadow: '0 5px 18px rgba(0,0,0,.12)', position: 'relative', overflow: 'hidden' }}>
-              <style>{`@keyframes homeLiveDot{0%,100%{opacity:1;transform:scale(1)}50%{opacity:.45;transform:scale(.72)}}`}</style>
-              <div style={{ position: 'absolute', top: -26, right: -20, width: 96, height: 96, borderRadius: '50%', background: 'radial-gradient(circle,rgba(226,75,74,.22),transparent 66%)', pointerEvents: 'none' }} />
-              <div style={{ display: 'flex', alignItems: 'center', gap: 12, position: 'relative' }}>
-                <div style={{ width: 42, height: 42, borderRadius: 12, background: 'rgba(226,75,74,.14)', border: '1px solid rgba(226,75,74,.32)', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
-                  <i className="fa-solid fa-video" style={{ fontSize: 17, color: '#E24B4A' }}></i>
-                </div>
-                <div style={{ flex: 1, minWidth: 0 }}>
-                  <div style={{ display: 'flex', alignItems: 'center', gap: 7, marginBottom: 3 }}>
-                    <span style={{ display: 'inline-flex', alignItems: 'center', gap: 4, background: '#E24B4A', borderRadius: 6, padding: '2px 7px' }}>
-                      <span style={{ width: 5, height: 5, borderRadius: '50%', background: '#fff', animation: 'homeLiveDot 1s ease infinite' }} />
-                      <span style={{ fontSize: 9, fontWeight: 900, color: '#fff', letterSpacing: '0.1em' }}>LIVE</span>
-                    </span>
-                    <span style={{ fontSize: 14, fontWeight: 800, color: '#fff' }}>直播下單區</span>
-                  </div>
-                  <div style={{ fontSize: 10, color: '#aaa', lineHeight: 1.4 }}>
-                    {liveItemCount > 0 ? `${liveItemCount} 件商品上架中，立即下單` : '等待直播商品上架'}
-                  </div>
-                </div>
-                <div style={{ display: 'flex', alignItems: 'center', gap: 5, color: '#E24B4A', fontSize: 11, fontWeight: 800, flexShrink: 0 }}>
-                  進入
-                  <i className="fa-solid fa-chevron-right" style={{ fontSize: 10 }}></i>
-                </div>
+              style={{ background: 'linear-gradient(135deg,#1a1a1a,#2A2A2A)', border: '1px solid rgba(226,75,74,0.35)', borderRadius: 14, padding: '14px', cursor: 'pointer', boxShadow: '0 5px 18px rgba(0,0,0,.12)', position: 'relative', overflow: 'hidden', display: 'flex', flexDirection: 'column', justifyContent: 'center', gap: 6 }}>
+              <div style={{ position: 'absolute', top: -18, right: -14, width: 72, height: 72, borderRadius: '50%', background: 'radial-gradient(circle,rgba(226,75,74,.22),transparent 70%)', pointerEvents: 'none' }} />
+              {/* LIVE badge + 標題 */}
+              <div style={{ display: 'flex', alignItems: 'center', gap: 6, position: 'relative' }}>
+                <span style={{ display: 'inline-flex', alignItems: 'center', gap: 4, background: '#E24B4A', borderRadius: 5, padding: '2px 7px', flexShrink: 0 }}>
+                  <span style={{ width: 4, height: 4, borderRadius: '50%', background: '#fff', animation: 'homeLiveDot 1s ease infinite' }} />
+                  <span style={{ fontSize: 9, fontWeight: 900, color: '#fff', letterSpacing: '0.1em' }}>LIVE</span>
+                </span>
+                <span style={{ fontSize: 13, fontWeight: 800, color: '#fff' }}>直播下單區</span>
+              </div>
+              {/* 副文字 */}
+              <div style={{ fontSize: 10, color: '#888', position: 'relative' }}>
+                {liveItemCount > 0 ? `${liveItemCount} 件商品上架中，立即下單` : '等待直播商品上架'}
+              </div>
+              {/* 進入 */}
+              <div style={{ display: 'inline-flex', alignItems: 'center', gap: 4, color: '#E24B4A', fontSize: 11, fontWeight: 700, position: 'relative' }}>
+                <i className="fa-solid fa-video" style={{ fontSize: 11 }}></i>
+                進入
+                <i className="fa-solid fa-chevron-right" style={{ fontSize: 9 }}></i>
               </div>
             </div>
 
-            {/* 積分排行榜 按鈕 */}
+            {/* 積分排行榜 — 等高縱向 */}
             <div
               onClick={() => setShowLeaderboard(true)}
-              style={{ background: 'linear-gradient(135deg,#FFF8EE,#FFFBF2)', border: '1px solid #F5E8C8', borderRadius: 14, padding: '12px 10px', cursor: 'pointer', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: 6, minWidth: 76, boxShadow: '0 2px 8px rgba(186,117,23,.07)' }}>
+              style={{ background: 'linear-gradient(135deg,#FFF8EE,#FFFBF2)', border: '1px solid #F5E8C8', borderRadius: 14, padding: '12px 8px', cursor: 'pointer', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: 7, boxShadow: '0 2px 8px rgba(186,117,23,.07)' }}>
               <div style={{ width: 36, height: 36, borderRadius: 10, background: 'linear-gradient(135deg,#BA7517,#D4A94A)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
                 <i className="fa-solid fa-ranking-star" style={{ fontSize: 16, color: '#fff' }}></i>
               </div>
-              <div style={{ fontSize: 11, fontWeight: 700, color: '#2D1A00', textAlign: 'center', lineHeight: 1.3 }}>積分<br/>排行榜</div>
+              <div style={{ fontSize: 10, fontWeight: 700, color: '#2D1A00', textAlign: 'center', lineHeight: 1.4 }}>積分<br/>排行榜</div>
             </div>
           </div>
 
