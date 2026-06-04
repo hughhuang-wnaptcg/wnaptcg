@@ -85,7 +85,8 @@ export function AuthProvider({ children }) {
     const weekComplete = newStreak % 7 === 0  // 7的倍數 = 全勤
     const bonusPoints = weekComplete ? 15 : 0
     const pointsEarned = 5
-    const totalPoints = m.points + pointsEarned + bonusPoints
+    const currentPoints = m.points || 0
+    const totalPoints = currentPoints + pointsEarned + bonusPoints
     const { getLevel } = await import('../lib/supabase')
     const oldLevel = m.level
     const newLevel = getLevel(totalPoints)
