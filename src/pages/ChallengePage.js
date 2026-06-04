@@ -64,8 +64,33 @@ function normalizeRewards(rewards) {
   if (Array.isArray(value)) return value.map(normalizeReward).filter(Boolean)
   if (Array.isArray(value?.rewards)) return value.rewards.map(normalizeReward).filter(Boolean)
   if (Array.isArray(value?.items)) return value.items.map(normalizeReward).filter(Boolean)
+  if (Array.isArray(value?.data)) return value.data.map(normalizeReward).filter(Boolean)
+  if (typeof value === 'object') {
+    const list = Object.values(value).map(normalizeReward).filter(Boolean)
+    if (list.length > 0) return list
+  }
   const single = normalizeReward(value)
   return single ? [single] : []
+}
+
+function normalizeBossRewards(boss) {
+  const fields = [
+    boss?.rewards,
+    boss?.reward,
+    boss?.reward_list,
+    boss?.reward_items,
+    boss?.reward_text,
+    boss?.reward_description,
+    boss?.prizes,
+    boss?.prize,
+  ]
+
+  for (const field of fields) {
+    const rewards = normalizeRewards(field)
+    if (rewards.length > 0) return rewards
+  }
+
+  return []
 }
 
 export default function ChallengePage() {
@@ -131,7 +156,7 @@ export default function ChallengePage() {
   const myRank = rankList.findIndex(m => m.name === member?.display_name) + 1
   const myAmount = rankList.find(m => m.name === member?.display_name)?.amount || 0
   const myPct = totalAmount > 0 ? Math.round(myAmount / totalAmount * 100) : 0
-  const rewards = normalizeRewards(boss.rewards)
+  const rewards = normalizeBossRewards(boss)
 
   return (
     <div style={S.page}>
@@ -202,25 +227,27 @@ export default function ChallengePage() {
         </div>
 
         {/* 獎勵 */}
-        {rewards.length > 0 && (
-          <div style={{ ...S.card, background: '#fff' }}>
-            <div style={{ ...S.secTitle, marginBottom: 10 }}>
-              <i className="fa-solid fa-gift" style={{ fontSize: 14, color: '#BA7517' }}></i>擊敗獎勵
-              <span style={{ fontSize: 10, background: 'linear-gradient(135deg,#FAEEDA,#FFF3D0)', color: '#8B5A00', padding: '2px 8px', borderRadius: 20, border: '0.5px solid #FAC775', marginLeft: 'auto' }}>依消費比例分配</span>
-            </div>
-            {rewards.map((r, i) => (
-              <div key={i} style={{ display: 'flex', alignItems: 'center', gap: 8, padding: 10, background: '#fdfaf4', borderRadius: 8, border: '0.5px solid #f0e8d0', marginBottom: 6 }}>
-                <div style={{ width: 32, height: 32, borderRadius: 8, background: 'linear-gradient(135deg,#FAEEDA,#FFF3D0)', display: 'flex', alignItems: 'center', justifyContent: 'center', border: '0.5px solid #FAC775' }}>
-                  <i className="fa-solid fa-gift" style={{ fontSize: 14, color: '#BA7517' }}></i>
-                </div>
-                <div>
-                  <div style={{ fontSize: 13, fontWeight: 500, color: '#111' }}>{r.name}</div>
-                  {r.desc && <div style={{ fontSize: 11, color: '#999', marginTop: 1 }}>{r.desc}</div>}
-                </div>
-              </div>
-            ))}
+        <div style={{ ...S.card, background: '#fff' }}>
+          <div style={{ ...S.secTitle, marginBottom: 10 }}>
+            <i className="fa-solid fa-gift" style={{ fontSize: 14, color: '#BA7517' }}></i>擊敗獎勵
+            <span style={{ fontSize: 10, background: 'linear-gradient(135deg,#FAEEDA,#FFF3D0)', color: '#8B5A00', padding: '2px 8px', borderRadius: 20, border: '0.5px solid #FAC775', marginLeft: 'auto' }}>依消費比例分配</span>
           </div>
-        )}
+          {rewards.length > 0 ? rewards.map((r, i) => (
+            <div key={i} style={{ display: 'flex', alignItems: 'center', gap: 8, padding: 10, background: '#fdfaf4', borderRadius: 8, border: '0.5px solid #f0e8d0', marginBottom: 6 }}>
+              <div style={{ width: 32, height: 32, borderRadius: 8, background: 'linear-gradient(135deg,#FAEEDA,#FFF3D0)', display: 'flex', alignItems: 'center', justifyContent: 'center', border: '0.5px solid #FAC775' }}>
+                <i className="fa-solid fa-gift" style={{ fontSize: 14, color: '#BA7517' }}></i>
+              </div>
+              <div>
+                <div style={{ fontSize: 13, fontWeight: 500, color: '#111' }}>{r.name}</div>
+                {r.desc && <div style={{ fontSize: 11, color: '#999', marginTop: 1 }}>{r.desc}</div>}
+              </div>
+            </div>
+          )) : (
+            <div style={{ padding: 12, background: '#fdfaf4', borderRadius: 8, border: '0.5px solid #f0e8d0', fontSize: 12, color: '#999', textAlign: 'center' }}>
+              尚未設定擊敗獎勵
+            </div>
+          )}
+        </div>
 
         {/* 我的貢獻 */}
         {member && myAmount > 0 && (
