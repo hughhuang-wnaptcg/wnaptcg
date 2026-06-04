@@ -1,3 +1,4 @@
+// src/pages/WallPage.js
 import React, { useEffect, useState, useMemo } from 'react'
 import { supabase, RARITY_COLORS } from '../lib/supabase'
 import { useAuth } from '../hooks/useAuth'
@@ -5,7 +6,6 @@ import { LevelBadge, PokeballIcon } from '../lib/pokeballs'
 import BottomNav from '../components/BottomNav'
 
 const RARITIES = ['UR','HR','SAR','CSR','SSR','SR','AR','CHR','PROMO','Other']
-
 
 function formatDate(iso) {
   if (!iso) return ''
@@ -25,10 +25,19 @@ export default function WallPage() {
   useEffect(() => { fetchCards() }, [member])
 
   async function fetchCards() {
-    const { data: allData } = await supabase.from('cards')
-      .select('*, card_owners(member_id, created_at, members(display_name, level, avatar_url))')
-      .order('created_at', { ascending: false })
-    setCards(allData || [])
+    // 全部卡片：用 SECURITY DEFINER RPC 繞過 RLS，取得含 members 資料的完整結果
+    const { data: rpcData, error: rpcErr } = await supabase.rpc('get_cards_with_owners')
+    if (!rpcErr && rpcData) {
+      setCards(rpcData)
+    } else {
+      // fallback：直接查（members 欄位可能為 null，但至少卡片本身能顯示）
+      const { data: allData } = await supabase.from('cards')
+        .select('*, card_owners(member_id, created_at, members(display_name, level, avatar_url))')
+        .order('created_at', { ascending: false })
+      setCards(allData || [])
+    }
+
+    // 我的戰績：只查自己的 card_owners，不需要讀別人 members，RLS 不影響
     if (member) {
       const { data: myData } = await supabase.from('cards')
         .select('*, card_owners!inner(member_id, created_at, members(display_name, level, avatar_url))')
@@ -177,7 +186,7 @@ export default function WallPage() {
                               </div>
                           }
                           <span style={{ fontSize: 9, color: '#999', flex: 1, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
-                            {card.card_owners?.map(o => o.members?.display_name).join(', ') || '-'}
+                            {card.card_owners?.map(o => o.members?.display_name).filter(Boolean).join(', ') || '-'}
                           </span>
                         </div>
                         {owner?.created_at && (
@@ -233,17 +242,19 @@ export default function WallPage() {
               </div>
             )}
             <div style={{ fontSize: 11, color: '#aaa', marginBottom: 8 }}>開卡會員</div>
-            {selected.card_owners?.map(o => (
+            {selected.card_owners?.length > 0 ? selected.card_owners.map(o => (
               <div key={o.member_id} style={{ display: 'flex', alignItems: 'center', gap: 10, padding: 12, border: '0.5px solid #f0e8d0', borderRadius: 10, marginBottom: 8, background: 'linear-gradient(135deg,#fdfaf4,#fff)' }}>
                 {o.members?.avatar_url
                   ? <img src={o.members.avatar_url} alt="" style={{ width: 36, height: 36, borderRadius: '50%', objectFit: 'cover', border: '1.5px solid #FAC775' }} />
                   : <div style={{ width: 36, height: 36, borderRadius: '50%', background: 'linear-gradient(135deg,#FAEEDA,#FFF3D0)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 13, fontWeight: 600, color: '#633806', border: '1.5px solid #FAC775' }}>
-                      {o.members?.display_name?.[0]?.toUpperCase()}
+                      {o.members?.display_name?.[0]?.toUpperCase() || '?'}
                     </div>
                 }
                 <div style={{ flex: 1 }}>
-                  <div style={{ fontSize: 14, fontWeight: 500, color: '#111', marginBottom: 3 }}>{o.members?.display_name}</div>
-                  <LevelBadge level={o.members?.level} size='sm' />
+                  <div style={{ fontSize: 14, fontWeight: 500, color: '#111', marginBottom: 3 }}>
+                    {o.members?.display_name || '未知會員'}
+                  </div>
+                  {o.members?.level && <LevelBadge level={o.members.level} size='sm' />}
                   {o.created_at && (
                     <div style={{ fontSize: 10, color: '#bbb', marginTop: 4 }}>
                       <i className="fa-regular fa-calendar" style={{ marginRight: 3 }}></i>
@@ -252,7 +263,9 @@ export default function WallPage() {
                   )}
                 </div>
               </div>
-            ))}
+            )) : (
+              <div style={{ fontSize: 12, color: '#ccc', textAlign: 'center', padding: '12px 0' }}>尚無會員資料</div>
+            )}
           </div>
         </div>
       )}
