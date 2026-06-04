@@ -28,6 +28,23 @@ const TIER_CONFIG = {
   },
 }
 
+const PRODUCT_TAG_CONFIG = {
+  擴充盒: { icon: 'fa-box', color: '#E24B4A', bg: '#FCEBEB', border: '#F09595' },
+  散包: { icon: 'fa-layer-group', color: '#E07B00', bg: '#FFF3E0', border: '#FAC775' },
+  其他: { icon: 'fa-tag', color: '#666', bg: '#F5F5F5', border: '#E0E0E0' },
+}
+
+function ProductTag({ tag }) {
+  const label = tag || '其他'
+  const cfg = PRODUCT_TAG_CONFIG[label] || PRODUCT_TAG_CONFIG['其他']
+  return (
+    <span style={{ display: 'inline-flex', alignItems: 'center', gap: 4, alignSelf: 'flex-start', fontSize: 9, fontWeight: 700, color: cfg.color, background: cfg.bg, border: `0.5px solid ${cfg.border}`, borderRadius: 99, padding: '2px 7px', lineHeight: 1.3 }}>
+      <i className={`fa-solid ${cfg.icon}`} style={{ fontSize: 8 }}></i>
+      {label}
+    </span>
+  )
+}
+
 const POKEBALL_SVG = {
   精靈球: `<svg width="16" height="16" viewBox="0 0 52 52"><circle cx="26" cy="26" r="24" fill="#fff" stroke="#ccc" stroke-width="1"/><path d="M2 26 A24 24 0 0 1 50 26 Z" fill="#E24B4A"/><rect x="2" y="23" width="48" height="6" fill="#1a1a1a"/><circle cx="26" cy="26" r="7" fill="#fff" stroke="#1a1a1a" stroke-width="2.5"/><circle cx="26" cy="26" r="3.5" fill="#e8e8e8"/></svg>`,
   超級球: `<svg width="16" height="16" viewBox="0 0 52 52"><circle cx="26" cy="26" r="24" fill="#fff" stroke="#ccc" stroke-width="1"/><path d="M2 26 A24 24 0 0 1 50 26 Z" fill="#378ADD"/><polygon points="15,8 22,14 15,20 8,14" fill="#E24B4A"/><polygon points="37,8 44,14 37,20 30,14" fill="#E24B4A"/><rect x="2" y="23" width="48" height="6" fill="#1a1a1a"/><circle cx="26" cy="26" r="7" fill="#fff" stroke="#1a1a1a" stroke-width="2.5"/><circle cx="26" cy="26" r="3.5" fill="#e8e8e8"/></svg>`,
@@ -428,7 +445,10 @@ export default function ShopPage() {
                         )}
                       </div>
                       <div style={{ padding: '10px 10px 12px' }}>
-                        <div style={{ fontSize: 12, fontWeight: 600, color: isVip ? '#E8D5A0' : '#2D1A00', marginBottom: 4 }}>{prod.name}</div>
+                        <div style={{ display: 'flex', alignItems: 'center', gap: 6, marginBottom: 5, flexWrap: 'wrap' }}>
+                          <ProductTag tag={prod.product_tag} />
+                          <div style={{ fontSize: 12, fontWeight: 600, color: isVip ? '#E8D5A0' : '#2D1A00', lineHeight: 1.35 }}>{prod.name}</div>
+                        </div>
                         {prod.description && <div style={{ fontSize: 10, color: isVip ? '#666' : '#bbb', marginBottom: 6, lineHeight: 1.4 }}>{prod.description}</div>}
                         <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginTop: 6 }}>
                           <div style={{ fontSize: 13, fontWeight: 800, color: cfg.enterColor }}><i className="fa-solid fa-coins" style={{ fontSize: 10, marginRight: 3 }}></i>{prod.price} 點</div>
@@ -460,7 +480,10 @@ export default function ShopPage() {
                       {confirmProduct.image_url ? <img src={confirmProduct.image_url} alt="" style={{ width: '100%', height: '100%', objectFit: 'cover' }} /> : <i className="fa-solid fa-gift" style={{ fontSize: 28, color: '#D4A94A', opacity: 0.5 }}></i>}
                     </div>
                     <div style={{ flex: 1 }}>
-                      <div style={{ fontSize: 14, fontWeight: 700, color: '#2D1A00', marginBottom: 4 }}>{confirmProduct.name}</div>
+                      <div style={{ display: 'flex', alignItems: 'center', gap: 6, marginBottom: 5, flexWrap: 'wrap' }}>
+                        <ProductTag tag={confirmProduct.product_tag} />
+                        <div style={{ fontSize: 14, fontWeight: 700, color: '#2D1A00', lineHeight: 1.35 }}>{confirmProduct.name}</div>
+                      </div>
                       {confirmProduct.description && <div style={{ fontSize: 11, color: '#bbb', marginBottom: 6 }}>{confirmProduct.description}</div>}
                       <div style={{ fontSize: 12, color: '#E07B00', fontWeight: 700 }}><i className="fa-solid fa-coins" style={{ fontSize: 10, marginRight: 3 }}></i>{confirmProduct.price} 點 / 個</div>
                     </div>
@@ -578,6 +601,19 @@ export default function ShopPage() {
             ))}
           </div>
         </div>
+
+        {mainTab === 'live' && (
+          <div style={{ padding: '12px 16px 0' }}>
+            <button
+              onClick={() => window.open('https://www.hugocollections.com', '_blank', 'noopener,noreferrer')}
+              style={{ width: '100%', border: '1px solid rgba(226,75,74,0.35)', background: 'linear-gradient(135deg,#1a1a1a,#2A2A2A)', color: '#fff', borderRadius: 12, padding: '11px 14px', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8, fontSize: 13, fontWeight: 800, cursor: 'pointer', boxShadow: '0 3px 12px rgba(0,0,0,0.12)' }}
+            >
+              <i className="fa-solid fa-credit-card" style={{ fontSize: 13, color: '#E24B4A' }}></i>
+              我要刷卡
+              <i className="fa-solid fa-arrow-up-right-from-square" style={{ fontSize: 10, color: '#888' }}></i>
+            </button>
+          </div>
+        )}
 
         {/* 直播下單區 */}
         {mainTab === 'live' && (
