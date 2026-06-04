@@ -37,6 +37,37 @@ function AnimatedBar({ targetPct, color, height = 10, delay = 0 }) {
   )
 }
 
+function normalizeReward(reward) {
+  if (!reward) return null
+  if (typeof reward === 'string') {
+    const name = reward.trim()
+    return name ? { name, desc: '' } : null
+  }
+  if (typeof reward !== 'object') return null
+  const name = reward.name || reward.title || reward.label || reward.reward || reward.prize || reward.item || ''
+  const desc = reward.desc || reward.description || reward.note || reward.detail || ''
+  if (!name && !desc) return null
+  return { name: name || desc, desc: name ? desc : '' }
+}
+
+function normalizeRewards(rewards) {
+  if (!rewards) return []
+  let value = rewards
+  if (typeof value === 'string') {
+    try {
+      value = JSON.parse(value)
+    } catch (e) {
+      const single = normalizeReward(value)
+      return single ? [single] : []
+    }
+  }
+  if (Array.isArray(value)) return value.map(normalizeReward).filter(Boolean)
+  if (Array.isArray(value?.rewards)) return value.rewards.map(normalizeReward).filter(Boolean)
+  if (Array.isArray(value?.items)) return value.items.map(normalizeReward).filter(Boolean)
+  const single = normalizeReward(value)
+  return single ? [single] : []
+}
+
 export default function ChallengePage() {
   const { member } = useAuth()
   const [boss, setBoss] = useState(null)
@@ -100,6 +131,7 @@ export default function ChallengePage() {
   const myRank = rankList.findIndex(m => m.name === member?.display_name) + 1
   const myAmount = rankList.find(m => m.name === member?.display_name)?.amount || 0
   const myPct = totalAmount > 0 ? Math.round(myAmount / totalAmount * 100) : 0
+  const rewards = normalizeRewards(boss.rewards)
 
   return (
     <div style={S.page}>
@@ -170,13 +202,13 @@ export default function ChallengePage() {
         </div>
 
         {/* 獎勵 */}
-        {boss.rewards?.length > 0 && (
+        {rewards.length > 0 && (
           <div style={{ ...S.card, background: '#fff' }}>
             <div style={{ ...S.secTitle, marginBottom: 10 }}>
               <i className="fa-solid fa-gift" style={{ fontSize: 14, color: '#BA7517' }}></i>擊敗獎勵
               <span style={{ fontSize: 10, background: 'linear-gradient(135deg,#FAEEDA,#FFF3D0)', color: '#8B5A00', padding: '2px 8px', borderRadius: 20, border: '0.5px solid #FAC775', marginLeft: 'auto' }}>依消費比例分配</span>
             </div>
-            {boss.rewards.map((r, i) => (
+            {rewards.map((r, i) => (
               <div key={i} style={{ display: 'flex', alignItems: 'center', gap: 8, padding: 10, background: '#fdfaf4', borderRadius: 8, border: '0.5px solid #f0e8d0', marginBottom: 6 }}>
                 <div style={{ width: 32, height: 32, borderRadius: 8, background: 'linear-gradient(135deg,#FAEEDA,#FFF3D0)', display: 'flex', alignItems: 'center', justifyContent: 'center', border: '0.5px solid #FAC775' }}>
                   <i className="fa-solid fa-gift" style={{ fontSize: 14, color: '#BA7517' }}></i>
