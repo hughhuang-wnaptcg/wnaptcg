@@ -63,9 +63,9 @@ export default function AdminSettings() {
             <button onClick={() => openModal('points')} style={{ display: 'flex', alignItems: 'center', gap: 4, padding: '4px 10px', border: '0.5px solid #ddd', borderRadius: 6, fontSize: 11, color: '#666', background: 'transparent', cursor: 'pointer' }}>✏️ 編輯</button>
           </div>
           {[
-            { label: '每日登入', value: `+${settings.points_login} 點` },
-            { label: '全勤獎勵', value: `額外 +${settings.points_streak_bonus} 點` },
-            { label: '消費積分比例', value: `$1 = ${settings.points_purchase_ratio} 點` },
+            { label: '每日登入', value: `+${settings.points_login} 積分` },
+            { label: '全勤獎勵', value: `額外 +${settings.points_streak_bonus} 積分` },
+            { label: '消費積分比例', value: `$1 = ${settings.points_purchase_ratio} 積分` },
             { label: '積分有效期限', value: '永久有效' },
           ].map(r => (
             <div key={r.label} style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '9px 0', borderBottom: '0.5px solid #f0f0f0' }}>
@@ -147,7 +147,7 @@ export default function AdminSettings() {
               </div>
             </div>
             <div style={{ marginBottom: 16 }}>
-              <label style={{ fontSize: 11, color: '#999', display: 'block', marginBottom: 4 }}>消費積分比例（$1 = ? 點）</label>
+              <label style={{ fontSize: 11, color: '#999', display: 'block', marginBottom: 4 }}>消費積分比例（$1 = ? 積分）</label>
               <input type="number" value={form.points_purchase_ratio} onChange={e => setForm({ ...form, points_purchase_ratio: parseInt(e.target.value) })}
                 style={{ width: '100%', padding: '8px 10px', border: '0.5px solid #ddd', borderRadius: 7, fontSize: 13, color: '#111', outline: 'none' }} />
             </div>
