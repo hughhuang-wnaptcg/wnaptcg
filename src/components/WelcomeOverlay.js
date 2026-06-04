@@ -176,12 +176,12 @@ function PointsStep({ loginResult }) {
         }}>
           +{displayPoints}
         </span>
-        <span style={{fontSize:20,color:'#BA7517',opacity:0.7,animation:'slideUp 0.4s 0.5s ease both'}}>點</span>
+        <span style={{fontSize:20,color:'#BA7517',opacity:0.7,animation:'slideUp 0.4s 0.5s ease both'}}>積分</span>
       </div>
       {loginResult?.bonusEarned > 0 && (
         <div style={{display:'flex',alignItems:'center',gap:6,background:'linear-gradient(135deg,#FAEEDA,#FFF3D0)',border:'0.5px solid #FAC775',borderRadius:20,padding:'6px 14px',marginBottom:6,animation:'slideUp 0.4s 0.5s ease both'}}>
           <i className="fa-solid fa-fire" style={{fontSize:13,color:'#E24B4A'}}></i>
-          <span style={{fontSize:12,color:'#8B5A00',fontWeight:500}}>全勤獎勵 +{loginResult.bonusEarned} 點</span>
+          <span style={{fontSize:12,color:'#8B5A00',fontWeight:500}}>全勤獎勵 +{loginResult.bonusEarned} 積分</span>
         </div>
       )}
       <div style={{fontSize:12,color:'#bbb',marginTop:8,animation:'slideUp 0.4s 0.6s ease both'}}>
