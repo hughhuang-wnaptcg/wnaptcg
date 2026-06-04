@@ -398,8 +398,11 @@ export default function HomePage() {
               </div>
               <div style={S.bossCard}>
                 <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 12 }}>
-                  <div style={{ width: 40, height: 40, borderRadius: '50%', background: '#FCEBEB', display: 'flex', alignItems: 'center', justifyContent: 'center', border: '1px solid #F09595' }}>
-                    <i className="fa-solid fa-skull" style={{ fontSize: 18, color: '#E24B4A' }}></i>
+                  <div style={{ width: 40, height: 40, borderRadius: '50%', background: '#FCEBEB', display: 'flex', alignItems: 'center', justifyContent: 'center', border: '1px solid #F09595', overflow: 'hidden', flexShrink: 0 }}>
+                    {boss.image_url
+                      ? <img src={boss.image_url} alt={boss.name} style={{ width: '100%', height: '100%', objectFit: 'cover' }} onError={e => { e.currentTarget.style.display = 'none'; e.currentTarget.nextSibling.style.display = 'block' }} />
+                      : null}
+                    <i className="fa-solid fa-skull" style={{ fontSize: 18, color: '#E24B4A', display: boss.image_url ? 'none' : 'block' }}></i>
                   </div>
                   <div style={{ flex: 1 }}>
                     <div style={{ fontSize: 14, fontWeight: 500, color: '#111' }}>{boss.name}</div>
