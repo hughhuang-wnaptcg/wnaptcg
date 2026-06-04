@@ -211,6 +211,7 @@ export default function ShopPage() {
   const [requestSuccess, setRequestSuccess] = useState(false)
 
   const [liveItems, setLiveItems] = useState([])
+  const [liveTagFilter, setLiveTagFilter] = useState('全部')
   const [liveLoading, setLiveLoading] = useState(false)
   const [cart, setCart] = useState([])
   const [showCart, setShowCart] = useState(false)
@@ -307,6 +308,9 @@ export default function ShopPage() {
 
   const cartTotal = cart.reduce((sum, c) => sum + c.item.price * c.quantity, 0)
   const cartCount = cart.reduce((sum, c) => sum + c.quantity, 0)
+  const filteredLiveItems = liveTagFilter === '全部'
+    ? liveItems
+    : liveItems.filter(item => (item.product_tag || '其他') === liveTagFilter)
 
   function closeCart() {
     setCartFading(true)
@@ -445,10 +449,7 @@ export default function ShopPage() {
                         )}
                       </div>
                       <div style={{ padding: '10px 10px 12px' }}>
-                        <div style={{ display: 'flex', alignItems: 'center', gap: 6, marginBottom: 5, flexWrap: 'wrap' }}>
-                          <ProductTag tag={prod.product_tag} />
-                          <div style={{ fontSize: 12, fontWeight: 600, color: isVip ? '#E8D5A0' : '#2D1A00', lineHeight: 1.35 }}>{prod.name}</div>
-                        </div>
+                        <div style={{ fontSize: 12, fontWeight: 600, color: isVip ? '#E8D5A0' : '#2D1A00', marginBottom: 4, lineHeight: 1.35 }}>{prod.name}</div>
                         {prod.description && <div style={{ fontSize: 10, color: isVip ? '#666' : '#bbb', marginBottom: 6, lineHeight: 1.4 }}>{prod.description}</div>}
                         <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginTop: 6 }}>
                           <div style={{ fontSize: 13, fontWeight: 800, color: cfg.enterColor }}><i className="fa-solid fa-coins" style={{ fontSize: 10, marginRight: 3 }}></i>{prod.price} 點</div>
@@ -480,10 +481,7 @@ export default function ShopPage() {
                       {confirmProduct.image_url ? <img src={confirmProduct.image_url} alt="" style={{ width: '100%', height: '100%', objectFit: 'cover' }} /> : <i className="fa-solid fa-gift" style={{ fontSize: 28, color: '#D4A94A', opacity: 0.5 }}></i>}
                     </div>
                     <div style={{ flex: 1 }}>
-                      <div style={{ display: 'flex', alignItems: 'center', gap: 6, marginBottom: 5, flexWrap: 'wrap' }}>
-                        <ProductTag tag={confirmProduct.product_tag} />
-                        <div style={{ fontSize: 14, fontWeight: 700, color: '#2D1A00', lineHeight: 1.35 }}>{confirmProduct.name}</div>
-                      </div>
+                      <div style={{ fontSize: 14, fontWeight: 700, color: '#2D1A00', marginBottom: 4, lineHeight: 1.35 }}>{confirmProduct.name}</div>
                       {confirmProduct.description && <div style={{ fontSize: 11, color: '#bbb', marginBottom: 6 }}>{confirmProduct.description}</div>}
                       <div style={{ fontSize: 12, color: '#E07B00', fontWeight: 700 }}><i className="fa-solid fa-coins" style={{ fontSize: 10, marginRight: 3 }}></i>{confirmProduct.price} 點 / 個</div>
                     </div>
@@ -615,6 +613,23 @@ export default function ShopPage() {
           </div>
         )}
 
+        {mainTab === 'live' && !liveLoading && liveItems.length > 0 && (
+          <div style={{ padding: '10px 16px 0', display: 'flex', gap: 7, overflowX: 'auto', WebkitOverflowScrolling: 'touch' }}>
+            {['全部', '擴充盒', '散包', '其他'].map(tag => {
+              const active = liveTagFilter === tag
+              const count = tag === '全部' ? liveItems.length : liveItems.filter(item => (item.product_tag || '其他') === tag).length
+              return (
+                <button key={tag} onClick={() => setLiveTagFilter(tag)}
+                  style={{ flexShrink: 0, border: `1px solid ${active ? '#E24B4A' : '#E8E8E8'}`, background: active ? '#FCEBEB' : '#fff', color: active ? '#E24B4A' : '#777', borderRadius: 99, padding: '6px 10px', fontSize: 11, fontWeight: 800, cursor: 'pointer', display: 'flex', alignItems: 'center', gap: 5 }}>
+                  {tag !== '全部' && <i className={`fa-solid ${PRODUCT_TAG_CONFIG[tag]?.icon || 'fa-tag'}`} style={{ fontSize: 9 }}></i>}
+                  {tag}
+                  <span style={{ fontSize: 9, opacity: 0.7 }}>{count}</span>
+                </button>
+              )
+            })}
+          </div>
+        )}
+
         {/* 直播下單區 */}
         {mainTab === 'live' && (
           <div style={{ padding: '0 0 120px' }}>
@@ -641,9 +656,17 @@ export default function ShopPage() {
                 <div style={{ fontSize: 15, fontWeight: 700, color: '#333', marginBottom: 6 }}>目前尚未有上架商品</div>
                 <div style={{ fontSize: 12, color: '#bbb', lineHeight: 1.6 }}>商品上架後即可在此下單<br/>請關注直播通知</div>
               </div>
+            ) : filteredLiveItems.length === 0 ? (
+              <div style={{ padding: '56px 32px', textAlign: 'center' }}>
+                <div style={{ width: 64, height: 64, borderRadius: '50%', background: '#F5F5F5', display: 'flex', alignItems: 'center', justifyContent: 'center', margin: '0 auto 14px' }}>
+                  <i className="fa-solid fa-filter-circle-xmark" style={{ fontSize: 24, color: '#BDBDBD' }}></i>
+                </div>
+                <div style={{ fontSize: 14, fontWeight: 700, color: '#333', marginBottom: 6 }}>此分類暫無商品</div>
+                <div style={{ fontSize: 12, color: '#bbb', lineHeight: 1.6 }}>可以切換其他標籤查看</div>
+              </div>
             ) : (
               <div style={{ padding: '12px 16px 0', display: 'grid', gridTemplateColumns: 'repeat(2,1fr)', gap: 10 }}>
-                {liveItems.map((item, idx) => {
+                {filteredLiveItems.map((item, idx) => {
                   const soldOut = item.stock <= 0
                   const cartItem = cart.find(c => c.item.id === item.id)
                   const cartQty = cartItem ? cartItem.quantity : 0
