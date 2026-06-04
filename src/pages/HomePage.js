@@ -70,6 +70,7 @@ export default function HomePage() {
   const navigate = useNavigate()
   const [boss, setBoss] = useState(null)
   const [recentCards, setRecentCards] = useState([])
+  const [liveItemCount, setLiveItemCount] = useState(0)
   const [weekLogins, setWeekLogins] = useState([])
   const [announcement, setAnnouncement] = useState('')
   const [news, setNews] = useState(null)
@@ -102,13 +103,15 @@ export default function HomePage() {
   }, [loginResult])
 
   const fetchData = useCallback(async () => {
-    const [{ data: bossData }, { data: cardsData }, { data: settingsData }] = await Promise.all([
+    const [{ data: bossData }, { data: cardsData }, { data: settingsData }, { count: liveCount }] = await Promise.all([
       supabase.from('boss_challenges').select('*').eq('is_active', true).single(),
       supabase.from('cards').select('*').order('created_at', { ascending: false }).limit(3),
       supabase.from('settings').select('*'),
+      supabase.from('menu_items').select('id', { count: 'exact', head: true }).eq('is_active', true),
     ])
     setBoss(bossData)
     setRecentCards(cardsData || [])
+    setLiveItemCount(liveCount || 0)
     if (settingsData) {
       const s = {}
       settingsData.forEach(d => { try { s[d.key] = JSON.parse(d.value) } catch(e) { s[d.key] = d.value } })
@@ -347,6 +350,35 @@ export default function HomePage() {
         )}
 
         <div style={{ padding: '16px 20px 0' }}>
+
+          {/* 直播下單區 */}
+          <div
+            onClick={() => navigate('/shop?tab=live')}
+            style={{ marginBottom: 16, background: 'linear-gradient(135deg,#1a1a1a,#2A2A2A)', border: '1px solid rgba(226,75,74,0.35)', borderRadius: 14, padding: '13px 14px', cursor: 'pointer', boxShadow: '0 5px 18px rgba(0,0,0,.12)', position: 'relative', overflow: 'hidden' }}>
+            <style>{`@keyframes homeLiveDot{0%,100%{opacity:1;transform:scale(1)}50%{opacity:.45;transform:scale(.72)}}`}</style>
+            <div style={{ position: 'absolute', top: -26, right: -20, width: 96, height: 96, borderRadius: '50%', background: 'radial-gradient(circle,rgba(226,75,74,.22),transparent 66%)', pointerEvents: 'none' }} />
+            <div style={{ display: 'flex', alignItems: 'center', gap: 12, position: 'relative' }}>
+              <div style={{ width: 42, height: 42, borderRadius: 12, background: 'rgba(226,75,74,.14)', border: '1px solid rgba(226,75,74,.32)', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
+                <i className="fa-solid fa-video" style={{ fontSize: 17, color: '#E24B4A' }}></i>
+              </div>
+              <div style={{ flex: 1, minWidth: 0 }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: 7, marginBottom: 3 }}>
+                  <span style={{ display: 'inline-flex', alignItems: 'center', gap: 4, background: '#E24B4A', borderRadius: 6, padding: '2px 7px' }}>
+                    <span style={{ width: 5, height: 5, borderRadius: '50%', background: '#fff', animation: 'homeLiveDot 1s ease infinite' }} />
+                    <span style={{ fontSize: 9, fontWeight: 900, color: '#fff', letterSpacing: '0.1em' }}>LIVE</span>
+                  </span>
+                  <span style={{ fontSize: 14, fontWeight: 800, color: '#fff' }}>直播下單區</span>
+                </div>
+                <div style={{ fontSize: 10, color: '#aaa', lineHeight: 1.4 }}>
+                  {liveItemCount > 0 ? `${liveItemCount} 件商品上架中，立即下單` : '等待直播商品上架'}
+                </div>
+              </div>
+              <div style={{ display: 'flex', alignItems: 'center', gap: 7, color: '#E24B4A', fontSize: 11, fontWeight: 800 }}>
+                進入
+                <i className="fa-solid fa-chevron-right" style={{ fontSize: 10 }}></i>
+              </div>
+            </div>
+          </div>
 
           {/* 戰績牆 */}
           <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 10 }}>
