@@ -128,8 +128,11 @@ export default function ChallengePage() {
         {/* Boss 卡片 */}
         <div style={S.card}>
           <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 14 }}>
-            <div style={{ width: 46, height: 46, borderRadius: '50%', background: '#FCEBEB', display: 'flex', alignItems: 'center', justifyContent: 'center', border: '0.5px solid #F09595', flexShrink: 0 }}>
-              <i className="fa-solid fa-shield" style={{ fontSize: 20, color: '#E24B4A' }}></i>
+            <div style={{ width: 46, height: 46, borderRadius: '50%', background: '#FCEBEB', display: 'flex', alignItems: 'center', justifyContent: 'center', border: '0.5px solid #F09595', flexShrink: 0, overflow: 'hidden' }}>
+              {boss.image_url
+                ? <img src={boss.image_url} alt={boss.name} style={{ width: '100%', height: '100%', objectFit: 'cover' }} onError={e => { e.currentTarget.style.display = 'none'; e.currentTarget.nextSibling.style.display = 'block' }} />
+                : null}
+              <i className="fa-solid fa-shield" style={{ fontSize: 20, color: '#E24B4A', display: boss.image_url ? 'none' : 'block' }}></i>
             </div>
             <div style={{ flex: 1 }}>
               <div style={{ fontSize: 15, fontWeight: 500, color: '#111' }}>{boss.name}</div>
