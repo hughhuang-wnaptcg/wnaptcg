@@ -42,6 +42,7 @@ export default function ProfilePage() {
   const [editName, setEditName] = useState('')
   const [saving, setSaving] = useState(false)
   const [uploadingAvatar, setUploadingAvatar] = useState(false)
+  const [restoringAvatar, setRestoringAvatar] = useState(false)
   const avatarFileRef = useRef()
 
   useEffect(() => { if (member) fetchData() }, [member])
@@ -175,6 +176,18 @@ export default function ProfilePage() {
     setUploadingAvatar(false)
     // 清空 input，讓同一張圖也能重新觸發
     if (avatarFileRef.current) avatarFileRef.current.value = ''
+  }
+
+  async function handleRestoreLineAvatar() {
+    if (!member.line_avatar_url) return
+    setRestoringAvatar(true)
+    try {
+      await supabase.from('members').update({ avatar_url: member.line_avatar_url }).eq('id', member.id)
+      setMember({ ...member, avatar_url: member.line_avatar_url })
+    } catch (err) {
+      alert('恢復失敗：' + err.message)
+    }
+    setRestoringAvatar(false)
   }
 
   if (!member) return null
@@ -692,6 +705,17 @@ export default function ProfilePage() {
                         : <><i className="fa-solid fa-camera" style={{ fontSize: 12 }}></i>更換頭貼</>
                       }
                     </button>
+                    {member.line_avatar_url && member.avatar_url !== member.line_avatar_url && (
+                      <button
+                        onClick={handleRestoreLineAvatar}
+                        disabled={restoringAvatar}
+                        style={{ width: '100%', padding: '8px 12px', background: restoringAvatar ? '#f0ebe3' : '#fff', border: '0.5px solid #f0e8d0', borderRadius: 10, fontSize: 12, fontWeight: 500, color: restoringAvatar ? '#ccc' : '#888', cursor: restoringAvatar ? 'not-allowed' : 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 6, marginBottom: 6 }}>
+                        {restoringAvatar
+                          ? <><i className="fa-solid fa-spinner fa-spin" style={{ fontSize: 11 }}></i>恢復中...</>
+                          : <><i className="fa-brands fa-line" style={{ fontSize: 12, color: '#06C755' }}></i>恢復 LINE 頭貼</>
+                        }
+                      </button>
+                    )}
                     <div style={{ fontSize: 10, color: '#bbb', textAlign: 'center' }}>支援 JPG、PNG、WebP</div>
                   </div>
                 ) : (
