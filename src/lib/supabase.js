@@ -1,25 +1,21 @@
+// src/lib/supabase.js
 import { createClient } from '@supabase/supabase-js'
-
 const supabaseUrl = process.env.REACT_APP_SUPABASE_URL
 const supabaseKey = process.env.REACT_APP_SUPABASE_PUBLISHABLE_KEY
-
 if (!supabaseUrl || !supabaseKey) {
   throw new Error('Missing Supabase configuration')
 }
-
 export const supabase = createClient(supabaseUrl, supabaseKey)
-
 // 等級門檻
 export const LEVELS = [
   { name: '精靈球', min: 0 },
-  { name: '超級球', min: 1000 },
-  { name: '高級球', min: 10000 },
-  { name: '豪華球', min: 20000 },
-  { name: '貴重球', min: 50000 },
-  { name: '究極球', min: 100000 },
-  { name: '大師球', min: 300000 },
+  { name: '超級球', min: 10000 },
+  { name: '高級球', min: 20000 },
+  { name: '豪華球', min: 50000 },
+  { name: '貴重球', min: 80000 },
+  { name: '究極球', min: 200000 },
+  { name: '大師球', min: 500000 },
 ]
-
 export const getLevel = (points) => {
   let level = '精靈球'
   for (const l of LEVELS) {
@@ -27,7 +23,6 @@ export const getLevel = (points) => {
   }
   return level
 }
-
 export const getNextLevel = (points) => {
   for (let i = LEVELS.length - 1; i >= 0; i--) {
     if (points >= LEVELS[i].min) {
@@ -36,7 +31,6 @@ export const getNextLevel = (points) => {
   }
   return LEVELS[1]
 }
-
 export const RARITY_COLORS = {
   UR: { bg: '#FCEBEB', color: '#791F1F' },
   HR: { bg: '#FAEEDA', color: '#633806' },
