@@ -603,7 +603,7 @@ export default function ShopPage() {
 
         {mainTab === 'live' && (
           <div style={{ padding: '12px 16px 0' }}>
-            
+            <a
               href="https://www.hugocollections.com"
               target="_blank"
               rel="noopener noreferrer"
@@ -1075,3 +1075,15 @@ export default function ShopPage() {
                     <div style={{ fontSize: 11, color: '#bbb', marginTop: 2 }}>{order.shipped_at ? `${new Date(order.shipped_at).toLocaleDateString('zh-TW')} 出貨` : '已出貨'}</div>
                     <div style={{ fontSize: 10, fontWeight: 600, color: '#E24B4A', marginTop: 1 }}>-{order.points_spent} 點</div>
                   </div>
+                  <span style={{ fontSize: 10, fontWeight: 600, padding: '3px 8px', borderRadius: 99, background: '#EAF3DE', color: '#388E3C', flexShrink: 0 }}>已出貨</span>
+                </div>
+              ))}
+            </div>
+          </div>
+        </div>
+      )}
+
+      <BottomNav />
+    </div>
+  )
+}
