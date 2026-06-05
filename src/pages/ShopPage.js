@@ -1,3 +1,4 @@
+// src/pages/ShopPage.js
 import React, { useEffect, useState } from 'react'
 import { supabase } from '../lib/supabase'
 import { useAuth } from '../hooks/useAuth'
@@ -602,14 +603,16 @@ export default function ShopPage() {
 
         {mainTab === 'live' && (
           <div style={{ padding: '12px 16px 0' }}>
-            <button
-              onClick={() => window.open('https://www.hugocollections.com', '_blank', 'noopener,noreferrer')}
-              style={{ width: '100%', border: '1px solid rgba(226,75,74,0.35)', background: 'linear-gradient(135deg,#1a1a1a,#2A2A2A)', color: '#fff', borderRadius: 12, padding: '11px 14px', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8, fontSize: 13, fontWeight: 800, cursor: 'pointer', boxShadow: '0 3px 12px rgba(0,0,0,0.12)' }}
+            
+              href="https://www.hugocollections.com"
+              target="_blank"
+              rel="noopener noreferrer"
+              style={{ width: '100%', boxSizing: 'border-box', border: '1px solid rgba(226,75,74,0.35)', background: 'linear-gradient(135deg,#1a1a1a,#2A2A2A)', color: '#fff', borderRadius: 12, padding: '11px 14px', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8, fontSize: 13, fontWeight: 800, cursor: 'pointer', boxShadow: '0 3px 12px rgba(0,0,0,0.12)', textDecoration: 'none' }}
             >
               <i className="fa-solid fa-credit-card" style={{ fontSize: 13, color: '#E24B4A' }}></i>
               我要刷卡
               <i className="fa-solid fa-arrow-up-right-from-square" style={{ fontSize: 10, color: '#888' }}></i>
-            </button>
+            </a>
           </div>
         )}
 
@@ -1072,15 +1075,3 @@ export default function ShopPage() {
                     <div style={{ fontSize: 11, color: '#bbb', marginTop: 2 }}>{order.shipped_at ? `${new Date(order.shipped_at).toLocaleDateString('zh-TW')} 出貨` : '已出貨'}</div>
                     <div style={{ fontSize: 10, fontWeight: 600, color: '#E24B4A', marginTop: 1 }}>-{order.points_spent} 點</div>
                   </div>
-                  <span style={{ fontSize: 10, fontWeight: 600, padding: '3px 8px', borderRadius: 99, background: '#EAF3DE', color: '#388E3C', flexShrink: 0 }}>已出貨</span>
-                </div>
-              ))}
-            </div>
-          </div>
-        </div>
-      )}
-
-      <BottomNav />
-    </div>
-  )
-}
