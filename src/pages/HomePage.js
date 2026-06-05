@@ -234,7 +234,7 @@ export default function HomePage() {
   const bossProgress = boss ? Math.round((boss.current_amount / boss.target_amount) * 100) : 0
   const today = new Date().toISOString().split('T')[0]
   const hour = new Date().getHours()
-  const greeting = hour < 12 ? { text: '早安', icon: 'fa-sun' } : hour < 18 ? { text: '午安', icon: 'fa-sun' } : { text: '晚安', icon: 'fa-moon' }
+  const greeting = (hour >= 6 && hour < 12) ? { text: '早安', icon: 'fa-sun' } : hour < 18 ? { text: '午安', icon: 'fa-sun' } : { text: '晚安', icon: 'fa-moon' }
   const isPulling = pullDistance > 0
   const isReadyToRelease = pullDistance >= THRESHOLD
   const blockedDaysLeft = cannotOrderUntil ? Math.ceil((cannotOrderUntil - new Date()) / (1000 * 60 * 60 * 24)) : 0
