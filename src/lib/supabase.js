@@ -24,12 +24,10 @@ export const getLevel = (points) => {
   return level
 }
 export const getNextLevel = (points) => {
-  for (let i = LEVELS.length - 1; i >= 0; i--) {
-    if (points >= LEVELS[i].min) {
-      return LEVELS[i + 1] || null
-    }
-  }
-  return LEVELS[1]
+  const currentName = getLevel(points)
+  const currentIndex = LEVELS.findIndex(l => l.name === currentName)
+  if (currentIndex === -1 || currentIndex === LEVELS.length - 1) return null
+  return LEVELS[currentIndex + 1]
 }
 export const RARITY_COLORS = {
   UR: { bg: '#FCEBEB', color: '#791F1F' },
