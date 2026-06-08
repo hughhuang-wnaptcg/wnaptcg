@@ -191,7 +191,6 @@ export default function ShopPage() {
   const [mainTab, setMainTab] = useState(searchParams.get('tab') === 'shop' ? 'shop' : 'live')
 
   const [products, setProducts] = useState([])
-  // BUG FIX #1: 改用正確的 point_logs 表（原本錯誤使用 points_logs）
   const [pointsLogs, setPointsLogs] = useState([])
   const [pendingOrders, setPendingOrders] = useState([])
   const [shippedOrders, setShippedOrders] = useState([])
@@ -199,6 +198,8 @@ export default function ShopPage() {
   const [loading, setLoading] = useState(true)
   const [productsError, setProductsError] = useState(null)
   const [activeTier, setActiveTier] = useState(null)
+  // ── 新增：點數商城內的篩選 state ──
+  const [tierFilter, setTierFilter] = useState('all') // 'all' | 'affordable' | 'unaffordable'
   const [confirmProduct, setConfirmProduct] = useState(null)
   const [confirmQty, setConfirmQty] = useState(1)
   const [buying, setBuying] = useState(false)
@@ -232,7 +233,6 @@ export default function ShopPage() {
     else if (tab === 'live' || tab === 'menu') setMainTab('live')
   }, [searchParams])
 
-  // BUG FIX #3: Realtime 訂閱已在 Supabase Dashboard 對 menu_orders 開啟
   useEffect(() => {
     if (!member) return
     const channel = supabase
@@ -251,7 +251,6 @@ export default function ShopPage() {
     setLoading(true)
     const [{ data: prods, error: pe }, { data: logs }, { data: allOrders }] = await Promise.all([
       supabase.from('shop_products').select('*').eq('is_active', true).order('created_at', { ascending: false }),
-      // BUG FIX #1: 從 points_logs（舊表/錯誤）改為 point_logs（正確表）
       supabase.from('point_logs').select('*').eq('member_id', member.id).order('created_at', { ascending: false }).limit(30),
       supabase.from('shop_orders').select('*, shop_products(name, image_url)').eq('member_id', member.id).order('created_at', { ascending: false }).limit(200),
     ])
@@ -334,7 +333,6 @@ export default function ShopPage() {
         p_items: p_items,
       })
       if (rpcErr) throw rpcErr
-
       const successData = {
         order_no: result.order_no,
         total_amount: result.total_amount,
@@ -398,12 +396,28 @@ export default function ShopPage() {
     const cfg = TIER_CONFIG[activeTier]
     const tierProds = tierProducts(activeTier)
     const isVip = activeTier === 'vip'
+
+    // ── 篩選邏輯：依 member.shop_points 與商品售價即時判斷 ──
+    const tierFilteredProds = tierProds.filter(prod => {
+      if (tierFilter === 'all') return true
+      if (!member) return tierFilter === 'unaffordable'
+      const canAfford = (member.shop_points || 0) >= prod.price
+      return tierFilter === 'affordable' ? canAfford : !canAfford
+    })
+
+    const filterTabs = [
+      { key: 'all',          label: '全部商品',   icon: 'fa-border-all' },
+      { key: 'affordable',   label: '目前可兌換', icon: 'fa-circle-check' },
+      { key: 'unaffordable', label: '點數不足',   icon: 'fa-circle-xmark' },
+    ]
+
     return (
       <div style={S.page}>
         <div style={{ flex: 1, overflowY: 'auto' }}>
           <div style={{ background: isVip ? '#1A1A1A' : 'linear-gradient(160deg,#FFFBF2 0%,#FFF5DC 60%,#FFEDBB 100%)', padding: '18px 20px 16px', borderBottom: `0.5px solid ${cfg.divider}` }}>
             <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
-              <button onClick={() => setActiveTier(null)} style={{ width: 32, height: 32, borderRadius: '50%', border: `0.5px solid ${cfg.divider}`, background: isVip ? '#222' : '#fff', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
+              {/* ── 返回時 reset tierFilter ── */}
+              <button onClick={() => { setActiveTier(null); setTierFilter('all') }} style={{ width: 32, height: 32, borderRadius: '50%', border: `0.5px solid ${cfg.divider}`, background: isVip ? '#222' : '#fff', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
                 <i className="fa-solid fa-arrow-left" style={{ fontSize: 12, color: isVip ? '#F5D060' : '#888' }}></i>
               </button>
               <div style={{ flex: 1 }}>
@@ -418,24 +432,60 @@ export default function ShopPage() {
               </div>
             </div>
           </div>
+
+          {/* ── 篩選列 ── */}
+          <div style={{ padding: '10px 16px 0', display: 'flex', gap: 7, overflowX: 'auto', WebkitOverflowScrolling: 'touch', background: isVip ? '#111' : '#FFFBF2', borderBottom: `0.5px solid ${cfg.divider}` }}>
+            {filterTabs.map(ft => {
+              const active = tierFilter === ft.key
+              const activeColor = isVip ? '#F5D060' : '#BA7517'
+              const activeBg = isVip ? '#2A2200' : '#FFF3D0'
+              const activeBorder = isVip ? '#B8860B' : '#FAC775'
+              const inactiveColor = isVip ? '#555' : '#bbb'
+              const inactiveBg = isVip ? '#1A1A1A' : '#fff'
+              const inactiveBorder = isVip ? '#333' : '#e8e8e8'
+              return (
+                <button
+                  key={ft.key}
+                  onClick={() => setTierFilter(ft.key)}
+                  style={{ flexShrink: 0, marginBottom: 10, border: `1px solid ${active ? activeBorder : inactiveBorder}`, background: active ? activeBg : inactiveBg, color: active ? activeColor : inactiveColor, borderRadius: 99, padding: '6px 11px', fontSize: 11, fontWeight: active ? 700 : 400, cursor: 'pointer', display: 'flex', alignItems: 'center', gap: 5, transition: 'all 0.15s' }}
+                >
+                  <i className={`fa-solid ${ft.icon}`} style={{ fontSize: 10 }}></i>
+                  {ft.label}
+                </button>
+              )
+            })}
+          </div>
+
           <div style={{ padding: '14px 16px 100px' }}>
-            {productsError ? (
+            {!member && tierFilter === 'affordable' ? (
+              <div style={{ textAlign: 'center', padding: '48px 24px' }}>
+                <div style={{ width: 56, height: 56, borderRadius: '50%', background: '#FFF3D0', border: '1px solid #FAC775', display: 'flex', alignItems: 'center', justifyContent: 'center', margin: '0 auto 14px' }}>
+                  <i className="fa-solid fa-lock" style={{ fontSize: 22, color: '#BA7517' }}></i>
+                </div>
+                <div style={{ fontSize: 14, fontWeight: 700, color: '#2D1A00', marginBottom: 6 }}>請先登入</div>
+                <div style={{ fontSize: 12, color: '#bbb', lineHeight: 1.6 }}>登入後才能查看目前可兌換的商品</div>
+              </div>
+            ) : productsError ? (
               <div style={{ textAlign: 'center', padding: '48px 20px', color: '#A32D2D' }}>
                 <i className="fa-solid fa-triangle-exclamation" style={{ fontSize: 28, display: 'block', marginBottom: 10, opacity: 0.7 }}></i>
                 <div style={{ fontSize: 13, fontWeight: 700 }}>商品載入失敗</div>
               </div>
-            ) : tierProds.length === 0 ? (
+            ) : tierFilteredProds.length === 0 ? (
               <div style={{ textAlign: 'center', padding: '48px 0', color: isVip ? '#444' : '#bbb' }}>
                 <i className="fa-solid fa-box-open" style={{ fontSize: 36, display: 'block', marginBottom: 10, opacity: 0.3 }}></i>
-                <div style={{ fontSize: 13 }}>目前無商品</div>
+                <div style={{ fontSize: 13 }}>
+                  {tierFilter === 'affordable' ? '目前沒有可兌換的商品' : tierFilter === 'unaffordable' ? '沒有點數不足的商品' : '目前無商品'}
+                </div>
               </div>
             ) : (
               <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2,1fr)', gap: 10 }}>
-                {tierProds.map(prod => {
+                {tierFilteredProds.map(prod => {
                   const soldOut = prod.stock <= 0
                   const remaining = remainingAllowance(prod)
                   const maxed = remaining <= 0
                   const disabled = soldOut || maxed
+                  // ── 點數狀態（登入時才判斷）──
+                  const canAfford = member ? (member.shop_points || 0) >= prod.price : null
                   return (
                     <div key={prod.id} onClick={() => !disabled && openConfirm(prod)}
                       style={{ background: isVip ? '#222' : '#fff', border: `0.5px solid ${cfg.divider}`, borderRadius: 14, overflow: 'hidden', cursor: disabled ? 'not-allowed' : 'pointer', opacity: disabled ? 0.5 : 1, boxShadow: isVip ? 'none' : '0 2px 10px rgba(186,117,23,.07)' }}>
@@ -446,6 +496,13 @@ export default function ShopPage() {
                         {(prod.max_per_member || 1) > 1 && !disabled && (
                           <div style={{ position: 'absolute', top: 6, right: 6, fontSize: 9, fontWeight: 700, background: 'rgba(0,0,0,0.55)', color: '#fff', padding: '2px 6px', borderRadius: 99 }}>
                             已買 {purchasedCounts[prod.id] || 0}/{prod.max_per_member}
+                          </div>
+                        )}
+                        {/* ── 可兌換狀態 badge（登入且非售完/達上限才顯示）── */}
+                        {canAfford !== null && !soldOut && !maxed && (
+                          <div style={{ position: 'absolute', bottom: 6, left: 6, display: 'flex', alignItems: 'center', gap: 3, background: canAfford ? 'rgba(6,199,85,0.88)' : 'rgba(160,160,160,0.88)', borderRadius: 99, padding: '2px 7px' }}>
+                            <i className={`fa-solid ${canAfford ? 'fa-circle-check' : 'fa-circle-xmark'}`} style={{ fontSize: 8, color: '#fff' }}></i>
+                            <span style={{ fontSize: 8, fontWeight: 700, color: '#fff' }}>{canAfford ? '可兌換' : '點數不足'}</span>
                           </div>
                         )}
                       </div>
@@ -586,7 +643,7 @@ export default function ShopPage() {
           <div style={{ display: 'flex', gap: 0, borderBottom: '0.5px solid #F5E8C8' }}>
             {[
               { key: 'live', label: '直播下單區', icon: 'fa-video',  activeColor: '#E24B4A', activeBg: 'rgba(226,75,74,0.06)' },
-              { key: 'shop', label: '點數商城',       icon: 'fa-store',  activeColor: '#E07B00', activeBg: 'rgba(224,123,0,0.04)' },
+              { key: 'shop', label: '點數商城',   icon: 'fa-store',  activeColor: '#E07B00', activeBg: 'rgba(224,123,0,0.04)' },
             ].map(t => (
               <button key={t.key}
                 onClick={() => { setMainTab(t.key); setSearchParams(t.key === 'shop' ? { tab: 'shop' } : {}) }}
@@ -729,7 +786,6 @@ export default function ShopPage() {
         {mainTab === 'shop' && (
           <>
             <div style={{ padding: '14px 16px 10px' }}>
-              {/* BUG FIX #2: 移除永遠顯示「計算中」的「即將到期」欄位，改為本月收支兩欄 */}
               <div style={{ display: 'flex', gap: 8, marginBottom: 10 }}>
                 {[
                   { label: '本月獲得', icon: 'fa-arrow-up', iconColor: '#78C850', value: `+${pointsLogs.filter(l => l.points > 0 && new Date(l.created_at).getMonth() === new Date().getMonth() && new Date(l.created_at).getFullYear() === new Date().getFullYear()).reduce((s, l) => s + l.points, 0)} 點` },
@@ -787,7 +843,8 @@ export default function ShopPage() {
                         <div style={{ fontSize: 11, color: isVip ? '#555' : '#bbb', display: 'flex', alignItems: 'center', gap: 5 }}>
                           <i className="fa-solid fa-box-open" style={{ fontSize: 11, color: isVip ? '#B8860B' : '#D4A94A' }}></i>共 {count} 項商品
                         </div>
-                        <div onClick={() => setActiveTier(tier)} style={{ fontSize: 12, color: cfg.enterColor, fontWeight: 700, display: 'flex', alignItems: 'center', gap: 4, cursor: 'pointer' }}>
+                        {/* ── 進入時 reset tierFilter ── */}
+                        <div onClick={() => { setActiveTier(tier); setTierFilter('all') }} style={{ fontSize: 12, color: cfg.enterColor, fontWeight: 700, display: 'flex', alignItems: 'center', gap: 4, cursor: 'pointer' }}>
                           進入點數商城 <i className="fa-solid fa-chevron-right" style={{ fontSize: 10 }}></i>
                         </div>
                       </div>
