@@ -1,6 +1,8 @@
+// src/pages/ChallengePage.js
 import React, { useEffect, useState } from 'react'
 import { supabase } from '../lib/supabase'
 import { useAuth } from '../hooks/useAuth'
+import { getLevel } from '../lib/supabase'
 import { LevelBadge, PokeballIcon } from '../lib/pokeballs'
 import BottomNav from '../components/BottomNav'
 
@@ -14,7 +16,6 @@ function AnimatedBar({ targetPct, color, height = 10, delay = 0 }) {
       const tick = (now) => {
         const elapsed = now - start
         const progress = Math.min(elapsed / duration, 1)
-        // easeOutCubic
         const eased = 1 - Math.pow(1 - progress, 3)
         setPct(Math.round(eased * targetPct))
         if (progress < 1) requestAnimationFrame(tick)
@@ -54,9 +55,7 @@ function normalizeRewards(rewards) {
   if (!rewards) return []
   let value = rewards
   if (typeof value === 'string') {
-    try {
-      value = JSON.parse(value)
-    } catch (e) {
+    try { value = JSON.parse(value) } catch (e) {
       const single = normalizeReward(value)
       return single ? [single] : []
     }
@@ -75,22 +74,57 @@ function normalizeRewards(rewards) {
 
 function normalizeBossRewards(boss) {
   const fields = [
-    boss?.rewards,
-    boss?.reward,
-    boss?.reward_list,
-    boss?.reward_items,
-    boss?.reward_text,
-    boss?.reward_description,
-    boss?.prizes,
-    boss?.prize,
+    boss?.rewards, boss?.reward, boss?.reward_list, boss?.reward_items,
+    boss?.reward_text, boss?.reward_description, boss?.prizes, boss?.prize,
   ]
-
   for (const field of fields) {
     const rewards = normalizeRewards(field)
     if (rewards.length > 0) return rewards
   }
-
   return []
+}
+
+// ── 共同挑戰說明 Sheet ────────────────────────────────
+function ChallengeHintSheet({ onClose }) {
+  return (
+    <div onClick={onClose} style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.4)', zIndex: 200, display: 'flex', alignItems: 'flex-end', justifyContent: 'center' }}>
+      <div onClick={e => e.stopPropagation()} style={{ width: '100%', maxWidth: 390, background: '#fff', borderRadius: '16px 16px 0 0', padding: '0 0 40px' }}>
+        <div style={{ width: 36, height: 4, borderRadius: 2, background: '#f0e8d0', margin: '12px auto 16px' }} />
+        <div style={{ padding: '0 20px' }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 20 }}>
+            <div style={{ width: 40, height: 40, borderRadius: 12, background: '#FCEBEB', border: '0.5px solid #F09595', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
+              <i className="fa-solid fa-shield" style={{ fontSize: 18, color: '#E24B4A' }}></i>
+            </div>
+            <div>
+              <div style={{ fontSize: 16, fontWeight: 800, color: '#2D1A00' }}>什麼是共同挑戰？</div>
+              <div style={{ fontSize: 11, color: '#bbb', marginTop: 2 }}>全體玩家一起挑戰</div>
+            </div>
+          </div>
+
+          {[
+            { icon: 'fa-users', color: '#378ADD', bg: '#EFF6FF', title: '共同對抗敵人', desc: '共同挑戰為全體玩家共同挑戰一個敵人，於結束日期前總消費大於敵人血量即挑戰成功。' },
+            { icon: 'fa-gift', color: '#BA7517', bg: '#FFF3E0', title: '依消費比例發放獎勵', desc: '挑戰成功後，獎勵依照各玩家的消費比例進行分配，貢獻越高、獎勵越豐厚。' },
+            { icon: 'fa-skull', color: '#A32D2D', bg: '#FCEBEB', title: '挑戰失敗規則', desc: '若挑戰失敗，不發放獎勵。但貢獻排名前三名的玩家可獲得安慰獎。' },
+          ].map((item, i, arr) => (
+            <div key={i} style={{ display: 'flex', gap: 14, padding: '14px 0', borderBottom: i < arr.length - 1 ? '0.5px solid #f5f0e8' : 'none' }}>
+              <div style={{ width: 42, height: 42, borderRadius: 12, background: item.bg, display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
+                <i className={`fa-solid ${item.icon}`} style={{ fontSize: 18, color: item.color }}></i>
+              </div>
+              <div style={{ flex: 1 }}>
+                <div style={{ fontSize: 14, fontWeight: 700, color: '#2D1A00', marginBottom: 4 }}>{item.title}</div>
+                <div style={{ fontSize: 12, color: '#888', lineHeight: 1.6 }}>{item.desc}</div>
+              </div>
+            </div>
+          ))}
+
+          <button onClick={onClose}
+            style={{ marginTop: 20, width: '100%', padding: 13, background: '#FCEBEB', border: '0.5px solid #F09595', borderRadius: 12, fontSize: 14, fontWeight: 600, color: '#A32D2D', cursor: 'pointer' }}>
+            了解了
+          </button>
+        </div>
+      </div>
+    </div>
+  )
 }
 
 export default function ChallengePage() {
@@ -98,6 +132,7 @@ export default function ChallengePage() {
   const [boss, setBoss] = useState(null)
   const [purchases, setPurchases] = useState([])
   const [loading, setLoading] = useState(true)
+  const [showHint, setShowHint] = useState(false)  // ── 新增
 
   useEffect(() => { fetchData() }, [])
 
@@ -125,6 +160,9 @@ export default function ChallengePage() {
     secTitle: { fontSize: 13, fontWeight: 500, color: '#111', display: 'flex', alignItems: 'center', gap: 6, marginBottom: 12 },
   }
 
+  // 等級以積分即時換算（徹底方案）
+  const currentLevel = member ? getLevel(member.points || 0) : null
+
   if (!boss) return (
     <div style={S.page}>
       <div style={{ background: 'linear-gradient(135deg,#fff 0%,#fdfaf4 60%,#faf4e8 100%)', padding: '18px 20px 16px', position: 'relative', overflow: 'hidden', borderBottom: '0.5px solid #f0e8d0' }}>
@@ -134,6 +172,9 @@ export default function ChallengePage() {
         <div style={{ fontSize: 9, color: '#BA7517', fontWeight: 600, opacity: 0.55, letterSpacing: '0.1em', marginBottom: 8 }}>W/NA PTCG × HUGO COLLECTIONS</div>
         <div style={{ fontSize: 15, fontWeight: 500, color: '#1a1a1a', display: 'flex', alignItems: 'center', gap: 5 }}>
           <i className="fa-solid fa-shield" style={{ fontSize: 13, color: '#BA7517' }} aria-hidden="true"></i>共同挑戰
+          <button onClick={() => setShowHint(true)} style={{ marginLeft: 4, width: 18, height: 18, borderRadius: '50%', background: '#F5E8C8', border: 'none', cursor: 'pointer', display: 'inline-flex', alignItems: 'center', justifyContent: 'center', padding: 0, flexShrink: 0 }}>
+            <i className="fa-solid fa-question" style={{ fontSize: 8, color: '#BA7517' }}></i>
+          </button>
         </div>
       </div>
       <div style={{ flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center', flexDirection: 'column', gap: 8 }}>
@@ -141,6 +182,7 @@ export default function ChallengePage() {
         <div style={{ fontSize: 14, color: '#bbb' }}>本月尚未設定挑戰</div>
       </div>
       <BottomNav />
+      {showHint && <ChallengeHintSheet onClose={() => setShowHint(false)} />}
     </div>
   )
 
@@ -170,12 +212,19 @@ export default function ChallengePage() {
           <div key={i} style={{ position:'absolute', top:`${t}%`, left:`${l}%`, width:2, height:2, borderRadius:'50%', background:'#BA7517', opacity:0.4+i*0.1 }} />
         ))}
         <div style={{ position: 'absolute', top: 14, right: 14, display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 2 }}>
-          {member && <PokeballIcon level={member.level} size={24} />}
-          <span style={{ fontSize: 6, color: '#BA7517', fontWeight: 600 }}>{member?.level}</span>
+          {member && <PokeballIcon level={currentLevel} size={24} />}
+          <span style={{ fontSize: 6, color: '#BA7517', fontWeight: 600 }}>{currentLevel}</span>
         </div>
         <div style={{ fontSize: 9, color: '#BA7517', fontWeight: 600, opacity: 0.55, letterSpacing: '0.1em', marginBottom: 8 }}>W/NA PTCG × HUGO COLLECTIONS</div>
+        {/* ── 標題列：共同挑戰 + ？icon ── */}
         <div style={{ fontSize: 15, fontWeight: 500, color: '#1a1a1a', display: 'flex', alignItems: 'center', gap: 5, marginBottom: 3 }}>
-          <i className="fa-solid fa-shield" style={{ fontSize: 13, color: '#BA7517' }} aria-hidden="true"></i>共同挑戰
+          <i className="fa-solid fa-shield" style={{ fontSize: 13, color: '#BA7517' }} aria-hidden="true"></i>
+          共同挑戰
+          <button
+            onClick={() => setShowHint(true)}
+            style={{ marginLeft: 4, width: 18, height: 18, borderRadius: '50%', background: '#F5E8C8', border: 'none', cursor: 'pointer', display: 'inline-flex', alignItems: 'center', justifyContent: 'center', padding: 0, flexShrink: 0 }}>
+            <i className="fa-solid fa-question" style={{ fontSize: 8, color: '#BA7517' }}></i>
+          </button>
         </div>
         <div style={{ fontSize: 11, color: '#bbb' }}>本月挑戰 · {rankList.length} 人參與</div>
       </div>
@@ -195,7 +244,6 @@ export default function ChallengePage() {
               <div style={{ fontSize: 15, fontWeight: 500, color: '#111' }}>{boss.name}</div>
               <div style={{ fontSize: 11, color: '#999', marginTop: 2 }}>{boss.description || '本月挑戰'} · 每月{boss.reset_day}日重置</div>
             </div>
-            {/* HP 數字動畫 */}
             <HpCounter targetHp={100 - progress} />
           </div>
 
@@ -204,13 +252,7 @@ export default function ChallengePage() {
             <span>目標 ${boss.target_amount?.toLocaleString()}</span>
           </div>
 
-          {/* 動畫血條 */}
-          <AnimatedBar
-            targetPct={progress}
-            color="linear-gradient(90deg,#E24B4A,#EF9F27)"
-            height={10}
-            delay={300}
-          />
+          <AnimatedBar targetPct={progress} color="linear-gradient(90deg,#E24B4A,#EF9F27)" height={10} delay={300} />
 
           <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3,1fr)', gap: 6, marginTop: 12 }}>
             {[
@@ -256,12 +298,7 @@ export default function ChallengePage() {
               <div style={S.secTitle}>我的貢獻度</div>
               {myRank > 0 && <span style={{ fontSize: 11, background: '#E6F1FB', color: '#0C447C', padding: '3px 8px', borderRadius: 20 }}>第 {myRank} 名</span>}
             </div>
-            <AnimatedBar
-              targetPct={myPct}
-              color="linear-gradient(90deg,#378ADD,#BA7517)"
-              height={8}
-              delay={600}
-            />
+            <AnimatedBar targetPct={myPct} color="linear-gradient(90deg,#378ADD,#BA7517)" height={8} delay={600} />
             <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 11, color: '#999', marginTop: 5 }}>
               <span>消費 ${myAmount.toLocaleString()} · 佔 {myPct}%</span>
               <span>預估獎勵 {myPct}%</span>
@@ -293,7 +330,11 @@ export default function ChallengePage() {
           ))}
         </div>
       </div>
+
       <BottomNav />
+
+      {/* ── 共同挑戰說明 Sheet ── */}
+      {showHint && <ChallengeHintSheet onClose={() => setShowHint(false)} />}
     </div>
   )
 }
