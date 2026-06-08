@@ -1,6 +1,6 @@
 // src/pages/ShopPage.js
 import React, { useEffect, useState } from 'react'
-import { supabase } from '../lib/supabase'
+import { supabase, getLevel } from '../lib/supabase'
 import { useAuth } from '../hooks/useAuth'
 import { useSearchParams } from 'react-router-dom'
 import BottomNav from '../components/BottomNav'
@@ -69,8 +69,9 @@ function AccessTag({ tier }) {
   )
 }
 
-function canAccess(memberLevel, tier) {
-  return TIER_CONFIG[tier].allowedLevels.includes(memberLevel)
+// 徹底方案：等級一律以積分即時換算，不讀 member.level 欄位
+function canAccess(memberPoints, tier) {
+  return TIER_CONFIG[tier].allowedLevels.includes(getLevel(memberPoints || 0))
 }
 
 function SuccessOverlay({ product, qty, onClose }) {
@@ -198,14 +199,14 @@ export default function ShopPage() {
   const [loading, setLoading] = useState(true)
   const [productsError, setProductsError] = useState(null)
   const [activeTier, setActiveTier] = useState(null)
-  // ── 新增：點數商城內的篩選 state ──
-  const [tierFilter, setTierFilter] = useState('all') // 'all' | 'affordable' | 'unaffordable'
+  const [tierFilter, setTierFilter] = useState('all')
   const [confirmProduct, setConfirmProduct] = useState(null)
   const [confirmQty, setConfirmQty] = useState(1)
   const [buying, setBuying] = useState(false)
   const [showPointsLog, setShowPointsLog] = useState(false)
   const [showMyItems, setShowMyItems] = useState(false)
   const [showShipped, setShowShipped] = useState(false)
+  const [showPointsHint, setShowPointsHint] = useState(false)  // ── 新增：如何獲得點數說明
   const [successProduct, setSuccessProduct] = useState(null)
   const [successQty, setSuccessQty] = useState(1)
   const [selectedIds, setSelectedIds] = useState([])
@@ -397,7 +398,6 @@ export default function ShopPage() {
     const tierProds = tierProducts(activeTier)
     const isVip = activeTier === 'vip'
 
-    // ── 篩選邏輯：依 member.shop_points 與商品售價即時判斷 ──
     const tierFilteredProds = tierProds.filter(prod => {
       if (tierFilter === 'all') return true
       if (!member) return tierFilter === 'unaffordable'
@@ -416,7 +416,6 @@ export default function ShopPage() {
         <div style={{ flex: 1, overflowY: 'auto' }}>
           <div style={{ background: isVip ? '#1A1A1A' : 'linear-gradient(160deg,#FFFBF2 0%,#FFF5DC 60%,#FFEDBB 100%)', padding: '18px 20px 16px', borderBottom: `0.5px solid ${cfg.divider}` }}>
             <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
-              {/* ── 返回時 reset tierFilter ── */}
               <button onClick={() => { setActiveTier(null); setTierFilter('all') }} style={{ width: 32, height: 32, borderRadius: '50%', border: `0.5px solid ${cfg.divider}`, background: isVip ? '#222' : '#fff', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
                 <i className="fa-solid fa-arrow-left" style={{ fontSize: 12, color: isVip ? '#F5D060' : '#888' }}></i>
               </button>
@@ -433,7 +432,6 @@ export default function ShopPage() {
             </div>
           </div>
 
-          {/* ── 篩選列 ── */}
           <div style={{ padding: '10px 16px 0', display: 'flex', gap: 7, overflowX: 'auto', WebkitOverflowScrolling: 'touch', background: isVip ? '#111' : '#FFFBF2', borderBottom: `0.5px solid ${cfg.divider}` }}>
             {filterTabs.map(ft => {
               const active = tierFilter === ft.key
@@ -444,11 +442,8 @@ export default function ShopPage() {
               const inactiveBg = isVip ? '#1A1A1A' : '#fff'
               const inactiveBorder = isVip ? '#333' : '#e8e8e8'
               return (
-                <button
-                  key={ft.key}
-                  onClick={() => setTierFilter(ft.key)}
-                  style={{ flexShrink: 0, marginBottom: 10, border: `1px solid ${active ? activeBorder : inactiveBorder}`, background: active ? activeBg : inactiveBg, color: active ? activeColor : inactiveColor, borderRadius: 99, padding: '6px 11px', fontSize: 11, fontWeight: active ? 700 : 400, cursor: 'pointer', display: 'flex', alignItems: 'center', gap: 5, transition: 'all 0.15s' }}
-                >
+                <button key={ft.key} onClick={() => setTierFilter(ft.key)}
+                  style={{ flexShrink: 0, marginBottom: 10, border: `1px solid ${active ? activeBorder : inactiveBorder}`, background: active ? activeBg : inactiveBg, color: active ? activeColor : inactiveColor, borderRadius: 99, padding: '6px 11px', fontSize: 11, fontWeight: active ? 700 : 400, cursor: 'pointer', display: 'flex', alignItems: 'center', gap: 5, transition: 'all 0.15s' }}>
                   <i className={`fa-solid ${ft.icon}`} style={{ fontSize: 10 }}></i>
                   {ft.label}
                 </button>
@@ -484,7 +479,6 @@ export default function ShopPage() {
                   const remaining = remainingAllowance(prod)
                   const maxed = remaining <= 0
                   const disabled = soldOut || maxed
-                  // ── 點數狀態（登入時才判斷）──
                   const canAfford = member ? (member.shop_points || 0) >= prod.price : null
                   return (
                     <div key={prod.id} onClick={() => !disabled && openConfirm(prod)}
@@ -498,7 +492,6 @@ export default function ShopPage() {
                             已買 {purchasedCounts[prod.id] || 0}/{prod.max_per_member}
                           </div>
                         )}
-                        {/* ── 可兌換狀態 badge（登入且非售完/達上限才顯示）── */}
                         {canAfford !== null && !soldOut && !maxed && (
                           <div style={{ position: 'absolute', bottom: 6, left: 6, display: 'flex', alignItems: 'center', gap: 3, background: canAfford ? 'rgba(6,199,85,0.88)' : 'rgba(160,160,160,0.88)', borderRadius: 99, padding: '2px 7px' }}>
                             <i className={`fa-solid ${canAfford ? 'fa-circle-check' : 'fa-circle-xmark'}`} style={{ fontSize: 8, color: '#fff' }}></i>
@@ -660,12 +653,8 @@ export default function ShopPage() {
 
         {mainTab === 'live' && (
           <div style={{ padding: '12px 16px 0' }}>
-            <a
-              href="https://www.hugocollections.com"
-              target="_blank"
-              rel="noopener noreferrer"
-              style={{ width: '100%', boxSizing: 'border-box', border: '1px solid rgba(226,75,74,0.35)', background: 'linear-gradient(135deg,#1a1a1a,#2A2A2A)', color: '#fff', borderRadius: 12, padding: '11px 14px', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8, fontSize: 13, fontWeight: 800, cursor: 'pointer', boxShadow: '0 3px 12px rgba(0,0,0,0.12)', textDecoration: 'none' }}
-            >
+            <a href="https://www.hugocollections.com" target="_blank" rel="noopener noreferrer"
+              style={{ width: '100%', boxSizing: 'border-box', border: '1px solid rgba(226,75,74,0.35)', background: 'linear-gradient(135deg,#1a1a1a,#2A2A2A)', color: '#fff', borderRadius: 12, padding: '11px 14px', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8, fontSize: 13, fontWeight: 800, cursor: 'pointer', boxShadow: '0 3px 12px rgba(0,0,0,0.12)', textDecoration: 'none' }}>
               <i className="fa-solid fa-credit-card" style={{ fontSize: 13, color: '#E24B4A' }}></i>
               我要刷卡
               <i className="fa-solid fa-arrow-up-right-from-square" style={{ fontSize: 10, color: '#888' }}></i>
@@ -734,25 +723,16 @@ export default function ShopPage() {
                     <div key={item.id}
                       style={{ background: '#fff', border: `1px solid ${soldOut ? '#EEEEEE' : '#E8E8E8'}`, borderRadius: 14, overflow: 'hidden', opacity: soldOut ? 0.55 : 1, boxShadow: soldOut ? 'none' : '0 2px 12px rgba(0,0,0,0.06)', animation: `slideInItem 0.3s ${idx * 0.05}s ease both` }}>
                       <div style={{ aspectRatio: '1', background: '#F5F5F5', display: 'flex', alignItems: 'center', justifyContent: 'center', position: 'relative', overflow: 'hidden' }}>
-                        {item.image_url
-                          ? <img src={item.image_url} alt="" style={{ width: '100%', height: '100%', objectFit: 'cover' }}
-                              onError={e => { e.target.style.display='none'; e.target.nextSibling.style.display='flex' }} />
-                          : null}
+                        {item.image_url ? <img src={item.image_url} alt="" style={{ width: '100%', height: '100%', objectFit: 'cover' }} onError={e => { e.target.style.display='none'; e.target.nextSibling.style.display='flex' }} /> : null}
                         <i className="fa-solid fa-box-open" style={{ fontSize: 32, color: '#BDBDBD', display: item.image_url ? 'none' : 'block' }}></i>
-                        <div style={{ position: 'absolute', top: 7, left: 7 }}>
-                          <ProductTag tag={item.product_tag} />
-                        </div>
+                        <div style={{ position: 'absolute', top: 7, left: 7 }}><ProductTag tag={item.product_tag} /></div>
                         {soldOut && (
                           <div style={{ position: 'absolute', inset: 0, background: 'rgba(255,255,255,0.75)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
                             <div style={{ background: '#1a1a1a', color: '#fff', fontSize: 12, fontWeight: 700, padding: '5px 14px', borderRadius: 99 }}>已售完</div>
                           </div>
                         )}
-                        {!soldOut && item.stock <= 5 && (
-                          <div style={{ position: 'absolute', top: 7, right: 7, background: '#E24B4A', color: '#fff', fontSize: 9, fontWeight: 700, padding: '2px 7px', borderRadius: 99 }}>僅剩 {item.stock}</div>
-                        )}
-                        {!soldOut && item.stock > 5 && (
-                          <div style={{ position: 'absolute', top: 7, right: 7, background: 'rgba(0,0,0,0.45)', color: '#fff', fontSize: 9, padding: '2px 7px', borderRadius: 99 }}>剩 {item.stock}</div>
-                        )}
+                        {!soldOut && item.stock <= 5 && <div style={{ position: 'absolute', top: 7, right: 7, background: '#E24B4A', color: '#fff', fontSize: 9, fontWeight: 700, padding: '2px 7px', borderRadius: 99 }}>僅剩 {item.stock}</div>}
+                        {!soldOut && item.stock > 5 && <div style={{ position: 'absolute', top: 7, right: 7, background: 'rgba(0,0,0,0.45)', color: '#fff', fontSize: 9, padding: '2px 7px', borderRadius: 99 }}>剩 {item.stock}</div>}
                       </div>
                       <div style={{ padding: '10px 10px 12px' }}>
                         <div style={{ fontSize: 12, fontWeight: 700, color: '#1a1a1a', marginBottom: 2, lineHeight: 1.4 }}>{item.name}</div>
@@ -767,9 +747,7 @@ export default function ShopPage() {
                                 <button onClick={() => addToCart(item)} style={{ width: 28, height: 28, border: 'none', background: '#1a1a1a', fontSize: 16, color: '#fff', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: 700 }}>＋</button>
                               </div>
                             ) : (
-                              <button onClick={() => addToCart(item)} style={{ padding: '6px 14px', background: '#1a1a1a', border: 'none', borderRadius: 99, fontSize: 11, fontWeight: 700, color: '#fff', cursor: 'pointer', letterSpacing: '0.02em' }}>
-                                + 加入
-                              </button>
+                              <button onClick={() => addToCart(item)} style={{ padding: '6px 14px', background: '#1a1a1a', border: 'none', borderRadius: 99, fontSize: 11, fontWeight: 700, color: '#fff', cursor: 'pointer', letterSpacing: '0.02em' }}>+ 加入</button>
                             )
                           )}
                         </div>
@@ -786,15 +764,24 @@ export default function ShopPage() {
         {mainTab === 'shop' && (
           <>
             <div style={{ padding: '14px 16px 10px' }}>
+              {/* ── 我的點數統計列（含累計點數旁的 ？icon）── */}
               <div style={{ display: 'flex', gap: 8, marginBottom: 10 }}>
                 {[
                   { label: '本月獲得', icon: 'fa-arrow-up', iconColor: '#78C850', value: `+${pointsLogs.filter(l => l.points > 0 && new Date(l.created_at).getMonth() === new Date().getMonth() && new Date(l.created_at).getFullYear() === new Date().getFullYear()).reduce((s, l) => s + l.points, 0)} 點` },
                   { label: '本月使用', icon: 'fa-arrow-down', iconColor: '#E24B4A', value: `-${Math.abs(pointsLogs.filter(l => l.points < 0 && new Date(l.created_at).getMonth() === new Date().getMonth() && new Date(l.created_at).getFullYear() === new Date().getFullYear()).reduce((s, l) => s + l.points, 0))} 點` },
-                  { label: '累計點數', icon: 'fa-coins', iconColor: '#BA7517', value: `${(member.shop_points || 0).toLocaleString()} 點` },
+                  { label: '累計點數', icon: 'fa-coins', iconColor: '#BA7517', value: `${(member.shop_points || 0).toLocaleString()} 點`, hint: true },
                 ].map((s, i) => (
-                  <div key={i} style={{ flex: 1, background: '#fff', border: '0.5px solid #F5E8C8', borderRadius: 10, padding: '8px 10px' }}>
+                  <div key={i} style={{ flex: 1, background: '#fff', border: '0.5px solid #F5E8C8', borderRadius: 10, padding: '8px 10px', position: 'relative' }}>
                     <div style={{ fontSize: 10, color: '#bbb', display: 'flex', alignItems: 'center', gap: 4 }}>
                       <i className={`fa-solid fa-${s.icon}`} style={{ fontSize: 9, color: s.iconColor }}></i>{s.label}
+                      {/* ── ？icon，僅累計點數格顯示 ── */}
+                      {s.hint && (
+                        <button
+                          onClick={() => setShowPointsHint(true)}
+                          style={{ marginLeft: 'auto', width: 16, height: 16, borderRadius: '50%', background: '#F5E8C8', border: 'none', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0, padding: 0 }}>
+                          <i className="fa-solid fa-question" style={{ fontSize: 8, color: '#BA7517' }}></i>
+                        </button>
+                      )}
                     </div>
                     <div style={{ fontSize: 13, fontWeight: 700, color: i === 2 ? '#E07B00' : '#2D1A00', marginTop: 2 }}>{s.value}</div>
                   </div>
@@ -815,12 +802,12 @@ export default function ShopPage() {
             </div>
             <div style={{ padding: '0 16px 4px', fontSize: 11, color: '#bbb', display: 'flex', alignItems: 'center', gap: 6 }}>
               <i className="fa-solid fa-circle-info" style={{ color: '#E07B00' }}></i>
-              你的等級：{member.level} · 目前可進入{canAccess(member.level, 'vip') ? 'VIP 點數商城' : canAccess(member.level, 'premium') ? '高級點數商城' : '一般點數商城'}
+              你的等級：{getLevel(member.points || 0)} · 目前可進入{canAccess(member.points, 'vip') ? 'VIP 點數商城' : canAccess(member.points, 'premium') ? '高級點數商城' : '一般點數商城'}
             </div>
             <div style={{ padding: '0 0 28px' }}>
               {['general', 'premium', 'vip'].map(tier => {
                 const cfg = TIER_CONFIG[tier]
-                const accessible = canAccess(member.level, tier)
+                const accessible = canAccess(member.points, tier)
                 const isVip = tier === 'vip'
                 const count = tierProducts(tier).length
                 return (
@@ -843,7 +830,6 @@ export default function ShopPage() {
                         <div style={{ fontSize: 11, color: isVip ? '#555' : '#bbb', display: 'flex', alignItems: 'center', gap: 5 }}>
                           <i className="fa-solid fa-box-open" style={{ fontSize: 11, color: isVip ? '#B8860B' : '#D4A94A' }}></i>共 {count} 項商品
                         </div>
-                        {/* ── 進入時 reset tierFilter ── */}
                         <div onClick={() => { setActiveTier(tier); setTierFilter('all') }} style={{ fontSize: 12, color: cfg.enterColor, fontWeight: 700, display: 'flex', alignItems: 'center', gap: 4, cursor: 'pointer' }}>
                           進入點數商城 <i className="fa-solid fa-chevron-right" style={{ fontSize: 10 }}></i>
                         </div>
@@ -913,8 +899,8 @@ export default function ShopPage() {
                   </div>
                   <div style={{ display: 'flex', gap: 6 }}>
                     {[
-                      { key: 'dine_in',  label: '內用', sub: '直播現場拆', icon: 'fa-users',   activeColor: '#E24B4A', activeBorder: '#E24B4A', activeBg: '#FCEBEB', activeText: '#A32D2D', activeSub: '#A32D2D' },
-                      { key: 'takeout',  label: '外帶', sub: '未拆封寄出', icon: 'fa-box',     activeColor: '#1a1a1a', activeBorder: '#1a1a1a', activeBg: '#F5F5F5', activeText: '#1a1a1a', activeSub: '#555' },
+                      { key: 'dine_in', label: '內用', sub: '直播現場拆', icon: 'fa-users', activeColor: '#E24B4A', activeBorder: '#E24B4A', activeBg: '#FCEBEB', activeText: '#A32D2D', activeSub: '#A32D2D' },
+                      { key: 'takeout', label: '外帶', sub: '未拆封寄出', icon: 'fa-box', activeColor: '#1a1a1a', activeBorder: '#1a1a1a', activeBg: '#F5F5F5', activeText: '#1a1a1a', activeSub: '#555' },
                     ].map(opt => {
                       const active = c.dine_type === opt.key
                       return (
@@ -940,14 +926,7 @@ export default function ShopPage() {
               <button onClick={handleCheckout} disabled={checkingOut || cart.length === 0}
                 style={{ width: '100%', padding: 15, background: checkingOut ? '#ccc' : '#1a1a1a', border: 'none', borderRadius: 13, fontSize: 15, fontWeight: 800, color: '#fff', cursor: checkingOut ? 'not-allowed' : 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8, letterSpacing: '0.02em' }}>
                 {checkingOut ? (
-                  <>
-                    <svg width="16" height="16" viewBox="0 0 16 16" fill="none" style={{ animation: 'spin 0.8s linear infinite' }}>
-                      <style>{`@keyframes spin{to{transform:rotate(360deg)}}`}</style>
-                      <circle cx="8" cy="8" r="6" stroke="rgba(255,255,255,0.3)" strokeWidth="2"/>
-                      <path d="M8 2 A6 6 0 0 1 14 8" stroke="#fff" strokeWidth="2" strokeLinecap="round"/>
-                    </svg>
-                    送出中...
-                  </>
+                  <><svg width="16" height="16" viewBox="0 0 16 16" fill="none" style={{ animation: 'spin 0.8s linear infinite' }}><style>{`@keyframes spin{to{transform:rotate(360deg)}}`}</style><circle cx="8" cy="8" r="6" stroke="rgba(255,255,255,0.3)" strokeWidth="2"/><path d="M8 2 A6 6 0 0 1 14 8" stroke="#fff" strokeWidth="2" strokeLinecap="round"/></svg>送出中...</>
                 ) : (
                   <><i className="fa-solid fa-bolt" style={{ fontSize: 13 }}></i>立即下單</>
                 )}
@@ -963,9 +942,7 @@ export default function ShopPage() {
           <div onClick={e => e.stopPropagation()} style={{ width: '100%', maxWidth: 390, maxHeight: '85vh', background: '#fff', borderRadius: '20px 20px 0 0', display: 'flex', flexDirection: 'column' }}>
             <div style={{ width: 36, height: 4, borderRadius: 2, background: '#E0E0E0', margin: '12px auto 0', flexShrink: 0 }} />
             <div style={{ padding: '12px 20px 10px', borderBottom: '0.5px solid #F0F0F0', display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexShrink: 0 }}>
-              <div style={{ fontSize: 15, fontWeight: 800, color: '#1a1a1a' }}>
-                <i className="fa-solid fa-receipt" style={{ marginRight: 8, color: '#555' }}></i>我的訂單
-              </div>
+              <div style={{ fontSize: 15, fontWeight: 800, color: '#1a1a1a' }}><i className="fa-solid fa-receipt" style={{ marginRight: 8, color: '#555' }}></i>我的訂單</div>
               <span style={{ fontSize: 11, color: '#bbb' }}>{myOrders.length} 筆</span>
             </div>
             <div style={{ overflowY: 'auto', padding: '8px 20px 32px' }}>
@@ -1025,9 +1002,7 @@ export default function ShopPage() {
                     </div>
                     <div style={{ flex: 1 }}>
                       <div style={{ fontSize: 13, fontWeight: 500, color: '#111' }}>{log.note || LOG_TYPE_LABEL[log.type] || log.type}</div>
-                      {log.type === 'makeup' && (
-                        <div style={{ fontSize: 10, color: '#bbb', marginTop: 1 }}>扣除積分，非商城點數</div>
-                      )}
+                      {log.type === 'makeup' && <div style={{ fontSize: 10, color: '#bbb', marginTop: 1 }}>扣除積分，非商城點數</div>}
                       <div style={{ fontSize: 11, color: '#bbb', marginTop: 1 }}>{new Date(log.created_at).toLocaleDateString('zh-TW')}</div>
                     </div>
                     <div style={{ fontSize: 14, fontWeight: 700, color: log.points > 0 ? '#388E3C' : '#E24B4A' }}>{log.points > 0 ? '+' : ''}{log.points}</div>
@@ -1135,6 +1110,44 @@ export default function ShopPage() {
                   <span style={{ fontSize: 10, fontWeight: 600, padding: '3px 8px', borderRadius: 99, background: '#EAF3DE', color: '#388E3C', flexShrink: 0 }}>已出貨</span>
                 </div>
               ))}
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* ── 如何獲得點數 Sheet ── */}
+      {showPointsHint && (
+        <div onClick={() => setShowPointsHint(false)} style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.4)', zIndex: 100, display: 'flex', alignItems: 'flex-end', justifyContent: 'center' }}>
+          <div onClick={e => e.stopPropagation()} style={{ width: '100%', maxWidth: 390, background: '#fff', borderRadius: '16px 16px 0 0', padding: '0 0 40px' }}>
+            <div style={{ width: 36, height: 4, borderRadius: 2, background: '#f0e8d0', margin: '12px auto 16px' }} />
+            <div style={{ padding: '0 20px' }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 20 }}>
+                <div style={{ width: 40, height: 40, borderRadius: 12, background: 'linear-gradient(135deg,#FAEEDA,#FFF3D0)', border: '0.5px solid #FAC775', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
+                  <i className="fa-solid fa-coins" style={{ fontSize: 18, color: '#E07B00' }}></i>
+                </div>
+                <div>
+                  <div style={{ fontSize: 16, fontWeight: 800, color: '#2D1A00' }}>如何獲得點數？</div>
+                  <div style={{ fontSize: 11, color: '#bbb', marginTop: 2 }}>點數可在點數商城兌換好禮</div>
+                </div>
+              </div>
+              {[
+                { icon: 'fa-gamepad', color: '#7038F8', bg: '#F5F3FF', title: '參加大逃殺', desc: '參與限時大逃殺活動，依排名獲得豐厚點數獎勵' },
+                { icon: 'fa-star', color: '#E07B00', bg: '#FFF3E0', title: '限時活動', desc: '關注 W/NA PTCG 官方直播與社群，不定期舉辦限時積點活動' },
+              ].map((item, i) => (
+                <div key={i} style={{ display: 'flex', gap: 14, padding: '14px 0', borderBottom: i === 0 ? '0.5px solid #f5f0e8' : 'none' }}>
+                  <div style={{ width: 42, height: 42, borderRadius: 12, background: item.bg, display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
+                    <i className={`fa-solid ${item.icon}`} style={{ fontSize: 18, color: item.color }}></i>
+                  </div>
+                  <div style={{ flex: 1 }}>
+                    <div style={{ fontSize: 14, fontWeight: 700, color: '#2D1A00', marginBottom: 4 }}>{item.title}</div>
+                    <div style={{ fontSize: 12, color: '#888', lineHeight: 1.6 }}>{item.desc}</div>
+                  </div>
+                </div>
+              ))}
+              <button onClick={() => setShowPointsHint(false)}
+                style={{ marginTop: 20, width: '100%', padding: 13, background: 'linear-gradient(135deg,#FAEEDA,#FFF3D0)', border: '0.5px solid #FAC775', borderRadius: 12, fontSize: 14, fontWeight: 600, color: '#8B5A00', cursor: 'pointer' }}>
+                了解了
+              </button>
             </div>
           </div>
         </div>
