@@ -22,7 +22,6 @@ const GRADING_STATUS = {
   sold:      { label: '已售出', color: '#757575', bg: '#F5F5F5' },
 }
 
-// 可使用自訂頭貼的等級
 const AVATAR_ALLOWED_LEVELS = ['高級球', '豪華球', '貴重球', '究極球', '大師球']
 
 export default function ProfilePage() {
@@ -129,7 +128,6 @@ export default function ProfilePage() {
     setShowSettings(false)
   }
 
-  // 圖片壓縮：最長邊 1200px，品質 0.82，輸出 WebP
   function compressImage(file) {
     return new Promise((resolve) => {
       const MAX = 1200
@@ -174,7 +172,6 @@ export default function ProfilePage() {
       alert('頭貼上傳失敗：' + err.message)
     }
     setUploadingAvatar(false)
-    // 清空 input，讓同一張圖也能重新觸發
     if (avatarFileRef.current) avatarFileRef.current.value = ''
   }
 
@@ -274,6 +271,14 @@ export default function ProfilePage() {
         {/* ── 主頁 Tab ── */}
         {profileTab === 'home' && (
           <div style={{ padding: '18px 20px 28px' }}>
+
+            {/* ── 公開頁面提示列 ── */}
+            <div style={{ display: 'flex', alignItems: 'center', gap: 8, padding: '9px 12px', background: '#EFF6FF', border: '0.5px solid #BFDBFE', borderRadius: 10, marginBottom: 14 }}>
+              <i className="fa-solid fa-earth-asia" style={{ fontSize: 12, color: '#3B82F6', flexShrink: 0 }}></i>
+              <span style={{ fontSize: 11, color: '#1D4ED8', lineHeight: 1.5, flex: 1 }}>
+                主頁為<strong style={{ fontWeight: 700 }}>公開頁面</strong>，展示卡、等級進度等資訊，其他人皆可查看。
+              </span>
+            </div>
 
             {/* 等級徽章區 */}
             <div style={{ display: 'flex', alignItems: 'center', gap: 12, padding: '14px 16px', background: '#fff', borderRadius: 16, boxShadow: '0 4px 14px rgba(186,117,23,.09)', marginBottom: 16 }}>
@@ -675,45 +680,26 @@ export default function ProfilePage() {
             <div style={{ fontSize: 16, fontWeight: 600, color: '#111', marginBottom: 4 }}>設定</div>
             <div style={{ fontSize: 12, color: '#bbb', marginBottom: 18 }}>#{String(member.member_no || '0').padStart(4, '0')}</div>
 
-            {/* ── 頭貼區塊 ── */}
             <div style={{ marginBottom: 20 }}>
               <label style={{ fontSize: 12, color: '#999', display: 'block', marginBottom: 10 }}>頭貼</label>
               <div style={{ display: 'flex', alignItems: 'center', gap: 14 }}>
-                {/* 頭貼預覽 */}
                 <div style={{ width: 64, height: 64, borderRadius: '50%', overflow: 'hidden', border: '2px solid #FAC775', flexShrink: 0, background: '#FAEEDA', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
                   {member.avatar_url
                     ? <img src={member.avatar_url} alt="" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
                     : <span style={{ fontSize: 24, fontWeight: 700, color: '#633806' }}>{member.display_name?.[0]?.toUpperCase()}</span>
                   }
                 </div>
-                {/* 上傳按鈕或鎖定提示 */}
                 {canChangeAvatar ? (
                   <div style={{ flex: 1 }}>
-                    <input
-                      ref={avatarFileRef}
-                      type="file"
-                      accept="image/*"
-                      onChange={handleAvatarUpload}
-                      style={{ display: 'none' }}
-                    />
-                    <button
-                      onClick={() => !uploadingAvatar && avatarFileRef.current?.click()}
-                      disabled={uploadingAvatar}
+                    <input ref={avatarFileRef} type="file" accept="image/*" onChange={handleAvatarUpload} style={{ display: 'none' }} />
+                    <button onClick={() => !uploadingAvatar && avatarFileRef.current?.click()} disabled={uploadingAvatar}
                       style={{ width: '100%', padding: '9px 12px', background: uploadingAvatar ? '#f0ebe3' : 'linear-gradient(135deg,#FAEEDA,#FFF3D0)', border: '0.5px solid #FAC775', borderRadius: 10, fontSize: 13, fontWeight: 500, color: uploadingAvatar ? '#ccc' : '#8B5A00', cursor: uploadingAvatar ? 'not-allowed' : 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 7, marginBottom: 6 }}>
-                      {uploadingAvatar
-                        ? <><i className="fa-solid fa-spinner fa-spin" style={{ fontSize: 12 }}></i>上傳中...</>
-                        : <><i className="fa-solid fa-camera" style={{ fontSize: 12 }}></i>更換頭貼</>
-                      }
+                      {uploadingAvatar ? <><i className="fa-solid fa-spinner fa-spin" style={{ fontSize: 12 }}></i>上傳中...</> : <><i className="fa-solid fa-camera" style={{ fontSize: 12 }}></i>更換頭貼</>}
                     </button>
                     {member.line_avatar_url && member.avatar_url !== member.line_avatar_url && (
-                      <button
-                        onClick={handleRestoreLineAvatar}
-                        disabled={restoringAvatar}
+                      <button onClick={handleRestoreLineAvatar} disabled={restoringAvatar}
                         style={{ width: '100%', padding: '8px 12px', background: restoringAvatar ? '#f0ebe3' : '#fff', border: '0.5px solid #f0e8d0', borderRadius: 10, fontSize: 12, fontWeight: 500, color: restoringAvatar ? '#ccc' : '#888', cursor: restoringAvatar ? 'not-allowed' : 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 6, marginBottom: 6 }}>
-                        {restoringAvatar
-                          ? <><i className="fa-solid fa-spinner fa-spin" style={{ fontSize: 11 }}></i>恢復中...</>
-                          : <><i className="fa-brands fa-line" style={{ fontSize: 12, color: '#06C755' }}></i>恢復 LINE 頭貼</>
-                        }
+                        {restoringAvatar ? <><i className="fa-solid fa-spinner fa-spin" style={{ fontSize: 11 }}></i>恢復中...</> : <><i className="fa-brands fa-line" style={{ fontSize: 12, color: '#06C755' }}></i>恢復 LINE 頭貼</>}
                       </button>
                     )}
                     <div style={{ fontSize: 10, color: '#bbb', textAlign: 'center' }}>支援 JPG、PNG、WebP</div>
@@ -732,7 +718,6 @@ export default function ProfilePage() {
 
             <div style={{ height: '0.5px', background: '#f0e8d0', marginBottom: 16 }} />
 
-            {/* 暱稱 */}
             <div style={{ marginBottom: 16 }}>
               <label style={{ fontSize: 12, color: '#999', display: 'block', marginBottom: 6 }}>暱稱</label>
               <input value={editName} onChange={e => setEditName(e.target.value)} placeholder="輸入你的暱稱"
@@ -779,9 +764,7 @@ export default function ProfilePage() {
                     {isCurrentLevel && (
                       <div style={{ position: 'absolute', top: 6, right: 10, fontSize: 9, fontWeight: 700, background: '#E07B00', color: '#fff', padding: '2px 7px', borderRadius: 99 }}>目前等級</div>
                     )}
-                    <div style={{ flexShrink: 0 }}>
-                      <PokeballIcon level={lv.name} size={36} />
-                    </div>
+                    <div style={{ flexShrink: 0 }}><PokeballIcon level={lv.name} size={36} /></div>
                     <div style={{ flex: 1 }}>
                       <div style={{ display: 'flex', alignItems: 'center', gap: 6, marginBottom: 4 }}>
                         <span style={{ fontSize: 14, fontWeight: 800, color: isAchieved ? '#2D1A00' : '#bbb' }}>{lv.name}</span>
