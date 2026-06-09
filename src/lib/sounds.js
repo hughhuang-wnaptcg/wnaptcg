@@ -1,9 +1,3 @@
-// src/lib/sounds.js
-// ── 全站唯一音效管理中心 ──────────────────────────────
-// 使用方式：import { playSound, SoundToggle } from '../lib/sounds'
-// 播放音效：playSound('order_success')
-// 開關元件：<SoundToggle />
-
 import React, { useState, useEffect } from 'react'
 
 const STORAGE_KEY = 'wna_sound_enabled'
