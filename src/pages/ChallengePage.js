@@ -5,7 +5,6 @@ import { getLevel } from '../lib/supabase'
 import { LevelBadge, PokeballIcon } from '../lib/pokeballs'
 import BottomNav from '../components/BottomNav'
 
-// ── HP 血條（疊在圖片上，從滿血往下降）────────────────
 function BossHpBar({ targetPct, delay = 0 }) {
   const [pct, setPct] = useState(100)
   useEffect(() => {
@@ -25,9 +24,8 @@ function BossHpBar({ targetPct, delay = 0 }) {
   }, [targetPct, delay])
 
   const barColor = pct > 50 ? '#C0392B' : pct > 25 ? '#BA7517' : '#E24B4A'
-
   return (
-    <div style={{ height: 10, background: 'rgba(0,0,0,0.5)', borderRadius: 99, overflow: 'hidden', border: '0.5px solid rgba(255,255,255,0.1)', position: 'relative' }}>
+    <div style={{ height: 10, background: 'rgba(0,0,0,0.5)', borderRadius: 99, overflow: 'hidden', border: '0.5px solid rgba(255,255,255,0.1)' }}>
       <div style={{ height: '100%', width: `${pct}%`, background: barColor, borderRadius: 99, position: 'relative', transition: 'none' }}>
         <div style={{ position: 'absolute', top: 0, left: 0, right: 0, height: '45%', background: 'rgba(255,255,255,0.22)', borderRadius: '99px 99px 0 0' }} />
       </div>
@@ -35,7 +33,6 @@ function BossHpBar({ targetPct, delay = 0 }) {
   )
 }
 
-// ── HP 數字動畫（從100往下）──────────────────────────
 function HpPctCounter({ targetPct, delay = 0 }) {
   const [pct, setPct] = useState(100)
   useEffect(() => {
@@ -53,11 +50,9 @@ function HpPctCounter({ targetPct, delay = 0 }) {
     }, delay)
     return () => clearTimeout(t)
   }, [targetPct, delay])
-
   return <span style={{ fontVariantNumeric: 'tabular-nums' }}>{pct}</span>
 }
 
-// ── 普通動畫條（我的貢獻用）──────────────────────────
 function AnimatedBar({ targetPct, color, height = 7, delay = 0 }) {
   const [pct, setPct] = useState(0)
   useEffect(() => {
@@ -82,7 +77,6 @@ function AnimatedBar({ targetPct, color, height = 7, delay = 0 }) {
   )
 }
 
-// ── 相對時間 ──────────────────────────────────────────
 function relativeTime(dateStr) {
   if (!dateStr) return ''
   const diff = Math.floor((Date.now() - new Date(dateStr)) / 1000)
@@ -92,7 +86,6 @@ function relativeTime(dateStr) {
   return `${Math.floor(diff / 86400)}天前`
 }
 
-// ── 解析里程碑 ────────────────────────────────────────
 function parseMilestones(boss) {
   try {
     const r = boss?.rewards
@@ -109,7 +102,6 @@ function parseMilestones(boss) {
 
 const MILESTONE_ICONS = ['fa-star', 'fa-fire', 'fa-bolt', 'fa-crown']
 
-// ── 共同挑戰說明 Sheet ────────────────────────────────
 function ChallengeHintSheet({ onClose }) {
   return (
     <div onClick={onClose} style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.4)', zIndex: 200, display: 'flex', alignItems: 'flex-end', justifyContent: 'center' }}>
@@ -127,8 +119,8 @@ function ChallengeHintSheet({ onClose }) {
           </div>
           {[
             { icon: 'fa-users', color: '#378ADD', bg: '#EFF6FF', title: '共同對抗敵人', desc: '共同挑戰為全體玩家共同挑戰一個敵人，於結束日期前總消費大於敵人血量即挑戰成功。' },
-            { icon: 'fa-gift', color: '#BA7517', bg: '#FFF3E0', title: '依消費比例發放獎勵', desc: '挑戰成功後，發放最終獎勵並依照消費比例進行分配，貢獻越高、獎勵越豐厚。' },
-            { icon: 'fa-skull', color: '#A32D2D', bg: '#FCEBEB', title: '挑戰失敗規則', desc: '若挑戰失敗，只發放階段獎勵，不發放最終獎勵。' },
+            { icon: 'fa-gift', color: '#BA7517', bg: '#FFF3E0', title: '依消費比例發放獎勵', desc: '挑戰成功後，獎勵依照消費比例進行分配，貢獻越高、獎勵越豐厚。' },
+            { icon: 'fa-skull', color: '#A32D2D', bg: '#FCEBEB', title: '挑戰失敗規則', desc: '若挑戰失敗，只發放階段獎勵，不發放最終獎勵' },
           ].map((item, i, arr) => (
             <div key={i} style={{ display: 'flex', gap: 14, padding: '14px 0', borderBottom: i < arr.length - 1 ? '0.5px solid #f5f0e8' : 'none' }}>
               <div style={{ width: 42, height: 42, borderRadius: 12, background: item.bg, display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
@@ -149,7 +141,6 @@ function ChallengeHintSheet({ onClose }) {
   )
 }
 
-// ── 主頁面 ────────────────────────────────────────────
 export default function ChallengePage() {
   const { member } = useAuth()
   const [boss, setBoss] = useState(null)
@@ -211,7 +202,6 @@ export default function ChallengePage() {
     </div>
   )
 
-  // ── 計算 ──
   const damagedPct = Math.min(Math.round((boss.current_amount / boss.target_amount) * 100), 100)
   const remainingPct = 100 - damagedPct
   const damaged = boss.current_amount || 0
@@ -244,7 +234,7 @@ export default function ChallengePage() {
   return (
     <div style={{ maxWidth: 390, margin: '0 auto', background: '#fdfaf4', minHeight: '100vh', display: 'flex', flexDirection: 'column' }}>
 
-      {/* ── Header ── */}
+      {/* Header */}
       <div style={{ background: '#fdfaf4', padding: '16px 20px 12px', borderBottom: '0.5px solid #f0e8d0', display: 'flex', alignItems: 'center', justifyContent: 'space-between', position: 'relative', overflow: 'hidden' }}>
         <div style={{ position: 'absolute', bottom: -6, left: -6, fontSize: 72, opacity: 0.04, color: '#BA7517', lineHeight: 1, pointerEvents: 'none' }}>
           <i className="fa-solid fa-shield" aria-hidden="true"></i>
@@ -268,9 +258,8 @@ export default function ChallengePage() {
 
       <div style={{ flex: 1, overflowY: 'auto', paddingBottom: 20 }}>
 
-        {/* ── Boss 戰場區塊 ── */}
+        {/* Boss 戰場 */}
         <div style={{ position: 'relative', overflow: 'hidden' }}>
-          {/* Boss 圖片 — 全寬 */}
           <div style={{ width: '100%', height: 280, background: '#1c1208', position: 'relative', overflow: 'hidden' }}>
             {boss.image_url ? (
               <img
@@ -280,39 +269,36 @@ export default function ChallengePage() {
                 onError={e => { e.currentTarget.style.display = 'none'; e.currentTarget.nextSibling.style.display = 'flex' }}
               />
             ) : null}
-            {/* fallback */}
             <div style={{ width: '100%', height: '100%', display: boss.image_url ? 'none' : 'flex', alignItems: 'center', justifyContent: 'center', background: '#1c1208' }}>
               <i className="fa-solid fa-skull" style={{ fontSize: 72, color: 'rgba(192,96,26,0.25)' }}></i>
             </div>
 
-            {/* 頂部漸層 overlay — Boss 名稱 + HP 血條 */}
-            <div style={{ position: 'absolute', top: 0, left: 0, right: 0, padding: '14px 16px 24px', background: 'linear-gradient(180deg, rgba(0,0,0,0.75) 0%, rgba(0,0,0,0.4) 70%, transparent 100%)' }}>
-              {/* Boss 標題列 */}
-              <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 10 }}>
-                <span style={{ fontSize: 9, background: 'rgba(226,75,74,0.85)', color: '#fff', padding: '2px 7px', borderRadius: 4, fontWeight: 600, letterSpacing: '0.06em', flexShrink: 0 }}>
-                  Lv. ??
-                </span>
-                <span style={{ fontSize: 15, fontWeight: 500, color: '#f5e8c8', letterSpacing: '0.02em' }}>{boss.name}</span>
+            {/* Overlay — Boss 名稱 + HP */}
+            <div style={{ position: 'absolute', top: 0, left: 0, right: 0, padding: '14px 16px 24px', background: 'linear-gradient(180deg, rgba(0,0,0,0.78) 0%, rgba(0,0,0,0.45) 65%, transparent 100%)' }}>
+
+              {/* Boss 名稱 */}
+              <div style={{ marginBottom: 10 }}>
+                <span style={{ fontSize: 16, fontWeight: 600, color: '#f5e8c8', letterSpacing: '0.02em' }}>{boss.name}</span>
               </div>
 
               {/* HP 血條 */}
-              <div style={{ marginBottom: 6 }}>
+              <div style={{ marginBottom: 4 }}>
                 <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 5 }}>
                   <div style={{ display: 'flex', alignItems: 'center', gap: 5 }}>
                     <i className="fa-solid fa-heart" style={{ fontSize: 10, color: '#E24B4A' }}></i>
-                    <span style={{ fontSize: 10, color: 'rgba(245,232,200,0.65)', letterSpacing: '0.06em' }}>HP</span>
+                    <span style={{ fontSize: 10, color: 'rgba(245,232,200,0.8)', letterSpacing: '0.06em', fontWeight: 500 }}>HP</span>
                   </div>
-                  <span style={{ fontSize: 12, color: 'rgba(245,232,200,0.9)', fontWeight: 500, fontVariantNumeric: 'tabular-nums' }}>
+                  <span style={{ fontSize: 12, color: 'rgba(245,232,200,0.95)', fontWeight: 600, fontVariantNumeric: 'tabular-nums' }}>
                     <HpPctCounter targetPct={remainingPct} delay={300} />%
                   </span>
                 </div>
                 <BossHpBar targetPct={remainingPct} delay={300} />
                 <div style={{ display: 'flex', justifyContent: 'space-between', marginTop: 5 }}>
-                  <span style={{ fontSize: 10, color: 'rgba(245,232,200,0.45)', fontVariantNumeric: 'tabular-nums' }}>
+                  <span style={{ fontSize: 11, color: 'rgba(245,232,200,0.85)', fontVariantNumeric: 'tabular-nums', fontWeight: 500 }}>
                     {remaining.toLocaleString()} / {boss.target_amount?.toLocaleString()}
                   </span>
                   {damaged > 0 && (
-                    <span style={{ fontSize: 10, color: 'rgba(226,75,74,0.75)' }}>
+                    <span style={{ fontSize: 11, color: 'rgba(226,75,74,0.9)', fontWeight: 500 }}>
                       -{damaged.toLocaleString()} 傷害
                     </span>
                   )}
@@ -321,14 +307,14 @@ export default function ChallengePage() {
 
               {/* Boss 台詞 */}
               {boss.description && (
-                <div style={{ fontSize: 10, color: 'rgba(245,232,200,0.35)', fontStyle: 'italic', marginTop: 4 }}>
+                <div style={{ fontSize: 11, color: 'rgba(245,232,200,0.75)', fontWeight: 500, marginTop: 6 }}>
                   「{boss.description}」
                 </div>
               )}
             </div>
           </div>
 
-          {/* 圖片正下方：輕量傷害資訊 */}
+          {/* 傷害資訊列 */}
           <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1px', background: '#f0e8d0' }}>
             <div style={{ background: '#fff', padding: '12px 16px' }}>
               <div style={{ fontSize: 10, color: '#999', marginBottom: 4 }}>累積傷害</div>
@@ -341,7 +327,7 @@ export default function ChallengePage() {
           </div>
         </div>
 
-        {/* ── 里程碑 ── */}
+        {/* 里程碑 */}
         <div style={{ padding: '16px 16px 0' }}>
           <div style={{ display: 'flex', alignItems: 'center', gap: 6, marginBottom: 10 }}>
             <i className="fa-solid fa-gift" style={{ fontSize: 13, color: '#BA7517' }}></i>
@@ -382,7 +368,7 @@ export default function ChallengePage() {
           </div>
         </div>
 
-        {/* ── 最新戰報 ── */}
+        {/* 最新戰報 */}
         <div style={{ padding: '16px 16px 0' }}>
           <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 10 }}>
             <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
@@ -414,7 +400,7 @@ export default function ChallengePage() {
           </div>
         </div>
 
-        {/* ── 本月戰況 ── */}
+        {/* 本月戰況 */}
         <div style={{ padding: '16px 16px 0' }}>
           <div style={{ display: 'flex', alignItems: 'center', gap: 6, marginBottom: 10 }}>
             <i className="fa-solid fa-chart-bar" style={{ fontSize: 13, color: '#BA7517' }}></i>
@@ -435,7 +421,7 @@ export default function ChallengePage() {
           </div>
         </div>
 
-        {/* ── 排行榜 ── */}
+        {/* 排行榜 */}
         <div style={{ padding: '16px 16px 0' }}>
           <div style={{ display: 'flex', alignItems: 'center', gap: 6, marginBottom: 10 }}>
             <i className="fa-solid fa-ranking-star" style={{ fontSize: 13, color: '#BA7517' }}></i>
@@ -477,7 +463,7 @@ export default function ChallengePage() {
           </div>
         </div>
 
-        {/* ── 我的貢獻 ── */}
+        {/* 我的貢獻 */}
         <div style={{ padding: '16px 16px 0' }}>
           <div style={{ background: '#fff', border: '0.5px solid #f0e8d0', borderRadius: 12, padding: '12px 14px' }}>
             <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 10 }}>
