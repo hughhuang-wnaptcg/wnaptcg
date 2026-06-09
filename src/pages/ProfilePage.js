@@ -4,6 +4,7 @@ import { supabase, LEVELS, getNextLevel, RARITY_COLORS } from '../lib/supabase'
 import { useAuth } from '../hooks/useAuth'
 import { PokeballIcon, LevelBadge } from '../lib/pokeballs'
 import BottomNav from '../components/BottomNav'
+import { playSound, SoundToggle } from '../lib/sounds'
 
 const CDN = 'https://cdn.jsdelivr.net/gh/duiker101/pokemon-type-svg-icons@master/icons'
 const TYPE_BY_WEEKDAY = {
@@ -105,6 +106,7 @@ export default function ProfilePage() {
     const updated = { ...member, showcase_cards: cleaned.filter(Boolean) }
     setMember(updated)
     await fetchShowcase(cleaned.filter(Boolean))
+    playSound('button_tap')
     setShowCardPicker(null)
   }
 
@@ -125,6 +127,7 @@ export default function ProfilePage() {
     await supabase.from('members').update({ display_name: editName.trim() }).eq('id', member.id)
     setMember({ ...member, display_name: editName.trim() })
     setSaving(false)
+    playSound('shop_redeem_success')
     setShowSettings(false)
   }
 
@@ -168,7 +171,9 @@ export default function ProfilePage() {
       const newUrl = data.publicUrl
       await supabase.from('members').update({ avatar_url: newUrl }).eq('id', member.id)
       setMember({ ...member, avatar_url: newUrl })
+      playSound('shop_redeem_success')
     } catch (err) {
+      playSound('error_system')
       alert('頭貼上傳失敗：' + err.message)
     }
     setUploadingAvatar(false)
@@ -181,10 +186,28 @@ export default function ProfilePage() {
     try {
       await supabase.from('members').update({ avatar_url: member.line_avatar_url }).eq('id', member.id)
       setMember({ ...member, avatar_url: member.line_avatar_url })
+      playSound('shop_redeem_success')
     } catch (err) {
+      playSound('error_system')
       alert('恢復失敗：' + err.message)
     }
     setRestoringAvatar(false)
+  }
+
+  function switchTab(tab) {
+    if (profileTab !== tab) playSound('tab_switch')
+    setProfileTab(tab)
+  }
+
+  function openSettings() {
+    playSound('modal_open')
+    setEditName(member.display_name || '')
+    setShowSettings(true)
+  }
+
+  function closeSettings() {
+    playSound('modal_close')
+    setShowSettings(false)
   }
 
   if (!member) return null
@@ -242,7 +265,7 @@ export default function ProfilePage() {
                 </div>
             }
             <span style={{ fontSize: 6, color: '#E07B00', fontWeight: 600 }}>{member?.level}</span>
-            <button onClick={() => { setEditName(member.display_name || ''); setShowSettings(true) }}
+            <button onClick={openSettings}
               style={{ width: 26, height: 26, borderRadius: '50%', background: 'linear-gradient(135deg,#FAEEDA,#FFF3D0)', border: '0.5px solid #FAC775', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer', marginTop: 2 }}>
               <i className="fa-solid fa-gear" style={{ fontSize: 12, color: '#E07B00' }}></i>
             </button>
@@ -260,10 +283,10 @@ export default function ProfilePage() {
 
         {/* Tab 切換 */}
         <div style={{ display: 'flex', borderBottom: '0.5px solid #f0e8d0', background: '#FFFBF2' }}>
-          <button style={S.tabBtn(profileTab === 'home')} onClick={() => setProfileTab('home')}>
+          <button style={S.tabBtn(profileTab === 'home')} onClick={() => switchTab('home')}>
             <i className="fa-solid fa-house" style={{ marginRight: 5, fontSize: 12 }}></i>主頁
           </button>
-          <button style={S.tabBtn(profileTab === 'mine')} onClick={() => setProfileTab('mine')}>
+          <button style={S.tabBtn(profileTab === 'mine')} onClick={() => switchTab('mine')}>
             <i className="fa-solid fa-chart-bar" style={{ marginRight: 5, fontSize: 12 }}></i>我的
           </button>
         </div>
@@ -317,7 +340,7 @@ export default function ProfilePage() {
                 return (
                   <div key={i} style={{ position: 'relative' }}>
                     <div
-                      onClick={() => setShowCardPicker(i)}
+                      onClick={() => { playSound('modal_open'); setShowCardPicker(i) }}
                       style={{ aspectRatio: '3/4', borderRadius: 14, overflow: 'hidden', background: slot ? '#fff' : '#f5f0e8', border: slot ? 'none' : '2px dashed #F5E8C8', boxShadow: slot ? '0 4px 14px rgba(186,117,23,.12)' : 'none', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', flexDirection: 'column', position: 'relative' }}>
                       {slot?.cards?.image_url
                         ? <img src={slot.cards.image_url} alt="" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
@@ -372,7 +395,7 @@ export default function ProfilePage() {
             </div>
 
             {/* 福利入口 */}
-            <div onClick={() => setShowBenefits(true)} style={{ display: 'flex', alignItems: 'center', gap: 12, padding: '13px 14px', border: '0.5px solid #f0e8d0', borderRadius: 12, background: 'linear-gradient(135deg,#fdfaf4,#fff)', boxShadow: '0 1px 6px rgba(186,117,23,0.05)', cursor: 'pointer' }}>
+            <div onClick={() => { playSound('modal_open'); setShowBenefits(true) }} style={{ display: 'flex', alignItems: 'center', gap: 12, padding: '13px 14px', border: '0.5px solid #f0e8d0', borderRadius: 12, background: 'linear-gradient(135deg,#fdfaf4,#fff)', boxShadow: '0 1px 6px rgba(186,117,23,0.05)', cursor: 'pointer' }}>
               <div style={{ width: 38, height: 38, borderRadius: 10, background: 'linear-gradient(135deg,#FAEEDA,#FFF3D0)', border: '0.5px solid rgba(186,117,23,0.2)', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
                 <i className="fa-solid fa-gift" style={{ fontSize: 16, color: '#E07B00' }}></i>
               </div>
@@ -451,7 +474,7 @@ export default function ProfilePage() {
                 出貨記錄
               </div>
               {shippingOrders.length > 3 && (
-                <span onClick={() => setShowShipping(true)} style={{ fontSize: 11, color: '#E07B00', cursor: 'pointer', fontWeight: 400 }}>全部 →</span>
+                <span onClick={() => { playSound('modal_open'); setShowShipping(true) }} style={{ fontSize: 11, color: '#E07B00', cursor: 'pointer', fontWeight: 400 }}>全部 →</span>
               )}
             </div>
             <div style={{ marginBottom: 16 }}>
@@ -486,7 +509,7 @@ export default function ProfilePage() {
                 已送鑑定
               </div>
               {gradings.length > 3 && (
-                <span onClick={() => setShowGrading(true)} style={{ fontSize: 11, color: '#E07B00', cursor: 'pointer', fontWeight: 400 }}>全部 →</span>
+                <span onClick={() => { playSound('modal_open'); setShowGrading(true) }} style={{ fontSize: 11, color: '#E07B00', cursor: 'pointer', fontWeight: 400 }}>全部 →</span>
               )}
             </div>
             <div style={{ marginBottom: 16 }}>
@@ -550,7 +573,7 @@ export default function ProfilePage() {
 
       {/* 卡片選擇器 Sheet */}
       {showCardPicker !== null && (
-        <div onClick={() => setShowCardPicker(null)} style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.4)', zIndex: 200, display: 'flex', alignItems: 'flex-end', justifyContent: 'center' }}>
+        <div onClick={() => { playSound('modal_close'); setShowCardPicker(null) }} style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.4)', zIndex: 200, display: 'flex', alignItems: 'flex-end', justifyContent: 'center' }}>
           <div onClick={e => e.stopPropagation()} style={{ width: '100%', maxWidth: 390, maxHeight: '75vh', background: '#fff', borderRadius: '16px 16px 0 0', display: 'flex', flexDirection: 'column' }}>
             <div style={{ width: 36, height: 4, borderRadius: 2, background: '#f0e8d0', margin: '12px auto 0', flexShrink: 0 }} />
             <div style={{ padding: '12px 20px 8px', borderBottom: '0.5px solid #f5f0e8', flexShrink: 0 }}>
@@ -594,7 +617,7 @@ export default function ProfilePage() {
 
       {/* 出貨記錄全覽 Sheet */}
       {showShipping && (
-        <div onClick={() => setShowShipping(false)} style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.4)', zIndex: 100, display: 'flex', alignItems: 'flex-end', justifyContent: 'center' }}>
+        <div onClick={() => { playSound('modal_close'); setShowShipping(false) }} style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.4)', zIndex: 100, display: 'flex', alignItems: 'flex-end', justifyContent: 'center' }}>
           <div onClick={e => e.stopPropagation()} style={{ width: '100%', maxWidth: 390, maxHeight: '80vh', background: '#fff', borderRadius: '16px 16px 0 0', display: 'flex', flexDirection: 'column' }}>
             <div style={{ width: 36, height: 4, borderRadius: 2, background: '#f0e8d0', margin: '12px auto 0', flexShrink: 0 }} />
             <div style={{ padding: '12px 20px 8px', borderBottom: '0.5px solid #f5f0e8', display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexShrink: 0 }}>
@@ -638,7 +661,7 @@ export default function ProfilePage() {
 
       {/* 鑑定紀錄全覽 Sheet */}
       {showGrading && (
-        <div onClick={() => setShowGrading(false)} style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.4)', zIndex: 100, display: 'flex', alignItems: 'flex-end', justifyContent: 'center' }}>
+        <div onClick={() => { playSound('modal_close'); setShowGrading(false) }} style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.4)', zIndex: 100, display: 'flex', alignItems: 'flex-end', justifyContent: 'center' }}>
           <div onClick={e => e.stopPropagation()} style={{ width: '100%', maxWidth: 390, maxHeight: '80vh', background: '#fff', borderRadius: '16px 16px 0 0', display: 'flex', flexDirection: 'column' }}>
             <div style={{ width: 36, height: 4, borderRadius: 2, background: '#f0e8d0', margin: '12px auto 0', flexShrink: 0 }} />
             <div style={{ padding: '12px 20px 8px', borderBottom: '0.5px solid #f5f0e8', display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexShrink: 0 }}>
@@ -674,7 +697,7 @@ export default function ProfilePage() {
 
       {/* 設定彈窗 */}
       {showSettings && (
-        <div onClick={() => setShowSettings(false)} style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.35)', display: 'flex', alignItems: 'flex-end', justifyContent: 'center', zIndex: 100 }}>
+        <div onClick={closeSettings} style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.35)', display: 'flex', alignItems: 'flex-end', justifyContent: 'center', zIndex: 100 }}>
           <div onClick={e => e.stopPropagation()} style={{ background: '#fff', borderRadius: '16px 16px 0 0', width: '100%', maxWidth: 390, padding: 20 }}>
             <div style={{ width: 36, height: 4, borderRadius: 2, background: '#f0e8d0', margin: '0 auto 16px' }} />
             <div style={{ fontSize: 16, fontWeight: 600, color: '#111', marginBottom: 4 }}>設定</div>
@@ -727,18 +750,25 @@ export default function ProfilePage() {
               style={{ width: '100%', padding: 12, background: (saving || !editName.trim() || editName.trim() === member.display_name) ? '#f0ebe3' : 'linear-gradient(135deg,#FAEEDA,#FFF3D0)', border: '0.5px solid #FAC775', borderRadius: 10, fontSize: 14, fontWeight: 500, color: (saving || !editName.trim() || editName.trim() === member.display_name) ? '#ccc' : '#8B5A00', cursor: 'pointer', marginBottom: 10 }}>
               {saving ? '儲存中...' : '儲存暱稱'}
             </button>
+
             <div style={{ height: '0.5px', background: '#f0e8d0', margin: '6px 0 14px' }} />
+
+            {/* 音效開關 */}
+            <div style={{ marginBottom: 14 }}>
+              <SoundToggle />
+            </div>
+
             <button onClick={signOut} style={{ width: '100%', padding: 12, background: '#fff', border: '0.5px solid #F09595', borderRadius: 10, fontSize: 14, color: '#A32D2D', cursor: 'pointer', marginBottom: 10, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 7 }}>
               <i className="fa-solid fa-right-from-bracket" style={{ fontSize: 13 }}></i>登出
             </button>
-            <button onClick={() => setShowSettings(false)} style={{ width: '100%', padding: 12, background: '#f8f5f0', border: 'none', borderRadius: 10, fontSize: 14, color: '#888', cursor: 'pointer' }}>取消</button>
+            <button onClick={closeSettings} style={{ width: '100%', padding: 12, background: '#f8f5f0', border: 'none', borderRadius: 10, fontSize: 14, color: '#888', cursor: 'pointer' }}>取消</button>
           </div>
         </div>
       )}
 
       {/* 積分升級表 Sheet */}
       {showBenefits && (
-        <div onClick={() => setShowBenefits(false)} style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.4)', zIndex: 100, display: 'flex', alignItems: 'flex-end', justifyContent: 'center' }}>
+        <div onClick={() => { playSound('modal_close'); setShowBenefits(false) }} style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.4)', zIndex: 100, display: 'flex', alignItems: 'flex-end', justifyContent: 'center' }}>
           <div onClick={e => e.stopPropagation()} style={{ width: '100%', maxWidth: 390, maxHeight: '85vh', background: '#fff', borderRadius: '16px 16px 0 0', display: 'flex', flexDirection: 'column' }}>
             <div style={{ width: 36, height: 4, borderRadius: 2, background: '#f0e8d0', margin: '12px auto 0', flexShrink: 0 }} />
             <div style={{ padding: '12px 20px 8px', borderBottom: '0.5px solid #f5f0e8', flexShrink: 0 }}>
