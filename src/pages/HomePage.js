@@ -1,3 +1,4 @@
+// src/pages/HomePage.js
 import React, { useEffect, useState, useRef, useCallback } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { supabase, LEVELS } from '../lib/supabase'
@@ -5,7 +6,6 @@ import { useAuth } from '../hooks/useAuth'
 import { PokeballIcon } from '../lib/pokeballs'
 import BottomNav from '../components/BottomNav'
 import LeaderboardSheet from '../components/LeaderboardSheet'
-import { playSound } from '../lib/sounds'
 import {
   playWeekCompleteSound, playMakeUpSound, playErrorSound,
   vibrate, VIBRATE,
@@ -93,17 +93,13 @@ export default function HomePage() {
   const [makeUpError, setMakeUpError] = useState('')
 
   useEffect(() => {
-    if (!loginResult) return
     if (loginResult?.weekComplete) {
       setTimeout(() => {
         setShowWeekCelebration(true)
         playWeekCompleteSound()
-        playSound('checkin_success')
         vibrate(VIBRATE.weekComplete)
         setTimeout(() => setShowWeekCelebration(false), 4000)
       }, 2800)
-    } else {
-      playSound('checkin_success')
     }
   }, [loginResult])
 
@@ -187,9 +183,7 @@ export default function HomePage() {
 
   async function handleSubmitShipping() {
     if (!shippingForm.store_name.trim() || !shippingForm.recipient_name.trim() || !shippingForm.phone.trim()) {
-      setShippingError('請填寫所有必填欄位')
-      playSound('error_general')
-      return
+      setShippingError('請填寫所有必填欄位'); return
     }
     setShippingSaving(true); setShippingError('')
     const { error } = await supabase.from('shipping_orders').insert({
@@ -197,14 +191,8 @@ export default function HomePage() {
       recipient_name: shippingForm.recipient_name.trim(), phone: shippingForm.phone.trim(),
       note: shippingForm.note.trim(), status: 'pending',
     })
-    if (error) {
-      setShippingError('申請失敗，請稍後再試')
-      playSound('error_system')
-    } else {
-      setShippingModal(false)
-      playSound('order_success')
-      await fetchShippingStatus(member.id)
-    }
+    if (error) setShippingError('申請失敗，請稍後再試')
+    else { setShippingModal(false); await fetchShippingStatus(member.id) }
     setShippingSaving(false)
   }
 
@@ -219,19 +207,13 @@ export default function HomePage() {
   function openMakeUp(day) {
     const today = new Date().toISOString().split('T')[0]
     if (day.done || day.date >= today) return
-    setMakeUpError('')
-    setMakeUpModal(day)
-    playSound('modal_open')
+    setMakeUpError(''); setMakeUpModal(day)
   }
 
   async function handleMakeUp() {
     if (!makeUpModal || !member) return
     if (member.points < 10) {
-      setMakeUpError('積分不足 10 點，無法補簽')
-      playErrorSound()
-      playSound('error_points')
-      vibrate(VIBRATE.error)
-      return
+      setMakeUpError('積分不足 10 點，無法補簽'); playErrorSound(); vibrate(VIBRATE.error); return
     }
     setMakeUpSaving(true); setMakeUpError('')
     try {
@@ -243,11 +225,8 @@ export default function HomePage() {
       await supabase.from('members').update({ points: newPoints, level: newLevel }).eq('id', member.id)
       await supabase.from('point_logs').insert({ member_id: member.id, type: 'makeup', points: -10, note: `補簽 ${makeUpModal.date}` })
       setMember({ ...member, points: newPoints, level: newLevel })
-      playMakeUpSound()
-      playSound('points_earned')
-      vibrate(VIBRATE.makeUp)
-      setMakeUpModal(null)
-      await fetchWeekLogins(member.id)
+      playMakeUpSound(); vibrate(VIBRATE.makeUp)
+      setMakeUpModal(null); await fetchWeekLogins(member.id)
     } catch { setMakeUpError('補簽失敗，請稍後再試') }
     setMakeUpSaving(false)
   }
@@ -275,6 +254,7 @@ export default function HomePage() {
   return (
     <div style={S.page}>
 
+      {/* Pull-to-refresh */}
       <div style={{ overflow: 'hidden', height: refreshing ? 56 : isPulling ? Math.max(pullDistance * 0.9, 0) : 0, transition: isPulling ? 'none' : 'height 0.3s ease', background: 'linear-gradient(135deg,#fdfaf4,#fff)', display: 'flex', alignItems: 'center', justifyContent: 'center', borderBottom: (isPulling || refreshing) ? '0.5px solid #f0e8d0' : 'none' }}>
         <div style={{ width: 28, height: 28, opacity: refreshing ? 1 : Math.min(pullDistance / THRESHOLD, 1), display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
           <svg viewBox="0 0 28 28" width="28" height="28">
@@ -296,6 +276,7 @@ export default function HomePage() {
       <div ref={scrollRef} style={{ flex: 1, overflowY: 'auto', WebkitOverflowScrolling: 'touch' }}
         onTouchStart={onTouchStart} onTouchMove={onTouchMove} onTouchEnd={onTouchEnd}>
 
+        {/* Hero */}
         <div style={S.hero}>
           <svg style={{ position: 'absolute', right: -16, bottom: -22, width: 110, height: 110, opacity: 0.07, pointerEvents: 'none' }} viewBox="0 0 100 100" fill="none">
             <circle cx="50" cy="50" r="47" stroke="#BA7517" strokeWidth="4"/>
@@ -333,6 +314,7 @@ export default function HomePage() {
           </svg>
         </div>
 
+        {/* ── 公告：沿用原設計，文字加強顯眼度 ── */}
         {announcement && (
           <div style={{ background: '#fffdf7', borderBottom: '1px solid #f5edd8', padding: '8px 16px', display: 'flex', alignItems: 'center', gap: 8 }}>
             <style>{`@keyframes marquee{0%{transform:translateX(100%)}100%{transform:translateX(-100%)}}`}</style>
@@ -346,6 +328,7 @@ export default function HomePage() {
           </div>
         )}
 
+        {/* 每日新聞 */}
         {news && (
           <div style={{ padding: '12px 20px', borderBottom: '1px solid #f5f0e8' }}>
             <div style={{ fontSize: 11, fontWeight: 500, color: '#888', display: 'flex', alignItems: 'center', gap: 5, marginBottom: 8 }}>
@@ -366,10 +349,16 @@ export default function HomePage() {
 
         <div style={{ padding: '16px 20px 0' }}>
 
+          {/* ── 直播下單區 + 積分排行榜 並排按鈕（方案 A：等高雙欄） ── */}
           <style>{`@keyframes homeLiveDot{0%,100%{opacity:1;transform:scale(1)}50%{opacity:.45;transform:scale(.72)}}`}</style>
           <div style={{ display: 'grid', gridTemplateColumns: '1fr 80px', gap: 8, marginBottom: 16 }}>
-            <div onClick={() => navigate('/shop?tab=live')} style={{ background: 'linear-gradient(135deg,#1a1a1a,#2A2A2A)', border: '1px solid rgba(226,75,74,0.35)', borderRadius: 14, padding: '14px', cursor: 'pointer', boxShadow: '0 5px 18px rgba(0,0,0,.12)', position: 'relative', overflow: 'hidden', display: 'flex', flexDirection: 'column', justifyContent: 'center', gap: 6 }}>
+
+            {/* 直播下單區 — 縱向排列 */}
+            <div
+              onClick={() => navigate('/shop?tab=live')}
+              style={{ background: 'linear-gradient(135deg,#1a1a1a,#2A2A2A)', border: '1px solid rgba(226,75,74,0.35)', borderRadius: 14, padding: '14px', cursor: 'pointer', boxShadow: '0 5px 18px rgba(0,0,0,.12)', position: 'relative', overflow: 'hidden', display: 'flex', flexDirection: 'column', justifyContent: 'center', gap: 6 }}>
               <div style={{ position: 'absolute', top: -18, right: -14, width: 72, height: 72, borderRadius: '50%', background: 'radial-gradient(circle,rgba(226,75,74,.22),transparent 70%)', pointerEvents: 'none' }} />
+              {/* LIVE badge + 標題 */}
               <div style={{ display: 'flex', alignItems: 'center', gap: 6, position: 'relative' }}>
                 <span style={{ display: 'inline-flex', alignItems: 'center', gap: 4, background: '#E24B4A', borderRadius: 5, padding: '2px 7px', flexShrink: 0 }}>
                   <span style={{ width: 4, height: 4, borderRadius: '50%', background: '#fff', animation: 'homeLiveDot 1s ease infinite' }} />
@@ -377,15 +366,22 @@ export default function HomePage() {
                 </span>
                 <span style={{ fontSize: 13, fontWeight: 800, color: '#fff' }}>直播下單區</span>
               </div>
+              {/* 副文字 */}
               <div style={{ fontSize: 10, color: '#888', position: 'relative' }}>
                 {liveItemCount > 0 ? `${liveItemCount} 件商品上架中，立即下單` : '等待直播商品上架'}
               </div>
+              {/* 進入 */}
               <div style={{ display: 'inline-flex', alignItems: 'center', gap: 4, color: '#E24B4A', fontSize: 11, fontWeight: 700, position: 'relative' }}>
-                <i className="fa-solid fa-video" style={{ fontSize: 11 }}></i>進入<i className="fa-solid fa-chevron-right" style={{ fontSize: 9 }}></i>
+                <i className="fa-solid fa-video" style={{ fontSize: 11 }}></i>
+                進入
+                <i className="fa-solid fa-chevron-right" style={{ fontSize: 9 }}></i>
               </div>
             </div>
 
-            <div onClick={() => setShowLeaderboard(true)} style={{ background: 'linear-gradient(135deg,#FFF8EE,#FFFBF2)', border: '1px solid #F5E8C8', borderRadius: 14, padding: '12px 8px', cursor: 'pointer', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: 7, boxShadow: '0 2px 8px rgba(186,117,23,.07)' }}>
+            {/* 積分排行榜 — 等高縱向 */}
+            <div
+              onClick={() => setShowLeaderboard(true)}
+              style={{ background: 'linear-gradient(135deg,#FFF8EE,#FFFBF2)', border: '1px solid #F5E8C8', borderRadius: 14, padding: '12px 8px', cursor: 'pointer', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: 7, boxShadow: '0 2px 8px rgba(186,117,23,.07)' }}>
               <div style={{ width: 36, height: 36, borderRadius: 10, background: 'linear-gradient(135deg,#BA7517,#D4A94A)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
                 <i className="fa-solid fa-ranking-star" style={{ fontSize: 16, color: '#fff' }}></i>
               </div>
@@ -393,6 +389,7 @@ export default function HomePage() {
             </div>
           </div>
 
+          {/* 戰績牆 */}
           <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 10 }}>
             <div style={S.secLeft}>
               <span style={S.typeBadge('linear-gradient(135deg,#BA7517,#D4A94A)')}><i className="fa-solid fa-trophy"></i></span>
@@ -416,6 +413,7 @@ export default function HomePage() {
             ))}
           </div>
 
+          {/* Boss */}
           {boss && (
             <>
               <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 10 }}>
@@ -428,7 +426,9 @@ export default function HomePage() {
               <div style={S.bossCard}>
                 <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 12 }}>
                   <div style={{ width: 40, height: 40, borderRadius: '50%', background: '#FCEBEB', display: 'flex', alignItems: 'center', justifyContent: 'center', border: '1px solid #F09595', overflow: 'hidden', flexShrink: 0 }}>
-                    {boss.image_url ? <img src={boss.image_url} alt={boss.name} style={{ width: '100%', height: '100%', objectFit: 'cover' }} onError={e => { e.currentTarget.style.display = 'none'; e.currentTarget.nextSibling.style.display = 'block' }} /> : null}
+                    {boss.image_url
+                      ? <img src={boss.image_url} alt={boss.name} style={{ width: '100%', height: '100%', objectFit: 'cover' }} onError={e => { e.currentTarget.style.display = 'none'; e.currentTarget.nextSibling.style.display = 'block' }} />
+                      : null}
                     <i className="fa-solid fa-skull" style={{ fontSize: 18, color: '#E24B4A', display: boss.image_url ? 'none' : 'block' }}></i>
                   </div>
                   <div style={{ flex: 1 }}>
@@ -447,6 +447,7 @@ export default function HomePage() {
             </>
           )}
 
+          {/* 本週簽到 */}
           {weekLogins.length > 0 && (
             <div style={{ marginBottom: 100 }}>
               <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 10 }}>
@@ -466,8 +467,12 @@ export default function HomePage() {
                   const isToday = d.date === today
                   const canMakeUp = !d.done && !isToday && !d.isFuture
                   const tc = d.typeConfig
-                  const bg = d.done ? (isToday ? '#FCEBEB' : 'linear-gradient(135deg,#FAEEDA,#FFF3D0)') : d.isFuture ? '#f5f5f5' : isToday ? '#fff5f5' : '#f8f5f0'
-                  const borderColor = d.done ? (isToday ? '#F09595' : '#FAC775') : d.isFuture ? '#eee' : isToday ? '#F09595' : canMakeUp ? '#e5ddd0' : '#eee'
+                  const bg = d.done
+                    ? (isToday ? '#FCEBEB' : 'linear-gradient(135deg,#FAEEDA,#FFF3D0)')
+                    : d.isFuture ? '#f5f5f5' : isToday ? '#fff5f5' : '#f8f5f0'
+                  const borderColor = d.done
+                    ? (isToday ? '#F09595' : '#FAC775')
+                    : d.isFuture ? '#eee' : isToday ? '#F09595' : canMakeUp ? '#e5ddd0' : '#eee'
                   return (
                     <div key={d.date} onClick={() => canMakeUp && openMakeUp(d)}
                       style={{ aspectRatio: 1, borderRadius: 9, background: bg, border: `1px solid ${borderColor}`, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: 2, cursor: canMakeUp ? 'pointer' : 'default', position: 'relative', transition: 'transform 0.1s' }}>
@@ -489,6 +494,7 @@ export default function HomePage() {
         </div>
       </div>
 
+      {/* 我要出貨 固定按鈕 */}
       <div style={{ position: 'fixed', bottom: 72, left: '50%', transform: 'translateX(-50%)', width: '100%', maxWidth: 390, padding: '0 20px', pointerEvents: 'none', zIndex: 50 }}>
         {currentOrder ? (
           <div style={{ pointerEvents: 'auto', background: 'linear-gradient(135deg,#fdfaf4,#fff)', border: '1px solid #FAC775', borderRadius: 14, padding: '10px 14px', display: 'flex', alignItems: 'center', gap: 10, boxShadow: '0 4px 20px rgba(186,117,23,.15)' }}>
@@ -513,12 +519,13 @@ export default function HomePage() {
             </div>
           </div>
         ) : (
-          <button onClick={() => { setShippingModal(true); playSound('modal_open') }} style={{ pointerEvents: 'auto', width: '100%', padding: '13px 0', background: 'linear-gradient(135deg,#BA7517,#D4A94A)', border: 'none', borderRadius: 14, fontSize: 14, fontWeight: 700, color: '#fff', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8, boxShadow: '0 4px 20px rgba(186,117,23,.35)' }}>
+          <button onClick={() => setShippingModal(true)} style={{ pointerEvents: 'auto', width: '100%', padding: '13px 0', background: 'linear-gradient(135deg,#BA7517,#D4A94A)', border: 'none', borderRadius: 14, fontSize: 14, fontWeight: 700, color: '#fff', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8, boxShadow: '0 4px 20px rgba(186,117,23,.35)' }}>
             <i className="fa-solid fa-truck"></i> 我要出貨
           </button>
         )}
       </div>
 
+      {/* 全勤慶祝 */}
       {showWeekCelebration && (
         <div style={{ position: 'fixed', inset: 0, zIndex: 200, display: 'flex', alignItems: 'center', justifyContent: 'center', pointerEvents: 'none', maxWidth: 390, margin: '0 auto' }}>
           <style>{`
@@ -543,6 +550,7 @@ export default function HomePage() {
         </div>
       )}
 
+      {/* 排行榜 Sheet */}
       {showLeaderboard && (
         <div onClick={() => setShowLeaderboard(false)} style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.4)', zIndex: 100, display: 'flex', alignItems: 'flex-end', justifyContent: 'center' }}>
           <div onClick={e => e.stopPropagation()} style={{ width: '100%', maxWidth: 390, height: '85vh', background: '#fff', borderRadius: '16px 16px 0 0', display: 'flex', flexDirection: 'column', position: 'relative', overflow: 'hidden' }}>
@@ -551,6 +559,7 @@ export default function HomePage() {
         </div>
       )}
 
+      {/* 新聞彈窗 */}
       {newsModal && news && (
         <div onClick={() => setNewsModal(false)} style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.4)', display: 'flex', alignItems: 'flex-end', justifyContent: 'center', zIndex: 100 }}>
           <div onClick={e => e.stopPropagation()} style={{ background: '#fff', borderRadius: '16px 16px 0 0', width: '100%', maxWidth: 390, maxHeight: '85vh', overflowY: 'auto' }}>
@@ -566,12 +575,13 @@ export default function HomePage() {
         </div>
       )}
 
+      {/* 補簽 Modal */}
       {makeUpModal && (
-        <div onClick={() => { setMakeUpModal(null); playSound('modal_close') }} style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.45)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 100 }}>
+        <div onClick={() => setMakeUpModal(null)} style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.45)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 100 }}>
           <div onClick={e => e.stopPropagation()} style={{ background: '#fff', borderRadius: 14, width: 300, padding: 20 }}>
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 14 }}>
               <div style={{ fontSize: 15, fontWeight: 600, color: '#111' }}>補簽確認</div>
-              <span onClick={() => { setMakeUpModal(null); playSound('modal_close') }} style={{ fontSize: 18, color: '#aaa', cursor: 'pointer' }}>✕</span>
+              <span onClick={() => setMakeUpModal(null)} style={{ fontSize: 18, color: '#aaa', cursor: 'pointer' }}>✕</span>
             </div>
             <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 8, marginBottom: 16 }}>
               <div style={{ width: 52, height: 52, borderRadius: '50%', background: makeUpModal.typeConfig.color, display: 'flex', alignItems: 'center', justifyContent: 'center', boxShadow: `0 4px 14px ${makeUpModal.typeConfig.color}66` }}>
@@ -597,8 +607,9 @@ export default function HomePage() {
             </div>
             {makeUpError && <div style={{ background: '#FCEBEB', color: '#A32D2D', padding: '8px 12px', borderRadius: 8, fontSize: 12, marginBottom: 12 }}>{makeUpError}</div>}
             <div style={{ display: 'flex', gap: 8 }}>
-              <button onClick={() => { setMakeUpModal(null); playSound('modal_close') }} style={{ flex: 1, padding: 10, border: '1px solid #f0e8d0', borderRadius: 10, fontSize: 13, color: '#888', background: '#fdfaf4', cursor: 'pointer' }}>取消</button>
-              <button onClick={handleMakeUp} disabled={makeUpSaving || (member?.points || 0) < 10} style={{ flex: 2, padding: 10, background: makeUpSaving || (member?.points || 0) < 10 ? '#ccc' : 'linear-gradient(135deg,#BA7517,#D4A94A)', border: 'none', borderRadius: 10, fontSize: 13, fontWeight: 700, color: '#fff', cursor: 'pointer' }}>
+              <button onClick={() => setMakeUpModal(null)} style={{ flex: 1, padding: 10, border: '1px solid #f0e8d0', borderRadius: 10, fontSize: 13, color: '#888', background: '#fdfaf4', cursor: 'pointer' }}>取消</button>
+              <button onClick={handleMakeUp} disabled={makeUpSaving || (member?.points || 0) < 10}
+                style={{ flex: 2, padding: 10, background: makeUpSaving || (member?.points || 0) < 10 ? '#ccc' : 'linear-gradient(135deg,#BA7517,#D4A94A)', border: 'none', borderRadius: 10, fontSize: 13, fontWeight: 700, color: '#fff', cursor: 'pointer' }}>
                 {makeUpSaving ? '補簽中...' : '確認補簽 (-10點)'}
               </button>
             </div>
@@ -606,8 +617,9 @@ export default function HomePage() {
         </div>
       )}
 
+      {/* 出貨 Modal */}
       {shippingModal && (
-        <div onClick={() => { setShippingModal(false); playSound('modal_close') }} style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.4)', display: 'flex', alignItems: 'flex-end', justifyContent: 'center', zIndex: 100 }}>
+        <div onClick={() => setShippingModal(false)} style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.4)', display: 'flex', alignItems: 'flex-end', justifyContent: 'center', zIndex: 100 }}>
           <div onClick={e => e.stopPropagation()} style={{ background: '#fff', borderRadius: '16px 16px 0 0', width: '100%', maxWidth: 390, padding: '0 0 32px' }}>
             <div style={{ width: 36, height: 4, borderRadius: 2, background: '#f0e8d0', margin: '12px auto 16px' }} />
             <div style={{ padding: '0 20px' }}>
@@ -626,7 +638,7 @@ export default function HomePage() {
                 </div>
               ))}
               <div style={{ display: 'flex', gap: 8, marginTop: 8 }}>
-                <button onClick={() => { setShippingModal(false); playSound('modal_close') }} style={{ flex: 1, padding: 12, border: '1px solid #f0e8d0', borderRadius: 10, fontSize: 14, color: '#888', background: '#fdfaf4', cursor: 'pointer' }}>取消</button>
+                <button onClick={() => setShippingModal(false)} style={{ flex: 1, padding: 12, border: '1px solid #f0e8d0', borderRadius: 10, fontSize: 14, color: '#888', background: '#fdfaf4', cursor: 'pointer' }}>取消</button>
                 <button onClick={handleSubmitShipping} disabled={shippingSaving} style={{ flex: 2, padding: 12, background: shippingSaving ? '#ccc' : 'linear-gradient(135deg,#BA7517,#D4A94A)', border: 'none', borderRadius: 10, fontSize: 14, fontWeight: 700, color: '#fff', cursor: 'pointer' }}>
                   {shippingSaving ? '申請中...' : '確認申請'}
                 </button>
@@ -636,6 +648,7 @@ export default function HomePage() {
         </div>
       )}
 
+      {/* 取消出貨 Modal */}
       {cancelModal && (
         <div onClick={() => setCancelModal(false)} style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.45)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 100 }}>
           <div onClick={e => e.stopPropagation()} style={{ background: '#fff', borderRadius: 14, width: 320, padding: 20 }}>
