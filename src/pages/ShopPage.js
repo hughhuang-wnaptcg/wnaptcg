@@ -4,6 +4,7 @@ import { supabase, getLevel } from '../lib/supabase'
 import { useAuth } from '../hooks/useAuth'
 import { useSearchParams } from 'react-router-dom'
 import BottomNav from '../components/BottomNav'
+import { playSound } from '../lib/sounds'
 
 const TIER_CONFIG = {
   general: {
@@ -279,10 +280,11 @@ export default function ShopPage() {
   }
 
   function addToCart(item) {
+    playSound('button_tap')
     setCart(prev => {
       const existing = prev.find(c => c.item.id === item.id)
       if (existing) {
-        if (existing.quantity >= item.stock) return prev
+        if (existing.quantity >= item.stock) { playSound('error_stock'); return prev }
         return prev.map(c => c.item.id === item.id ? { ...c, quantity: c.quantity + 1 } : c)
       }
       return [...prev, { item, quantity: 1, dine_type: 'dine_in' }]
@@ -294,7 +296,7 @@ export default function ShopPage() {
       if (c.item.id !== itemId) return c
       const newQty = c.quantity + delta
       if (newQty <= 0) return null
-      if (newQty > c.item.stock) return c
+      if (newQty > c.item.stock) { playSound('error_stock'); return c }
       return { ...c, quantity: newQty }
     }).filter(Boolean))
   }
@@ -313,7 +315,13 @@ export default function ShopPage() {
     ? liveItems
     : liveItems.filter(item => (item.product_tag || '其他') === liveTagFilter)
 
+  function openCart() {
+    playSound('modal_open')
+    setShowCart(true)
+  }
+
   function closeCart() {
+    playSound('modal_close')
     setCartFading(true)
     setTimeout(() => { setShowCart(false); setCartFading(false) }, 250)
   }
@@ -347,14 +355,16 @@ export default function ShopPage() {
       setCart([])
       closeCart()
       setOrderSuccess(successData)
+      playSound('order_success')
       await fetchLiveData()
     } catch (err) {
+      playSound('error_system')
       alert('下單失敗：' + err.message)
     }
     setCheckingOut(false)
   }
 
-  function openConfirm(prod) { setConfirmProduct(prod); setConfirmQty(1) }
+  function openConfirm(prod) { playSound('modal_open'); setConfirmProduct(prod); setConfirmQty(1) }
   function remainingAllowance(prod) {
     const max = prod.max_per_member || 1
     const bought = purchasedCounts[prod.id] || 0
@@ -363,15 +373,17 @@ export default function ShopPage() {
   async function handleBuy() {
     if (!confirmProduct || !member) return
     const totalCost = confirmProduct.price * confirmQty
-    if (member.shop_points < totalCost) return
+    if (member.shop_points < totalCost) { playSound('error_points'); return }
     setBuying(true)
     try {
       const { data, error } = await supabase.rpc('purchase_shop_product', { p_product_id: confirmProduct.id, p_quantity: confirmQty })
       if (error) throw error
       setMember({ ...member, shop_points: data.shop_points })
       setSuccessProduct(confirmProduct); setSuccessQty(confirmQty)
-      setConfirmProduct(null); await fetchShopData()
-    } catch (err) { alert('兌換失敗：' + err.message) }
+      setConfirmProduct(null)
+      playSound('shop_redeem_success')
+      await fetchShopData()
+    } catch (err) { playSound('error_system'); alert('兌換失敗：' + err.message) }
     setBuying(false)
   }
   async function handleRequestShipping() {
@@ -381,9 +393,10 @@ export default function ShopPage() {
       const { error } = await supabase.rpc('request_shop_order_shipping', { p_order_ids: selectedIds })
       if (error) throw error
       setSelectedIds([]); setRequestSuccess(true)
+      playSound('shop_redeem_success')
       await fetchShopData()
       setTimeout(() => setRequestSuccess(false), 3000)
-    } catch (err) { alert('申請失敗：' + err.message) }
+    } catch (err) { playSound('error_system'); alert('申請失敗：' + err.message) }
     setRequesting(false)
   }
   function toggleSelect(id) { setSelectedIds(prev => prev.includes(id) ? prev.filter(i => i !== id) : [...prev, id]) }
@@ -621,7 +634,7 @@ export default function ShopPage() {
               </div>
             )}
             {mainTab === 'live' && (
-              <button onClick={() => setShowMyOrders(true)}
+              <button onClick={() => { playSound('modal_open'); setShowMyOrders(true) }}
                 style={{ background: '#fff', border: '1.5px solid #E0E0E0', borderRadius: 12, padding: '8px 14px', textAlign: 'center', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: 7 }}>
                 <i className="fa-solid fa-receipt" style={{ fontSize: 14, color: '#555' }}></i>
                 <div style={{ textAlign: 'left' }}>
@@ -639,7 +652,7 @@ export default function ShopPage() {
               { key: 'shop', label: '點數商城',   icon: 'fa-store',  activeColor: '#E07B00', activeBg: 'rgba(224,123,0,0.04)' },
             ].map(t => (
               <button key={t.key}
-                onClick={() => { setMainTab(t.key); setSearchParams(t.key === 'shop' ? { tab: 'shop' } : {}) }}
+                onClick={() => { if (mainTab !== t.key) playSound('tab_switch'); setMainTab(t.key); setSearchParams(t.key === 'shop' ? { tab: 'shop' } : {}) }}
                 style={{ flex: 1, padding: '10px 0', border: 'none', background: mainTab === t.key ? t.activeBg : 'transparent', fontSize: 13, fontWeight: mainTab === t.key ? 700 : 400, color: mainTab === t.key ? t.activeColor : '#bbb', cursor: 'pointer', borderBottom: mainTab === t.key ? `2.5px solid ${t.activeColor}` : '2.5px solid transparent', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 6, transition: 'all 0.2s' }}>
                 <i className={`fa-solid ${t.icon}`} style={{ fontSize: 12 }}></i>
                 {t.label}
@@ -777,7 +790,7 @@ export default function ShopPage() {
                       {/* ── ？icon，僅累計點數格顯示 ── */}
                       {s.hint && (
                         <button
-                          onClick={() => setShowPointsHint(true)}
+                          onClick={() => { playSound('modal_open'); setShowPointsHint(true) }}
                           style={{ marginLeft: 'auto', width: 16, height: 16, borderRadius: '50%', background: '#F5E8C8', border: 'none', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0, padding: 0 }}>
                           <i className="fa-solid fa-question" style={{ fontSize: 8, color: '#BA7517' }}></i>
                         </button>
@@ -788,14 +801,14 @@ export default function ShopPage() {
                 ))}
               </div>
               <div style={{ display: 'flex', gap: 8 }}>
-                <button onClick={() => setShowPointsLog(true)} style={{ flex: 1, padding: 8, background: '#FFFBF2', border: '0.5px solid #F5E8C8', borderRadius: 8, fontSize: 11, color: '#BA7517', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 5 }}>
+                <button onClick={() => { playSound('modal_open'); setShowPointsLog(true) }} style={{ flex: 1, padding: 8, background: '#FFFBF2', border: '0.5px solid #F5E8C8', borderRadius: 8, fontSize: 11, color: '#BA7517', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 5 }}>
                   <i className="fa-solid fa-clock-rotate-left" style={{ fontSize: 11 }}></i>點數紀錄
                 </button>
-                <button onClick={() => setShowMyItems(true)} style={{ flex: 1, padding: 8, background: '#FFFBF2', border: '0.5px solid #F5E8C8', borderRadius: 8, fontSize: 11, color: '#BA7517', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 5, position: 'relative' }}>
+                <button onClick={() => { playSound('modal_open'); setShowMyItems(true) }} style={{ flex: 1, padding: 8, background: '#FFFBF2', border: '0.5px solid #F5E8C8', borderRadius: 8, fontSize: 11, color: '#BA7517', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 5, position: 'relative' }}>
                   <i className="fa-solid fa-box" style={{ fontSize: 11 }}></i>我的物品
                   {pendingOrders.length > 0 && <span style={{ position: 'absolute', top: 4, right: 8, background: '#E24B4A', color: '#fff', borderRadius: 99, fontSize: 9, fontWeight: 700, padding: '1px 5px' }}>{pendingOrders.length}</span>}
                 </button>
-                <button onClick={() => setShowShipped(true)} style={{ flex: 1, padding: 8, background: '#FFFBF2', border: '0.5px solid #F5E8C8', borderRadius: 8, fontSize: 11, color: '#BA7517', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 5 }}>
+                <button onClick={() => { playSound('modal_open'); setShowShipped(true) }} style={{ flex: 1, padding: 8, background: '#FFFBF2', border: '0.5px solid #F5E8C8', borderRadius: 8, fontSize: 11, color: '#BA7517', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 5 }}>
                   <i className="fa-solid fa-truck" style={{ fontSize: 11 }}></i>出貨紀錄
                 </button>
               </div>
@@ -830,7 +843,7 @@ export default function ShopPage() {
                         <div style={{ fontSize: 11, color: isVip ? '#555' : '#bbb', display: 'flex', alignItems: 'center', gap: 5 }}>
                           <i className="fa-solid fa-box-open" style={{ fontSize: 11, color: isVip ? '#B8860B' : '#D4A94A' }}></i>共 {count} 項商品
                         </div>
-                        <div onClick={() => { setActiveTier(tier); setTierFilter('all') }} style={{ fontSize: 12, color: cfg.enterColor, fontWeight: 700, display: 'flex', alignItems: 'center', gap: 4, cursor: 'pointer' }}>
+                        <div onClick={() => { playSound('tab_switch'); setActiveTier(tier); setTierFilter('all') }} style={{ fontSize: 12, color: cfg.enterColor, fontWeight: 700, display: 'flex', alignItems: 'center', gap: 4, cursor: 'pointer' }}>
                           進入點數商城 <i className="fa-solid fa-chevron-right" style={{ fontSize: 10 }}></i>
                         </div>
                       </div>
@@ -851,7 +864,7 @@ export default function ShopPage() {
       {/* 購物車固定按鈕 */}
       {mainTab === 'live' && cartCount > 0 && (
         <div style={{ position: 'fixed', bottom: 72, left: '50%', transform: 'translateX(-50%)', width: '100%', maxWidth: 390, padding: '0 16px', zIndex: 50 }}>
-          <button onClick={() => setShowCart(true)}
+          <button onClick={openCart}
             style={{ width: '100%', padding: '14px 20px', background: '#1a1a1a', border: 'none', borderRadius: 14, fontSize: 14, fontWeight: 700, color: '#fff', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'space-between', boxShadow: '0 6px 24px rgba(0,0,0,.3)' }}>
             <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
               <div style={{ position: 'relative' }}>
@@ -938,7 +951,7 @@ export default function ShopPage() {
 
       {/* 我的訂單 Sheet */}
       {showMyOrders && (
-        <div onClick={() => setShowMyOrders(false)} style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.5)', zIndex: 100, display: 'flex', alignItems: 'flex-end', justifyContent: 'center' }}>
+        <div onClick={() => { playSound('modal_close'); setShowMyOrders(false) }} style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.5)', zIndex: 100, display: 'flex', alignItems: 'flex-end', justifyContent: 'center' }}>
           <div onClick={e => e.stopPropagation()} style={{ width: '100%', maxWidth: 390, maxHeight: '85vh', background: '#fff', borderRadius: '20px 20px 0 0', display: 'flex', flexDirection: 'column' }}>
             <div style={{ width: 36, height: 4, borderRadius: 2, background: '#E0E0E0', margin: '12px auto 0', flexShrink: 0 }} />
             <div style={{ padding: '12px 20px 10px', borderBottom: '0.5px solid #F0F0F0', display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexShrink: 0 }}>
@@ -986,7 +999,7 @@ export default function ShopPage() {
 
       {/* 點數紀錄 Sheet */}
       {showPointsLog && (
-        <div onClick={() => setShowPointsLog(false)} style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.4)', zIndex: 100, display: 'flex', alignItems: 'flex-end', justifyContent: 'center' }}>
+        <div onClick={() => { playSound('modal_close'); setShowPointsLog(false) }} style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.4)', zIndex: 100, display: 'flex', alignItems: 'flex-end', justifyContent: 'center' }}>
           <div onClick={e => e.stopPropagation()} style={{ width: '100%', maxWidth: 390, maxHeight: '80vh', background: '#fff', borderRadius: '16px 16px 0 0', display: 'flex', flexDirection: 'column' }}>
             <div style={{ width: 36, height: 4, borderRadius: 2, background: '#f0e8d0', margin: '12px auto 0', flexShrink: 0 }} />
             <div style={{ padding: '12px 20px 8px', borderBottom: '0.5px solid #f5f0e8', display: 'flex', justifyContent: 'space-between', flexShrink: 0 }}>
@@ -1015,7 +1028,7 @@ export default function ShopPage() {
 
       {/* 我的物品 Sheet */}
       {showMyItems && (
-        <div onClick={() => { setShowMyItems(false); setSelectedIds([]) }} style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.4)', zIndex: 100, display: 'flex', alignItems: 'flex-end', justifyContent: 'center' }}>
+        <div onClick={() => { playSound('modal_close'); setShowMyItems(false); setSelectedIds([]) }} style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.4)', zIndex: 100, display: 'flex', alignItems: 'flex-end', justifyContent: 'center' }}>
           <div onClick={e => e.stopPropagation()} style={{ width: '100%', maxWidth: 390, maxHeight: '80vh', background: '#fff', borderRadius: '16px 16px 0 0', display: 'flex', flexDirection: 'column' }}>
             <div style={{ width: 36, height: 4, borderRadius: 2, background: '#f0e8d0', margin: '12px auto 0', flexShrink: 0 }} />
             <div style={{ padding: '12px 20px 8px', borderBottom: '0.5px solid #f5f0e8', display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexShrink: 0 }}>
@@ -1085,7 +1098,7 @@ export default function ShopPage() {
 
       {/* 出貨紀錄 Sheet */}
       {showShipped && (
-        <div onClick={() => setShowShipped(false)} style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.4)', zIndex: 100, display: 'flex', alignItems: 'flex-end', justifyContent: 'center' }}>
+        <div onClick={() => { playSound('modal_close'); setShowShipped(false) }} style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.4)', zIndex: 100, display: 'flex', alignItems: 'flex-end', justifyContent: 'center' }}>
           <div onClick={e => e.stopPropagation()} style={{ width: '100%', maxWidth: 390, maxHeight: '80vh', background: '#fff', borderRadius: '16px 16px 0 0', display: 'flex', flexDirection: 'column' }}>
             <div style={{ width: 36, height: 4, borderRadius: 2, background: '#f0e8d0', margin: '12px auto 0', flexShrink: 0 }} />
             <div style={{ padding: '12px 20px 8px', borderBottom: '0.5px solid #f5f0e8', display: 'flex', justifyContent: 'space-between', flexShrink: 0 }}>
@@ -1117,7 +1130,7 @@ export default function ShopPage() {
 
       {/* ── 如何獲得點數 Sheet ── */}
       {showPointsHint && (
-        <div onClick={() => setShowPointsHint(false)} style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.4)', zIndex: 100, display: 'flex', alignItems: 'flex-end', justifyContent: 'center' }}>
+        <div onClick={() => { playSound('modal_close'); setShowPointsHint(false) }} style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.4)', zIndex: 100, display: 'flex', alignItems: 'flex-end', justifyContent: 'center' }}>
           <div onClick={e => e.stopPropagation()} style={{ width: '100%', maxWidth: 390, background: '#fff', borderRadius: '16px 16px 0 0', padding: '0 0 40px' }}>
             <div style={{ width: 36, height: 4, borderRadius: 2, background: '#f0e8d0', margin: '12px auto 16px' }} />
             <div style={{ padding: '0 20px' }}>
@@ -1144,7 +1157,7 @@ export default function ShopPage() {
                   </div>
                 </div>
               ))}
-              <button onClick={() => setShowPointsHint(false)}
+              <button onClick={() => { playSound('modal_close'); setShowPointsHint(false) }}
                 style={{ marginTop: 20, width: '100%', padding: 13, background: 'linear-gradient(135deg,#FAEEDA,#FFF3D0)', border: '0.5px solid #FAC775', borderRadius: 12, fontSize: 14, fontWeight: 600, color: '#8B5A00', cursor: 'pointer' }}>
                 了解了
               </button>
