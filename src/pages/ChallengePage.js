@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react'
+import React, { useEffect, useRef, useState } from 'react'
 import { supabase } from '../lib/supabase'
 import { useAuth } from '../hooks/useAuth'
 import { getLevel } from '../lib/supabase'
@@ -58,6 +58,45 @@ function HpCounter({ targetHp }) {
   )
 }
 
+// ── 浮動粒子特效 ──────────────────────────────────────
+function BossParticles() {
+  const canvasRef = useRef(null)
+  useEffect(() => {
+    const canvas = canvasRef.current
+    if (!canvas) return
+    const ctx = canvas.getContext('2d')
+    canvas.width = canvas.offsetWidth
+    canvas.height = canvas.offsetHeight
+    const particles = Array.from({ length: 18 }, () => ({
+      x: Math.random() * canvas.width,
+      y: Math.random() * canvas.height,
+      r: Math.random() * 1.5 + 0.5,
+      vx: (Math.random() - 0.5) * 0.3,
+      vy: -Math.random() * 0.4 - 0.1,
+      alpha: Math.random() * 0.4 + 0.1,
+    }))
+    let animId
+    const draw = () => {
+      ctx.clearRect(0, 0, canvas.width, canvas.height)
+      particles.forEach(p => {
+        ctx.beginPath()
+        ctx.arc(p.x, p.y, p.r, 0, Math.PI * 2)
+        ctx.fillStyle = `rgba(192,96,26,${p.alpha})`
+        ctx.fill()
+        p.x += p.vx
+        p.y += p.vy
+        if (p.y < -4) { p.y = canvas.height + 4; p.x = Math.random() * canvas.width }
+        if (p.x < -4) p.x = canvas.width + 4
+        if (p.x > canvas.width + 4) p.x = -4
+      })
+      animId = requestAnimationFrame(draw)
+    }
+    draw()
+    return () => cancelAnimationFrame(animId)
+  }, [])
+  return <canvas ref={canvasRef} style={{ position: 'absolute', inset: 0, width: '100%', height: '100%', pointerEvents: 'none' }} />
+}
+
 // ── 相對時間 ───────────────────────────────────────────
 function relativeTime(dateStr) {
   if (!dateStr) return ''
@@ -82,6 +121,14 @@ function parseMilestones(boss) {
     { pct: 100, label: '最終大獎', reward: '' },
   ]
 }
+
+// ── 里程碑 icon 對應 ───────────────────────────────────
+const MILESTONE_ICONS = [
+  'fa-star',      // 25%
+  'fa-fire',      // 50%
+  'fa-bolt',      // 75%
+  'fa-crown',     // 100%
+]
 
 // ── 共同挑戰說明 Sheet ─────────────────────────────────
 function ChallengeHintSheet({ onClose }) {
@@ -163,7 +210,6 @@ export default function ChallengePage() {
     </div>
   )
 
-  // ── 空狀態 ──
   if (!boss) return (
     <div style={{ maxWidth: 390, margin: '0 auto', background: '#fff', minHeight: '100vh', display: 'flex', flexDirection: 'column' }}>
       <div style={{ background: '#fdfaf4', padding: '18px 20px 16px', borderBottom: '0.5px solid #f0e8d0' }}>
@@ -186,7 +232,6 @@ export default function ChallengePage() {
     </div>
   )
 
-  // ── 計算資料 ──
   const progress = Math.min(Math.round((boss.current_amount / boss.target_amount) * 100), 100)
   const damaged = boss.current_amount || 0
   const remaining = Math.max(boss.target_amount - damaged, 0)
@@ -203,10 +248,7 @@ export default function ChallengePage() {
   const myRank = myEntry ? rankList.indexOf(myEntry) + 1 : 0
   const myAmount = myEntry?.amount || 0
   const myPct = totalAmount > 0 ? Math.round(myAmount / totalAmount * 100) : 0
-
   const milestones = parseMilestones(boss)
-
-  // ── 下一個里程碑距離 ──
   const nextMilestone = milestones.find(m => m.pct > progress)
   const nextMilestonePct = nextMilestone?.pct || 100
   const myNextGap = nextMilestone && totalAmount > 0
@@ -247,32 +289,74 @@ export default function ChallengePage() {
       <div style={{ flex: 1, overflowY: 'auto', paddingBottom: 20 }}>
 
         {/* ── Boss 大圖區 ── */}
-        <div style={{ background: '#1c1208', position: 'relative', overflow: 'hidden' }}>
-          <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', paddingTop: 24, paddingBottom: 20 }}>
-            {/* Boss 圖片 */}
-            <div style={{ width: 140, height: 140, borderRadius: '50%', background: '#2a1a08', border: '2px solid #7a3e10', display: 'flex', alignItems: 'center', justifyContent: 'center', overflow: 'hidden', position: 'relative', flexShrink: 0 }}>
-              {boss.image_url
-                ? <img src={boss.image_url} alt={boss.name} style={{ width: '100%', height: '100%', objectFit: 'cover' }}
-                    onError={e => { e.currentTarget.style.display = 'none'; e.currentTarget.nextSibling.style.display = 'flex' }} />
-                : null}
-              <div style={{ width: '100%', height: '100%', display: boss.image_url ? 'none' : 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                <i className="fa-solid fa-skull" style={{ fontSize: 52, color: '#c0601a' }}></i>
+        <div style={{ background: '#1c1208', position: 'relative', overflow: 'hidden', minHeight: 320 }}>
+
+          {/* 粒子特效 */}
+          <BossParticles />
+
+          {/* 背景掃光橫條 */}
+          <div style={{ position: 'absolute', top: '30%', left: '-20%', width: '140%', height: 1, background: 'rgba(192,96,26,0.08)', transform: 'rotate(-8deg)', pointerEvents: 'none' }} />
+          <div style={{ position: 'absolute', top: '55%', left: '-20%', width: '140%', height: 1, background: 'rgba(192,96,26,0.05)', transform: 'rotate(-8deg)', pointerEvents: 'none' }} />
+
+          {/* 角落裝飾光點 */}
+          {[[8,8],[8,92],[92,8],[92,92]].map(([t,l],i) => (
+            <div key={i} style={{ position: 'absolute', top: `${t}%`, left: `${l}%`, width: 3, height: 3, borderRadius: '50%', background: '#c0601a', opacity: 0.25, pointerEvents: 'none' }} />
+          ))}
+
+          <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', paddingTop: 28, paddingBottom: 20, position: 'relative' }}>
+
+            {/* Boss 圖片 — 方形卡牌風格 */}
+            <div style={{ position: 'relative' }}>
+              {/* 外框光暈層 */}
+              <div style={{ position: 'absolute', inset: -4, borderRadius: 16, border: '1px solid rgba(192,96,26,0.2)', pointerEvents: 'none' }} />
+              <div style={{ position: 'absolute', inset: -8, borderRadius: 20, border: '1px solid rgba(192,96,26,0.08)', pointerEvents: 'none' }} />
+
+              {/* 主圖框 */}
+              <div style={{
+                width: 180, height: 220,
+                borderRadius: 12,
+                border: '2px solid #7a3e10',
+                overflow: 'hidden',
+                background: '#2a1a08',
+                flexShrink: 0,
+                position: 'relative',
+              }}>
+                {boss.image_url ? (
+                  <img
+                    src={boss.image_url}
+                    alt={boss.name}
+                    style={{ width: '100%', height: '100%', objectFit: 'cover', display: 'block' }}
+                    onError={e => { e.currentTarget.style.display = 'none'; e.currentTarget.nextSibling.style.display = 'flex' }}
+                  />
+                ) : null}
+                <div style={{ width: '100%', height: '100%', display: boss.image_url ? 'none' : 'flex', alignItems: 'center', justifyContent: 'center', flexDirection: 'column', gap: 8 }}>
+                  <i className="fa-solid fa-skull" style={{ fontSize: 52, color: '#c0601a' }}></i>
+                  <span style={{ fontSize: 10, color: 'rgba(192,96,26,0.5)', letterSpacing: '0.1em' }}>BOSS</span>
+                </div>
+
+                {/* 圖片下方漸層遮罩 */}
+                <div style={{ position: 'absolute', bottom: 0, left: 0, right: 0, height: 60, background: 'linear-gradient(transparent, rgba(28,18,8,0.85))', pointerEvents: 'none' }} />
+
+                {/* 圖片內 HP 角標 */}
+                <div style={{ position: 'absolute', top: 8, right: 8, background: 'rgba(226,75,74,0.9)', borderRadius: 6, padding: '2px 7px', display: 'flex', alignItems: 'center', gap: 4 }}>
+                  <i className="fa-solid fa-heart" style={{ fontSize: 8, color: '#fff' }}></i>
+                  <span style={{ fontSize: 10, color: '#fff', fontWeight: 600 }}>{100 - progress}%</span>
+                </div>
               </div>
-              {/* 光暈圈 */}
-              <div style={{ position: 'absolute', inset: -8, borderRadius: '50%', border: '1px solid rgba(192,96,26,0.25)', pointerEvents: 'none' }}></div>
             </div>
+
             {/* Boss 名稱 */}
-            <div style={{ marginTop: 14, textAlign: 'center', padding: '0 24px' }}>
-              <div style={{ fontSize: 9, color: '#BA7517', fontWeight: 600, letterSpacing: '0.12em', opacity: 0.9, marginBottom: 4 }}>本月共同挑戰</div>
-              <div style={{ fontSize: 18, fontWeight: 500, color: '#f5e8c8' }}>{boss.name}</div>
+            <div style={{ marginTop: 16, textAlign: 'center', padding: '0 24px' }}>
+              <div style={{ fontSize: 9, color: '#BA7517', fontWeight: 600, letterSpacing: '0.14em', opacity: 0.9, marginBottom: 5 }}>本月共同挑戰</div>
+              <div style={{ fontSize: 19, fontWeight: 500, color: '#f5e8c8', letterSpacing: '0.02em' }}>{boss.name}</div>
               {boss.description && (
-                <div style={{ fontSize: 11, color: 'rgba(245,232,200,0.45)', marginTop: 4, fontStyle: 'italic' }}>「{boss.description}」</div>
+                <div style={{ fontSize: 11, color: 'rgba(245,232,200,0.4)', marginTop: 5, fontStyle: 'italic' }}>「{boss.description}」</div>
               )}
             </div>
           </div>
 
-          {/* ── HP 區塊（在深色背景內） ── */}
-          <div style={{ margin: '0 16px 16px', background: 'rgba(255,255,255,0.05)', border: '0.5px solid rgba(255,255,255,0.1)', borderRadius: 12, padding: '12px 14px' }}>
+          {/* ── HP 區塊 ── */}
+          <div style={{ margin: '0 16px 16px', background: 'rgba(255,255,255,0.05)', border: '0.5px solid rgba(255,255,255,0.1)', borderRadius: 12, padding: '12px 14px', position: 'relative' }}>
             <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 10 }}>
               <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
                 <i className="fa-solid fa-heart" style={{ fontSize: 13, color: '#E24B4A' }}></i>
@@ -304,9 +388,10 @@ export default function ChallengePage() {
             {milestones.map((m, i) => {
               const unlocked = progress >= m.pct
               const active = !unlocked && (i === 0 || progress >= milestones[i - 1].pct)
+              const iconName = unlocked ? 'fa-check' : active ? MILESTONE_ICONS[i] : (m.pct === 100 ? 'fa-trophy' : 'fa-lock')
               return (
                 <div key={i} style={{
-                  borderRadius: 10, padding: '8px 4px', textAlign: 'center',
+                  borderRadius: 10, padding: '10px 4px 8px', textAlign: 'center',
                   background: unlocked ? '#fdfaf4' : active ? '#fff' : '#f8f5f0',
                   border: unlocked ? '0.5px solid #FAC775' : active ? '1.5px solid #E24B4A' : '0.5px solid #e8dfc8',
                   position: 'relative',
@@ -316,12 +401,20 @@ export default function ChallengePage() {
                       <span style={{ fontSize: 8, color: '#fff', fontWeight: 500 }}>進行中</span>
                     </div>
                   )}
-                  <div style={{ fontSize: 11, fontWeight: 500, color: unlocked ? '#854F0B' : active ? '#A32D2D' : '#B4B2A9', marginBottom: 4, marginTop: active ? 4 : 0 }}>
+                  <div style={{ fontSize: 11, fontWeight: 500, color: unlocked ? '#854F0B' : active ? '#A32D2D' : '#B4B2A9', marginBottom: 6, marginTop: active ? 4 : 0 }}>
                     {m.pct}%
                   </div>
-                  <i className={`fa-solid ${unlocked ? 'fa-check' : active ? 'fa-sword' : m.pct === 100 ? 'fa-trophy' : 'fa-lock'}`}
-                    style={{ fontSize: 16, color: unlocked ? '#BA7517' : active ? '#E24B4A' : '#B4B2A9' }}></i>
-                  <div style={{ fontSize: 9, color: unlocked ? '#854F0B' : active ? '#A32D2D' : '#B4B2A9', marginTop: 4, fontWeight: active || unlocked ? 500 : 400 }}>
+                  {/* icon 容器 — 有背景色 */}
+                  <div style={{
+                    width: 32, height: 32, borderRadius: 8, margin: '0 auto 6px',
+                    background: unlocked ? '#FAEEDA' : active ? '#FCEBEB' : '#f0ede8',
+                    border: `0.5px solid ${unlocked ? '#FAC775' : active ? '#F09595' : '#e0dcd4'}`,
+                    display: 'flex', alignItems: 'center', justifyContent: 'center',
+                  }}>
+                    <i className={`fa-solid ${iconName}`}
+                      style={{ fontSize: 14, color: unlocked ? '#BA7517' : active ? '#E24B4A' : '#C4BFB8' }}></i>
+                  </div>
+                  <div style={{ fontSize: 9, color: unlocked ? '#854F0B' : active ? '#A32D2D' : '#B4B2A9', fontWeight: active || unlocked ? 500 : 400 }}>
                     {unlocked ? '已解鎖' : active ? '攻略中' : m.pct === 100 ? '最終獎' : '未解鎖'}
                   </div>
                   {(unlocked || active) && m.reward && (
