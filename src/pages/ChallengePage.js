@@ -182,17 +182,34 @@ export default function ChallengePage() {
     const { data: bossData } = await supabase.from('boss_challenges').select('*').eq('is_active', true).single()
     if (bossData) {
       setBoss(bossData)
-      const [{ data: pData }, { data: recentData }] = await Promise.all([
-        supabase.from('boss_purchases')
-          .select('*, members(display_name, level, avatar_url)')
-          .eq('boss_id', bossData.id)
-          .order('amount', { ascending: false }),
-        supabase.from('boss_purchases')
-          .select('*, members(display_name)')
-          .eq('boss_id', bossData.id)
-          .order('created_at', { ascending: false })
-          .limit(5),
-      ])
+
+      // 用 SECURITY DEFINER RPC 繞過 RLS，才能讀到「所有人」的傷害紀錄
+      // （含他人 members 的 display_name/level/avatar_url）。
+      // 失敗時 fallback 回直接查詢（至少能顯示自己的紀錄）。
+      const { data: rpcData, error: rpcErr } = await supabase.rpc('get_boss_purchases_with_members', { p_boss_id: bossData.id })
+      let pData, recentData
+      if (!rpcErr && Array.isArray(rpcData)) {
+        // RPC 已按 amount 降序回傳 → 排行榜直接用
+        pData = rpcData
+        // 戰報：依 created_at 取最新 5 筆
+        recentData = [...rpcData]
+          .sort((a, b) => new Date(b.created_at) - new Date(a.created_at))
+          .slice(0, 5)
+      } else {
+        const [{ data: p1 }, { data: p2 }] = await Promise.all([
+          supabase.from('boss_purchases')
+            .select('*, members(display_name, level, avatar_url)')
+            .eq('boss_id', bossData.id)
+            .order('amount', { ascending: false }),
+          supabase.from('boss_purchases')
+            .select('*, members(display_name)')
+            .eq('boss_id', bossData.id)
+            .order('created_at', { ascending: false })
+            .limit(5),
+        ])
+        pData = p1
+        recentData = p2
+      }
       setPurchases(pData || [])
       setRecentPurchases(recentData || [])
 
