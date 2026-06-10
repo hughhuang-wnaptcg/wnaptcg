@@ -6,6 +6,7 @@ import { useSearchParams } from 'react-router-dom'
 import BottomNav from '../components/BottomNav'
 import { playSound } from '../lib/sounds'
 import { vibrate, VIBRATE } from '../lib/haptics'
+import { useToast } from '../components/Toast'
 
 const TIER_CONFIG = {
   general: {
@@ -189,6 +190,7 @@ const ORDER_STATUS = {
 
 export default function ShopPage() {
   const { member, setMember } = useAuth()
+  const toast = useToast()
   const [searchParams, setSearchParams] = useSearchParams()
 
   const [mainTab, setMainTab] = useState(searchParams.get('tab') === 'shop' ? 'shop' : 'live')
@@ -364,7 +366,7 @@ export default function ShopPage() {
     } catch (err) {
       playSound('error_system')
       vibrate(VIBRATE.error)
-      alert('下單失敗：' + err.message)
+      toast.error('下單失敗：' + err.message)
     }
     setCheckingOut(false)
   }
@@ -389,7 +391,7 @@ export default function ShopPage() {
       playSound('shop_redeem_success')
       vibrate(VIBRATE.success)
       await fetchShopData()
-    } catch (err) { playSound('error_system'); vibrate(VIBRATE.error); alert('兌換失敗：' + err.message) }
+    } catch (err) { playSound('error_system'); vibrate(VIBRATE.error); toast.error('兌換失敗：' + err.message) }
     setBuying(false)
   }
   async function handleRequestShipping() {
@@ -403,7 +405,7 @@ export default function ShopPage() {
       vibrate(VIBRATE.success)
       await fetchShopData()
       setTimeout(() => setRequestSuccess(false), 3000)
-    } catch (err) { playSound('error_system'); vibrate(VIBRATE.error); alert('申請失敗：' + err.message) }
+    } catch (err) { playSound('error_system'); vibrate(VIBRATE.error); toast.error('申請失敗：' + err.message) }
     setRequesting(false)
   }
   function toggleSelect(id) { setSelectedIds(prev => prev.includes(id) ? prev.filter(i => i !== id) : [...prev, id]) }
