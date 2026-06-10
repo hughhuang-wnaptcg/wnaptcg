@@ -2,201 +2,266 @@ import React, { useEffect, useState } from 'react'
 import { supabase, RARITY_COLORS } from '../lib/supabase'
 import { PokeballIcon, LevelBadge } from '../lib/pokeballs'
 
+// ── 等級會員卡主題（與 ProfilePage 一致）──
+const LEVEL_THEME = {
+  精靈球: { bg: 'linear-gradient(135deg,#FFFBF2,#FFF3D8)', border: '#F5E8C8', name: '#2D1A00', sub: '#A07040', accent: '#E07B00', glow: 'rgba(224,123,0,0.18)', dark: false },
+  超級球: { bg: 'linear-gradient(135deg,#EAF2FC,#D6E6F8)', border: '#AFCDEE', name: '#13355C', sub: '#4C6E96', accent: '#2F6FB5', glow: 'rgba(55,138,221,0.22)', dark: false },
+  高級球: { bg: 'linear-gradient(135deg,#FBF4E6,#F3E3C2)', border: '#E6C27A', name: '#3A2A0A', sub: '#7A5C2E', accent: '#B07A1E', glow: 'rgba(176,122,30,0.22)', dark: false },
+  豪華球: { bg: 'linear-gradient(135deg,#2A1B10,#3A2415)', border: '#BA7517', name: '#F7E4C0', sub: '#C9A06A', accent: '#EF9F27', glow: 'rgba(239,159,39,0.30)', dark: true },
+  貴重球: { bg: 'linear-gradient(135deg,#2A1414,#3B1C1C)', border: '#A32D2D', name: '#F7D6D0', sub: '#C98A82', accent: '#E24B4A', glow: 'rgba(226,75,74,0.30)', dark: true },
+  究極球: { bg: 'linear-gradient(135deg,#10204A,#1B2F66)', border: '#4466DD', name: '#CFE0FF', sub: '#8FA8DD', accent: '#6E9BFF', glow: 'rgba(110,155,255,0.32)', dark: true },
+  大師球: { bg: 'linear-gradient(135deg,#1A1A1A,#2A2030)', border: '#B8860B', name: '#F5D060', sub: '#B6A06A', accent: '#F5D060', glow: 'rgba(245,208,96,0.38)', dark: true },
+}
+function levelTheme(level) {
+  return LEVEL_THEME[level] || LEVEL_THEME['精靈球']
+}
+
+// ── 展示卡稀有度光暈（與 ProfilePage 一致）──
+const RARITY_GLOW = {
+  UR:    { kind: 'solid',   color: '#F5C518', ring: '#F5C518' },
+  HR:    { kind: 'rainbow', color: '#ff5e6c', ring: '#ff9a3d' },
+  SSR:   { kind: 'rainbow', color: '#ff5e6c', ring: '#ff9a3d' },
+  SAR:   { kind: 'solid',   color: '#C9A227', ring: '#1a1a1a' },
+  CSR:   { kind: 'solid',   color: '#C9A227', ring: '#1a1a1a' },
+  SR:    { kind: 'solid',   color: '#FFFFFF', ring: '#E8E8E8' },
+  AR:    { kind: 'solid',   color: '#FFFFFF', ring: '#E8E8E8' },
+  CHR:   { kind: 'solid',   color: '#FFFFFF', ring: '#E8E8E8' },
+  PROMO: { kind: 'solid',   color: '#1a1a1a', ring: '#1a1a1a' },
+  Other: { kind: 'solid',   color: '#1a1a1a', ring: '#1a1a1a' },
+}
+function rarityGlow(rarity) {
+  return RARITY_GLOW[rarity] || RARITY_GLOW.Other
+}
+
 export default function LeaderboardSheet({ onClose, currentMemberId }) {
-const [members, setMembers] = useState([])
-const [loading, setLoading] = useState(true)
-const [selected, setSelected] = useState(null) // 點進去的會員
-const [showcaseCards, setShowcaseCards] = useState([])
-const [showcaseLoading, setShowcaseLoading] = useState(false)
+  const [members, setMembers] = useState([])
+  const [loading, setLoading] = useState(true)
+  const [selected, setSelected] = useState(null) // 點進去的會員
+  const [showcaseCards, setShowcaseCards] = useState([])
+  const [showcaseLoading, setShowcaseLoading] = useState(false)
 
-useEffect(() => { fetchLeaderboard() }, [])
+  useEffect(() => { fetchLeaderboard() }, [])
 
-async function fetchLeaderboard() {
-const { data } = await supabase
-.from('members')
-.select('id, display_name, level, points, avatar_url, member_no, showcase_cards, created_at')
-.eq('is_hidden', false)
-.order('points', { ascending: false })
-.limit(50)
-setMembers(data || [])
-setLoading(false)
-}
+  async function fetchLeaderboard() {
+    const { data } = await supabase
+      .from('members')
+      .select('id, display_name, level, points, avatar_url, member_no, showcase_cards, created_at')
+      .eq('is_hidden', false)
+      .order('points', { ascending: false })
+      .limit(50)
+    setMembers(data || [])
+    setLoading(false)
+  }
 
-async function openProfile(member) {
-setSelected(member)
-setShowcaseCards([])
-if (!member.showcase_cards?.length) return
-setShowcaseLoading(true)
-const { data } = await supabase
-.from('card_owners')
-.select('id, cards(id, name, rarity, series, image_url)')
-.in('id', member.showcase_cards)
-// 保持順序
-const ordered = member.showcase_cards.map(coid => data?.find(d => d.id === coid) || null)
-setShowcaseCards(ordered)
-setShowcaseLoading(false)
-}
+  async function openProfile(member) {
+    setSelected(member)
+    setShowcaseCards([])
+    if (!member.showcase_cards?.length) return
+    setShowcaseLoading(true)
+    const { data } = await supabase
+      .from('card_owners')
+      .select('id, cards(id, name, rarity, series, image_url)')
+      .in('id', member.showcase_cards)
+    // 保持順序
+    const ordered = member.showcase_cards.map(coid => data?.find(d => d.id === coid) || null)
+    setShowcaseCards(ordered)
+    setShowcaseLoading(false)
+  }
 
-const medalColor = (i) => {
-if (i === 0) return { bg: 'linear-gradient(135deg,#FFD700,#FFA500)', color: '#7A4A00' }
-if (i === 1) return { bg: 'linear-gradient(135deg,#C0C0C0,#A0A0A0)', color: '#444' }
-if (i === 2) return { bg: 'linear-gradient(135deg,#CD7F32,#A0522D)', color: '#fff' }
-return { bg: '#f5f0e8', color: '#999' }
-}
+  const medalColor = (i) => {
+    if (i === 0) return { bg: 'linear-gradient(135deg,#FFD700,#FFA500)', color: '#7A4A00' }
+    if (i === 1) return { bg: 'linear-gradient(135deg,#C0C0C0,#A0A0A0)', color: '#444' }
+    if (i === 2) return { bg: 'linear-gradient(135deg,#CD7F32,#A0522D)', color: '#fff' }
+    return { bg: '#f5f0e8', color: '#999' }
+  }
 
-return (
-<>
-{/* 排行榜 Sheet */}
-<div style={{ width: 36, height: 4, borderRadius: 2, background: '#f0e8d0', margin: '12px auto 0', flexShrink: 0 }} />
-<div style={{ padding: '12px 20px 8px', borderBottom: '0.5px solid #f5f0e8', display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexShrink: 0 }}>
-<div style={{ fontSize: 16, fontWeight: 800, color: '#2D1A00', display: 'flex', alignItems: 'center', gap: 7 }}>
-<i className="fa-solid fa-ranking-star" style={{ fontSize: 14, color: '#E07B00' }}></i>
-積分排行榜
-</div>
-<span onClick={onClose} style={{ fontSize: 20, color: '#ccc', cursor: 'pointer', lineHeight: 1 }}>✕</span>
-</div>
+  const theme = selected ? levelTheme(selected.level) : null
 
-<div style={{ overflowY: 'auto', flex: 1, padding: '8px 0 32px' }}>
-{loading ? (
-<div style={{ textAlign: 'center', padding: 40, color: '#bbb', fontSize: 14 }}>載入中...</div>
-) : members.length === 0 ? (
-<div style={{ textAlign: 'center', padding: 40, color: '#bbb', fontSize: 14 }}>尚無資料</div>
-) : members.map((m, i) => {
-const medal = medalColor(i)
-const isMe = m.id === currentMemberId
-return (
-<div
-key={m.id}
-onClick={() => openProfile(m)}
-style={{
-display: 'flex', alignItems: 'center', gap: 12,
-padding: '11px 20px',
-background: isMe ? 'linear-gradient(135deg,#FFF8EE,#FFFBF2)' : '#fff',
-borderBottom: '0.5px solid #f5f0e8',
-cursor: 'pointer',
-borderLeft: isMe ? '3px solid #E07B00' : '3px solid transparent',
-}}>
-{/* 名次 */}
-<div style={{ width: 28, height: 28, borderRadius: 8, background: medal.bg, display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
-{i === 0 ? <i className="fa-solid fa-trophy" style={{ fontSize: 12, color: '#7A4A00' }}></i>
-: i === 1 ? <i className="fa-solid fa-medal" style={{ fontSize: 12, color: '#444' }}></i>
-: i === 2 ? <i className="fa-solid fa-award" style={{ fontSize: 12, color: '#fff' }}></i>
-: <span style={{ fontSize: 11, fontWeight: 700, color: medal.color }}>{i + 1}</span>}
-</div>
+  return (
+    <>
+      <style>{`
+        @keyframes lbMemberCardGlow{0%,100%{box-shadow:0 6px 22px rgba(0,0,0,0.10)}50%{box-shadow:0 8px 30px var(--mc-glow)}}
+        @keyframes lbCardGlowSolidStrong{0%,100%{box-shadow:0 0 0 1px var(--cg-ring),0 0 10px 1px var(--cg-color),0 4px 14px rgba(0,0,0,0.14)}50%{box-shadow:0 0 0 1px var(--cg-ring),0 0 20px 5px var(--cg-color),0 4px 16px rgba(0,0,0,0.16)}}
+        @keyframes lbCardGlowSolidSoft{0%,100%{box-shadow:0 0 0 1px var(--cg-ring),0 0 6px 0px var(--cg-color),0 4px 12px rgba(0,0,0,0.10)}50%{box-shadow:0 0 0 1px var(--cg-ring),0 0 12px 2px var(--cg-color),0 4px 14px rgba(0,0,0,0.12)}}
+        @keyframes lbCardGlowRainbow{0%{box-shadow:0 0 14px 3px rgba(255,94,108,0.65),0 4px 14px rgba(0,0,0,0.15)}25%{box-shadow:0 0 14px 3px rgba(255,206,86,0.65),0 4px 14px rgba(0,0,0,0.15)}50%{box-shadow:0 0 14px 3px rgba(120,200,80,0.65),0 4px 14px rgba(0,0,0,0.15)}75%{box-shadow:0 0 14px 3px rgba(110,155,255,0.65),0 4px 14px rgba(0,0,0,0.15)}100%{box-shadow:0 0 14px 3px rgba(255,94,108,0.65),0 4px 14px rgba(0,0,0,0.15)}}
+      `}</style>
 
-{/* 頭像 */}
-{m.avatar_url
-? <img src={m.avatar_url} alt="" style={{ width: 38, height: 38, borderRadius: '50%', objectFit: 'cover', border: '1.5px solid #FAC775', flexShrink: 0 }} />
-: <div style={{ width: 38, height: 38, borderRadius: '50%', background: 'linear-gradient(135deg,#FAEEDA,#FFF3D0)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 14, fontWeight: 700, color: '#633806', border: '1.5px solid #FAC775', flexShrink: 0 }}>
-{m.display_name?.[0]?.toUpperCase()}
-</div>
-}
+      {/* 排行榜 Sheet */}
+      <div style={{ width: 36, height: 4, borderRadius: 2, background: '#f0e8d0', margin: '12px auto 0', flexShrink: 0 }} />
+      <div style={{ padding: '12px 20px 8px', borderBottom: '0.5px solid #f5f0e8', display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexShrink: 0 }}>
+        <div style={{ fontSize: 16, fontWeight: 800, color: '#2D1A00', display: 'flex', alignItems: 'center', gap: 7 }}>
+          <i className="fa-solid fa-ranking-star" style={{ fontSize: 14, color: '#E07B00' }}></i>
+          積分排行榜
+        </div>
+        <span onClick={onClose} style={{ fontSize: 20, color: '#ccc', cursor: 'pointer', lineHeight: 1 }}>✕</span>
+      </div>
 
-{/* 名稱 & 等級 */}
-<div style={{ flex: 1, minWidth: 0 }}>
-<div style={{ display: 'flex', alignItems: 'center', gap: 6, marginBottom: 3 }}>
-<span style={{ fontSize: 13, fontWeight: 600, color: '#2D1A00', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{m.display_name}</span>
-{isMe && <span style={{ fontSize: 9, background: '#FFF3E0', color: '#E07B00', padding: '1px 6px', borderRadius: 20, fontWeight: 700, flexShrink: 0 }}>我</span>}
-</div>
-<LevelBadge level={m.level} size='sm' />
-</div>
+      <div style={{ overflowY: 'auto', flex: 1, padding: '8px 0 32px' }}>
+        {loading ? (
+          <div style={{ textAlign: 'center', padding: 40, color: '#bbb', fontSize: 14 }}>載入中...</div>
+        ) : members.length === 0 ? (
+          <div style={{ textAlign: 'center', padding: 40, color: '#bbb', fontSize: 14 }}>尚無資料</div>
+        ) : members.map((m, i) => {
+          const medal = medalColor(i)
+          const isMe = m.id === currentMemberId
+          return (
+            <div
+              key={m.id}
+              onClick={() => openProfile(m)}
+              style={{
+                display: 'flex', alignItems: 'center', gap: 12,
+                padding: '11px 20px',
+                background: isMe ? 'linear-gradient(135deg,#FFF8EE,#FFFBF2)' : '#fff',
+                borderBottom: '0.5px solid #f5f0e8',
+                cursor: 'pointer',
+                borderLeft: isMe ? '3px solid #E07B00' : '3px solid transparent',
+              }}>
+              {/* 名次 */}
+              <div style={{ width: 28, height: 28, borderRadius: 8, background: medal.bg, display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
+                {i === 0 ? <i className="fa-solid fa-trophy" style={{ fontSize: 12, color: '#7A4A00' }}></i>
+                  : i === 1 ? <i className="fa-solid fa-medal" style={{ fontSize: 12, color: '#444' }}></i>
+                  : i === 2 ? <i className="fa-solid fa-award" style={{ fontSize: 12, color: '#fff' }}></i>
+                  : <span style={{ fontSize: 11, fontWeight: 700, color: medal.color }}>{i + 1}</span>}
+              </div>
 
-{/* 積分 */}
-<div style={{ textAlign: 'right', flexShrink: 0 }}>
-<div style={{ fontSize: 15, fontWeight: 800, color: '#E07B00' }}>{m.points?.toLocaleString()}</div>
-<div style={{ fontSize: 9, color: '#bbb' }}>積分</div>
-</div>
+              {/* 頭像 */}
+              {m.avatar_url
+                ? <img src={m.avatar_url} alt="" style={{ width: 38, height: 38, borderRadius: '50%', objectFit: 'cover', border: '1.5px solid #FAC775', flexShrink: 0 }} />
+                : <div style={{ width: 38, height: 38, borderRadius: '50%', background: 'linear-gradient(135deg,#FAEEDA,#FFF3D0)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 14, fontWeight: 700, color: '#633806', border: '1.5px solid #FAC775', flexShrink: 0 }}>
+                    {m.display_name?.[0]?.toUpperCase()}
+                  </div>
+              }
 
-<i className="fa-solid fa-chevron-right" style={{ fontSize: 10, color: '#ddd', flexShrink: 0 }}></i>
-</div>
-)
-})}
-</div>
+              {/* 名稱 & 等級 */}
+              <div style={{ flex: 1, minWidth: 0 }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: 6, marginBottom: 3 }}>
+                  <span style={{ fontSize: 13, fontWeight: 600, color: '#2D1A00', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{m.display_name}</span>
+                  {isMe && <span style={{ fontSize: 9, background: '#FFF3E0', color: '#E07B00', padding: '1px 6px', borderRadius: 20, fontWeight: 700, flexShrink: 0 }}>我</span>}
+                </div>
+                <LevelBadge level={m.level} size='sm' />
+              </div>
 
-{/* 會員主頁 Sheet（疊在排行榜上） */}
-{selected && (
-<div style={{ position: 'absolute', inset: 0, background: '#fff', borderRadius: '16px 16px 0 0', display: 'flex', flexDirection: 'column', zIndex: 10 }}>
-<div style={{ width: 36, height: 4, borderRadius: 2, background: '#f0e8d0', margin: '12px auto 0', flexShrink: 0 }} />
-<div style={{ padding: '12px 20px 10px', borderBottom: '0.5px solid #f5f0e8', display: 'flex', alignItems: 'center', gap: 10, flexShrink: 0 }}>
-<button onClick={() => setSelected(null)} style={{ width: 28, height: 28, borderRadius: '50%', border: '0.5px solid #f0e8d0', background: '#f8f5f0', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-<i className="fa-solid fa-arrow-left" style={{ fontSize: 11, color: '#888' }}></i>
-</button>
-<div style={{ fontSize: 15, fontWeight: 700, color: '#2D1A00' }}>會員主頁</div>
-</div>
+              {/* 積分 */}
+              <div style={{ textAlign: 'right', flexShrink: 0 }}>
+                <div style={{ fontSize: 15, fontWeight: 800, color: '#E07B00' }}>{m.points?.toLocaleString()}</div>
+                <div style={{ fontSize: 9, color: '#bbb' }}>積分</div>
+              </div>
 
-<div style={{ overflowY: 'auto', flex: 1, padding: '20px 20px 32px' }}>
-{/* 會員資訊 */}
-<div style={{ display: 'flex', alignItems: 'center', gap: 14, padding: '14px 16px', background: 'linear-gradient(135deg,#FFFBF2,#FFF5DC)', borderRadius: 16, border: '0.5px solid #F5E8C8', marginBottom: 20 }}>
-{selected.avatar_url
-? <img src={selected.avatar_url} alt="" style={{ width: 56, height: 56, borderRadius: '50%', objectFit: 'cover', border: '2px solid #FAC775', flexShrink: 0 }} />
-: <div style={{ width: 56, height: 56, borderRadius: '50%', background: 'linear-gradient(135deg,#FAEEDA,#FFF3D0)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 20, fontWeight: 700, color: '#633806', border: '2px solid #FAC775', flexShrink: 0 }}>
-{selected.display_name?.[0]?.toUpperCase()}
-</div>
-}
-<div style={{ flex: 1 }}>
-<div style={{ fontSize: 17, fontWeight: 800, color: '#2D1A00', marginBottom: 5 }}>{selected.display_name}</div>
-<div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 4 }}>
-<LevelBadge level={selected.level} size='md' />
-<span style={{ fontSize: 11, color: '#bbb' }}>#{String(selected.member_no || '0').padStart(4, '0')}</span>
-</div>
-<div style={{ fontSize: 10, color: '#bbb', display: 'flex', alignItems: 'center', gap: 3 }}>
-<i className="fa-regular fa-clock" style={{ fontSize: 9 }}></i>
-加入於 {new Date(selected.created_at).toLocaleDateString('zh-TW')}
-</div>
-</div>
-<div style={{ textAlign: 'right' }}>
-<div style={{ fontSize: 20, fontWeight: 800, color: '#E07B00' }}>{selected.points?.toLocaleString()}</div>
-<div style={{ fontSize: 10, color: '#bbb' }}>積分</div>
-</div>
-</div>
+              <i className="fa-solid fa-chevron-right" style={{ fontSize: 10, color: '#ddd', flexShrink: 0 }}></i>
+            </div>
+          )
+        })}
+      </div>
 
-{/* 展示卡 */}
-<div style={{ fontSize: 14, fontWeight: 800, color: '#2D1A00', display: 'flex', alignItems: 'center', gap: 6, marginBottom: 12 }}>
-<span style={{ width: 26, height: 26, borderRadius: 10, background: 'linear-gradient(135deg,#BA7517,#EF9F27)', display: 'inline-flex', alignItems: 'center', justifyContent: 'center', color: '#fff', fontSize: 10 }}>
-<i className="fa-solid fa-id-card"></i>
-</span>
-展示卡
-</div>
+      {/* 會員主頁 Sheet（疊在排行榜上） */}
+      {selected && (
+        <div style={{ position: 'absolute', inset: 0, background: '#fff', borderRadius: '16px 16px 0 0', display: 'flex', flexDirection: 'column', zIndex: 10 }}>
+          <div style={{ width: 36, height: 4, borderRadius: 2, background: '#f0e8d0', margin: '12px auto 0', flexShrink: 0 }} />
+          <div style={{ padding: '12px 20px 10px', borderBottom: '0.5px solid #f5f0e8', display: 'flex', alignItems: 'center', gap: 10, flexShrink: 0 }}>
+            <button onClick={() => setSelected(null)} style={{ width: 28, height: 28, borderRadius: '50%', border: '0.5px solid #f0e8d0', background: '#f8f5f0', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+              <i className="fa-solid fa-arrow-left" style={{ fontSize: 11, color: '#888' }}></i>
+            </button>
+            <div style={{ fontSize: 15, fontWeight: 700, color: '#2D1A00' }}>會員主頁</div>
+          </div>
 
-{showcaseLoading ? (
-<div style={{ textAlign: 'center', padding: '24px 0', color: '#bbb', fontSize: 13 }}>載入中...</div>
-) : !selected.showcase_cards?.length ? (
-<div style={{ textAlign: 'center', padding: '32px 0', color: '#ccc', fontSize: 13 }}>
-<i className="fa-solid fa-id-card" style={{ fontSize: 32, display: 'block', marginBottom: 8, opacity: 0.3 }}></i>
-尚未設置展示卡
-</div>
-) : (
-<div style={{ display: 'grid', gridTemplateColumns: 'repeat(3,1fr)', gap: 10 }}>
-{[0,1,2].map(i => {
-const slot = showcaseCards[i]
-const rc = slot?.cards ? (RARITY_COLORS[slot.cards.rarity] || RARITY_COLORS.Other) : null
-return (
-<div key={i}>
-<div style={{ aspectRatio: '3/4', borderRadius: 14, overflow: 'hidden', background: slot ? '#fff' : '#f5f0e8', border: slot ? 'none' : '2px dashed #F5E8C8', boxShadow: slot ? '0 4px 14px rgba(186,117,23,.12)' : 'none', display: 'flex', alignItems: 'center', justifyContent: 'center', position: 'relative' }}>
-{slot?.cards?.image_url
-? <img src={slot.cards.image_url} alt="" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
-: slot
-? <i className="fa-solid fa-id-card" style={{ fontSize: 28, color: '#D4A94A', opacity: 0.4 }}></i>
-: <i className="fa-solid fa-minus" style={{ fontSize: 14, color: '#D4A94A', opacity: 0.3 }}></i>
-}
-{slot?.cards && rc && (
-<span style={{ position: 'absolute', top: 5, left: 5, fontSize: 7, fontWeight: 700, padding: '2px 5px', borderRadius: 20, background: rc.bg, color: rc.color }}>{slot.cards.rarity}</span>
-)}
-</div>
-{slot?.cards && (
-<div style={{ marginTop: 5 }}>
-<div style={{ fontSize: 9, color: '#7a5c2e', fontWeight: 600, textAlign: 'center', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{slot.cards.name}</div>
-<div style={{ fontSize: 8, color: '#bbb', textAlign: 'center', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{slot.cards.series}</div>
-</div>
-)}
-</div>
-)
-})}
-</div>
-)}
-</div>
-</div>
-)}
-</>
-)
+          <div style={{ overflowY: 'auto', flex: 1, padding: '20px 20px 32px' }}>
+            {/* 會員資訊（等級主題卡） */}
+            <div style={{ '--mc-glow': theme.glow, position: 'relative', overflow: 'hidden', borderRadius: 16, padding: '16px 18px', background: theme.bg, border: `1.5px solid ${theme.border}`, marginBottom: 20, animation: 'lbMemberCardGlow 3.2s ease-in-out infinite' }}>
+              <div style={{ position: 'absolute', top: -50, right: -40, width: 150, height: 150, borderRadius: '50%', background: `radial-gradient(circle, ${theme.glow} 0%, transparent 68%)`, pointerEvents: 'none' }} />
+              <div style={{ position: 'absolute', right: -10, bottom: -18, opacity: theme.dark ? 0.16 : 0.10, transform: 'rotate(-8deg)', pointerEvents: 'none' }}>
+                <PokeballIcon level={selected.level} size={92} />
+              </div>
+
+              <div style={{ position: 'relative', display: 'flex', alignItems: 'center', gap: 14 }}>
+                <div style={{ position: 'relative', flexShrink: 0 }}>
+                  <div style={{ width: 58, height: 58, borderRadius: '50%', overflow: 'hidden', border: `2px solid ${theme.accent}`, display: 'flex', alignItems: 'center', justifyContent: 'center', background: theme.dark ? 'rgba(255,255,255,0.06)' : '#FAEEDA', boxShadow: `0 0 0 4px ${theme.glow}` }}>
+                    {selected.avatar_url
+                      ? <img src={selected.avatar_url} alt="" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+                      : <span style={{ fontSize: 22, fontWeight: 700, color: theme.dark ? theme.name : '#633806' }}>{selected.display_name?.[0]?.toUpperCase()}</span>
+                    }
+                  </div>
+                  <div style={{ position: 'absolute', bottom: -2, right: -2, width: 24, height: 24, borderRadius: '50%', background: theme.dark ? '#000' : '#fff', display: 'flex', alignItems: 'center', justifyContent: 'center', boxShadow: '0 1px 4px rgba(0,0,0,0.25)' }}>
+                    <PokeballIcon level={selected.level} size={20} />
+                  </div>
+                </div>
+
+                <div style={{ flex: 1, minWidth: 0 }}>
+                  <div style={{ fontSize: 17, fontWeight: 800, color: theme.name, marginBottom: 5, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{selected.display_name}</div>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: 6, marginBottom: 5 }}>
+                    <span style={{ display: 'inline-flex', alignItems: 'center', gap: 4, fontSize: 11, fontWeight: 700, color: theme.accent, background: theme.dark ? 'rgba(255,255,255,0.08)' : 'rgba(255,255,255,0.6)', border: `0.5px solid ${theme.accent}55`, borderRadius: 99, padding: '2px 9px 2px 6px' }}>
+                      <PokeballIcon level={selected.level} size={14} />
+                      {selected.level}
+                    </span>
+                    <span style={{ fontSize: 11, color: theme.sub }}>#{String(selected.member_no || '0').padStart(4, '0')}</span>
+                  </div>
+                  <div style={{ fontSize: 10, color: theme.sub, display: 'flex', alignItems: 'center', gap: 3 }}>
+                    <i className="fa-regular fa-clock" style={{ fontSize: 9 }}></i>
+                    加入於 {new Date(selected.created_at).toLocaleDateString('zh-TW')}
+                  </div>
+                </div>
+
+                <div style={{ textAlign: 'right', flexShrink: 0 }}>
+                  <div style={{ fontSize: 20, fontWeight: 900, color: theme.accent, letterSpacing: '-0.5px', lineHeight: 1.1 }}>{selected.points?.toLocaleString()}</div>
+                  <div style={{ fontSize: 10, color: theme.sub, marginTop: 2 }}>積分</div>
+                </div>
+              </div>
+            </div>
+
+            {/* 展示卡 */}
+            <div style={{ fontSize: 14, fontWeight: 800, color: '#2D1A00', display: 'flex', alignItems: 'center', gap: 6, marginBottom: 12 }}>
+              <span style={{ width: 26, height: 26, borderRadius: 10, background: 'linear-gradient(135deg,#BA7517,#EF9F27)', display: 'inline-flex', alignItems: 'center', justifyContent: 'center', color: '#fff', fontSize: 10 }}>
+                <i className="fa-solid fa-id-card"></i>
+              </span>
+              展示卡
+            </div>
+
+            {showcaseLoading ? (
+              <div style={{ textAlign: 'center', padding: '24px 0', color: '#bbb', fontSize: 13 }}>載入中...</div>
+            ) : !selected.showcase_cards?.length ? (
+              <div style={{ textAlign: 'center', padding: '32px 0', color: '#ccc', fontSize: 13 }}>
+                <i className="fa-solid fa-id-card" style={{ fontSize: 32, display: 'block', marginBottom: 8, opacity: 0.3 }}></i>
+                尚未設置展示卡
+              </div>
+            ) : (
+              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3,1fr)', gap: 10 }}>
+                {[0,1,2].map(i => {
+                  const slot = showcaseCards[i]
+                  const rc = slot?.cards ? (RARITY_COLORS[slot.cards.rarity] || RARITY_COLORS.Other) : null
+                  const glow = slot?.cards ? rarityGlow(slot.cards.rarity) : null
+                  const isStrongGlow = slot?.cards ? ['UR', 'SAR', 'CSR'].includes(slot.cards.rarity) : false
+                  const glowAnim = glow
+                    ? (glow.kind === 'rainbow'
+                        ? 'lbCardGlowRainbow 4s linear infinite'
+                        : `${isStrongGlow ? 'lbCardGlowSolidStrong' : 'lbCardGlowSolidSoft'} 2.6s ease-in-out infinite`)
+                    : undefined
+                  const glowVars = glow && glow.kind !== 'rainbow' ? { '--cg-color': glow.color, '--cg-ring': glow.ring } : {}
+                  return (
+                    <div key={i}>
+                      <div style={{ ...glowVars, aspectRatio: '3/4', borderRadius: 14, overflow: 'hidden', background: slot ? '#fff' : '#f5f0e8', border: slot ? 'none' : '2px dashed #F5E8C8', boxShadow: slot && !glowAnim ? '0 4px 14px rgba(186,117,23,.12)' : 'none', animation: glowAnim, display: 'flex', alignItems: 'center', justifyContent: 'center', position: 'relative' }}>
+                        {slot?.cards?.image_url
+                          ? <img src={slot.cards.image_url} alt="" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+                          : slot
+                            ? <i className="fa-solid fa-id-card" style={{ fontSize: 28, color: '#D4A94A', opacity: 0.4 }}></i>
+                            : <i className="fa-solid fa-minus" style={{ fontSize: 14, color: '#D4A94A', opacity: 0.3 }}></i>
+                        }
+                        {slot?.cards && rc && (
+                          <span style={{ position: 'absolute', top: 5, left: 5, fontSize: 7, fontWeight: 700, padding: '2px 5px', borderRadius: 20, background: rc.bg, color: rc.color }}>{slot.cards.rarity}</span>
+                        )}
+                      </div>
+                      {slot?.cards && (
+                        <div style={{ marginTop: 5 }}>
+                          <div style={{ fontSize: 9, color: '#7a5c2e', fontWeight: 600, textAlign: 'center', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{slot.cards.name}</div>
+                          <div style={{ fontSize: 8, color: '#bbb', textAlign: 'center', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{slot.cards.series}</div>
+                        </div>
+                      )}
+                    </div>
+                  )
+                })}
+              </div>
+            )}
+          </div>
+        </div>
+      )}
+    </>
+  )
 }
