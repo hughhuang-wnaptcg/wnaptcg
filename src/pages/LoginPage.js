@@ -1,6 +1,8 @@
+// src/pages/LoginPage.js
 import React, { useState, useEffect } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { supabase } from '../lib/supabase'
+import { playSound } from '../lib/sounds'
 
 const LIFF_ID = '2010232634-k2C4gSOg'
 const hasLiffCallback = () => {
@@ -60,6 +62,7 @@ export default function LoginPage() {
   }, [])
 
   async function handleLineLogin() {
+    playSound('button_tap')
     setLoading(true)
     setError('')
     try {
@@ -74,6 +77,7 @@ export default function LoginPage() {
     } catch (err) {
       console.error(err)
       setError('LINE 登入失敗：' + err.message)
+      playSound('error_system')
     }
     setLoading(false)
   }
@@ -112,10 +116,12 @@ export default function LoginPage() {
           }).eq('id', user.id)
         }
       }
+      playSound('order_success')
       navigate('/')
     } catch (err) {
       console.error(err)
       setError('LINE 登入失敗：' + err.message)
+      playSound('error_system')
     }
     setLoading(false)
   }
