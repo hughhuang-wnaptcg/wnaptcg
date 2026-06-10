@@ -1,6 +1,6 @@
 // src/App.js
 import React, { useState, useEffect } from 'react'
-import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom'
+import { BrowserRouter, Routes, Route, Navigate, useLocation } from 'react-router-dom'
 import { AuthProvider, useAuth } from './hooks/useAuth'
 import LoginPage from './pages/LoginPage'
 import HomePage from './pages/HomePage'
@@ -11,6 +11,7 @@ import ShopPage from './pages/ShopPage'
 import WelcomeOverlay from './components/WelcomeOverlay'
 import { InteractionFXStyles } from './components/InteractionFX'
 import { ToastProvider } from './components/Toast'
+import PageTransition from './components/PageTransition'
 
 function AppLoader() {
   return (
@@ -80,21 +81,31 @@ function PrivateRoute({ children }) {
   )
 }
 
+// 路由內容抽成內部元件，才能用 useLocation 拿 pathname 當轉場 key
+function AppRoutes() {
+  const location = useLocation()
+  return (
+    <PageTransition routeKey={location.pathname}>
+      <Routes location={location}>
+        <Route path="/login" element={<LoginPage />} />
+        <Route path="/" element={<PrivateRoute><HomePage /></PrivateRoute>} />
+        <Route path="/wall" element={<PrivateRoute><WallPage /></PrivateRoute>} />
+        <Route path="/shop" element={<PrivateRoute><ShopPage /></PrivateRoute>} />
+        <Route path="/challenge" element={<PrivateRoute><ChallengePage /></PrivateRoute>} />
+        <Route path="/profile" element={<PrivateRoute><ProfilePage /></PrivateRoute>} />
+        <Route path="*" element={<Navigate to="/" replace />} />
+      </Routes>
+    </PageTransition>
+  )
+}
+
 export default function App() {
   return (
     <BrowserRouter>
       <ToastProvider>
         <AuthProvider>
           <InteractionFXStyles />
-          <Routes>
-            <Route path="/login" element={<LoginPage />} />
-            <Route path="/" element={<PrivateRoute><HomePage /></PrivateRoute>} />
-            <Route path="/wall" element={<PrivateRoute><WallPage /></PrivateRoute>} />
-            <Route path="/shop" element={<PrivateRoute><ShopPage /></PrivateRoute>} />
-            <Route path="/challenge" element={<PrivateRoute><ChallengePage /></PrivateRoute>} />
-            <Route path="/profile" element={<PrivateRoute><ProfilePage /></PrivateRoute>} />
-            <Route path="*" element={<Navigate to="/" replace />} />
-          </Routes>
+          <AppRoutes />
         </AuthProvider>
       </ToastProvider>
     </BrowserRouter>
