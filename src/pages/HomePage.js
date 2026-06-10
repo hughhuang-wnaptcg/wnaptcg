@@ -1,7 +1,7 @@
 // src/pages/HomePage.js
 import React, { useEffect, useState, useRef, useCallback } from 'react'
 import { useNavigate } from 'react-router-dom'
-import { supabase, LEVELS } from '../lib/supabase'
+import { supabase, getLevel } from '../lib/supabase'
 import { useAuth } from '../hooks/useAuth'
 import { PokeballIcon } from '../lib/pokeballs'
 import BottomNav from '../components/BottomNav'
@@ -11,6 +11,46 @@ import { playSound } from '../lib/sounds'
 import CountUp from '../components/CountUp'
 
 const CDN = 'https://cdn.jsdelivr.net/gh/duiker101/pokemon-type-svg-icons@master/icons'
+
+// 留言板：等級主題色（與 ProfilePage LEVEL_THEME 一致）
+const BOARD_LEVEL_THEME = {
+  '精靈球': { c: '#9A1F1F', bg: '#FFE3E3' },
+  '超級球': { c: '#1A4A7A', bg: '#D6E6F8' },
+  '高級球': { c: '#5A4A0A', bg: '#F5D04A' },
+  '豪華球': { c: '#F5D060', bg: '#3A2A1A' },
+  '貴重球': { c: '#F5C0C0', bg: '#3A1A1A' },
+  '究極球': { c: '#A0C8F0', bg: '#152540' },
+  '大師球': { c: '#F5D060', bg: '#1A1A1A' },
+}
+// 高級球以上（每日 3 則）
+const BOARD_VIP_LEVELS = ['高級球', '豪華球', '貴重球', '究極球', '大師球']
+
+function boardLevelTheme(level) {
+  return BOARD_LEVEL_THEME[level] || BOARD_LEVEL_THEME['精靈球']
+}
+
+// 留言時間顯示（相對時間）
+function boardTimeAgo(iso) {
+  const diff = Date.now() - new Date(iso).getTime()
+  const min = Math.floor(diff / 60000)
+  if (min < 1) return '剛剛'
+  if (min < 60) return `${min} 分鐘前`
+  const hr = Math.floor(min / 60)
+  if (hr < 24) return `${hr} 小時前`
+  const day = Math.floor(hr / 24)
+  return `${day} 天前`
+}
+
+// 台灣時間當日 00:00 的 ISO（用於查當日留言數）
+function taiwanTodayStartISO() {
+  const now = new Date()
+  // 台灣 UTC+8
+  const tw = new Date(now.getTime() + 8 * 3600000)
+  const y = tw.getUTCFullYear(), m = tw.getUTCMonth(), d = tw.getUTCDate()
+  // 當日 00:00 (台灣) 轉回 UTC
+  const startUTC = Date.UTC(y, m, d, 0, 0, 0) - 8 * 3600000
+  return new Date(startUTC).toISOString()
+}
 
 const TYPE_BY_WEEKDAY = {
   1: { type: 'water',    color: '#6890F0', name: '水',  label: '一' },
@@ -73,11 +113,17 @@ export default function HomePage() {
   const [liveItemCount, setLiveItemCount] = useState(0)
   const [weekLogins, setWeekLogins] = useState([])
   const [announcement, setAnnouncement] = useState('')
-  const [news, setNews] = useState(null)
-  const [newsModal, setNewsModal] = useState(false)
   const [todayPoints, setTodayPoints] = useState(0)
   const [showWeekCelebration, setShowWeekCelebration] = useState(false)
   const [showLeaderboard, setShowLeaderboard] = useState(false)
+
+  // 留言板
+  const [boardMsgs, setBoardMsgs] = useState([])
+  const [boardModal, setBoardModal] = useState(false)
+  const [boardInput, setBoardInput] = useState('')
+  const [boardSending, setBoardSending] = useState(false)
+  const [boardError, setBoardError] = useState('')
+  const [todayMsgCount, setTodayMsgCount] = useState(0)
 
   const [shippingModal, setShippingModal] = useState(false)
   const [cancelModal, setCancelModal] = useState(false)
@@ -91,6 +137,11 @@ export default function HomePage() {
   const [makeUpSaving, setMakeUpSaving] = useState(false)
   const [makeUpError, setMakeUpError] = useState('')
 
+  // 留言額度：高級球以上每日 3 則，其餘 1 則
+  const myLevel = member ? getLevel(member.points) : '精靈球'
+  const dailyLimit = BOARD_VIP_LEVELS.includes(myLevel) ? 3 : 1
+  const remainingMsgs = Math.max(0, dailyLimit - todayMsgCount)
+
   useEffect(() => {
     if (loginResult?.weekComplete) {
       setTimeout(() => {
@@ -101,6 +152,21 @@ export default function HomePage() {
       }, 2800)
     }
   }, [loginResult])
+
+  async function fetchBoardMessages() {
+    const { data } = await supabase.from('board_messages')
+      .select('*').order('created_at', { ascending: false }).limit(30)
+    setBoardMsgs(data || [])
+  }
+
+  async function fetchTodayMsgCount(memberId) {
+    const startISO = taiwanTodayStartISO()
+    const { count } = await supabase.from('board_messages')
+      .select('id', { count: 'exact', head: true })
+      .eq('member_id', memberId)
+      .gte('created_at', startISO)
+    setTodayMsgCount(count || 0)
+  }
 
   const fetchData = useCallback(async () => {
     const [{ data: bossData }, { data: cardsData }, { data: settingsData }, { count: liveCount }] = await Promise.all([
@@ -114,10 +180,10 @@ export default function HomePage() {
     setLiveItemCount(liveCount || 0)
     if (settingsData) {
       const s = {}
-      settingsData.forEach(d => { try { s[d.key] = JSON.parse(d.value) } catch(e) { s[d.key] = d.value } })
+      settingsData.forEach(d => { try { s[d.key] = JSON.parse(d.value) } catch { s[d.key] = d.value } })
       if (s.announcement) setAnnouncement(s.announcement)
-      if (s.news) setNews(s.news)
     }
+    await fetchBoardMessages()
     if (member) {
       const today = new Date().toISOString().split('T')[0]
       const { data: loginData } = await supabase.from('point_logs')
@@ -126,6 +192,7 @@ export default function HomePage() {
       setTodayPoints((loginData || []).reduce((s, l) => s + l.points, 0))
       await fetchWeekLogins(member.id)
       await fetchShippingStatus(member.id)
+      await fetchTodayMsgCount(member.id)
     }
   }, [member])
 
@@ -180,6 +247,51 @@ export default function HomePage() {
 
   const { scrollRef, pullDistance, refreshing, onTouchStart, onTouchMove, onTouchEnd, THRESHOLD } = usePullToRefresh(fetchData)
 
+  function openBoardModal() {
+    if (!member) { playSound('error_general'); vibrate(VIBRATE.error); return }
+    if (remainingMsgs <= 0) {
+      playSound('error_points'); vibrate(VIBRATE.error)
+      setBoardError('今日留言次數已達上限')
+      return
+    }
+    setBoardError(''); setBoardInput('')
+    playSound('modal_open'); vibrate(VIBRATE.light)
+    setBoardModal(true)
+  }
+
+  function closeBoardModal() {
+    playSound('modal_close')
+    setBoardModal(false); setBoardError('')
+  }
+
+  async function handleSendMessage() {
+    if (!member) return
+    const text = boardInput.trim()
+    if (!text) { setBoardError('請輸入留言內容'); playSound('error_general'); vibrate(VIBRATE.error); return }
+    if (text.length > 15) { setBoardError('留言不可超過 15 字'); playSound('error_general'); vibrate(VIBRATE.error); return }
+    if (remainingMsgs <= 0) { setBoardError('今日留言次數已達上限'); playSound('error_points'); vibrate(VIBRATE.error); return }
+    setBoardSending(true); setBoardError('')
+    try {
+      const level = getLevel(member.points)
+      const { error } = await supabase.from('board_messages').insert({
+        member_id: member.id,
+        display_name: member.display_name || 'Trainer',
+        avatar_url: member.avatar_url || null,
+        level,
+        message: text,
+      })
+      if (error) throw error
+      playSound('checkin_success'); vibrate(VIBRATE.success)
+      setBoardModal(false); setBoardInput('')
+      await fetchBoardMessages()
+      await fetchTodayMsgCount(member.id)
+    } catch {
+      setBoardError('留言失敗，請稍後再試')
+      playSound('error_system'); vibrate(VIBRATE.error)
+    }
+    setBoardSending(false)
+  }
+
   async function handleSubmitShipping() {
     if (!shippingForm.store_name.trim() || !shippingForm.recipient_name.trim() || !shippingForm.phone.trim()) {
       setShippingError('請填寫所有必填欄位'); playSound('error_general'); vibrate(VIBRATE.error); return
@@ -221,7 +333,6 @@ export default function HomePage() {
       const { error: insertErr } = await supabase.from('daily_logins').insert({ member_id: member.id, login_date: makeUpModal.date })
       if (insertErr && !insertErr.message?.includes('duplicate')) throw insertErr
       const newPoints = member.points - 10
-      const { getLevel } = await import('../lib/supabase')
       const newLevel = getLevel(newPoints)
       await supabase.from('members').update({ points: newPoints, level: newLevel }).eq('id', member.id)
       await supabase.from('point_logs').insert({ member_id: member.id, type: 'makeup', points: -10, note: `補簽 ${makeUpModal.date}` })
@@ -315,7 +426,7 @@ export default function HomePage() {
           </svg>
         </div>
 
-        {/* ── 公告：沿用原設計，文字加強顯眼度 ── */}
+        {/* ── 公告：沿用原設計 ── */}
         {announcement && (
           <div style={{ background: '#fffdf7', borderBottom: '1px solid #f5edd8', padding: '8px 16px', display: 'flex', alignItems: 'center', gap: 8 }}>
             <style>{`@keyframes marquee{0%{transform:translateX(100%)}100%{transform:translateX(-100%)}}`}</style>
@@ -329,38 +440,79 @@ export default function HomePage() {
           </div>
         )}
 
-        {/* 每日新聞 */}
-        {news && (
-          <div style={{ padding: '12px 20px', borderBottom: '1px solid #f5f0e8' }}>
-            <div style={{ fontSize: 11, fontWeight: 500, color: '#888', display: 'flex', alignItems: 'center', gap: 5, marginBottom: 8 }}>
-              <i className="fa-solid fa-newspaper" style={{ fontSize: 13, color: '#BA7517' }}></i>每日新聞
-            </div>
-            <div style={{ border: '1px solid #f0e8d0', borderRadius: 8, overflow: 'hidden', display: 'flex', cursor: news?.body ? 'pointer' : 'default', background: 'linear-gradient(135deg,#fdfaf4,#fff)' }} className={news?.body ? 'press-fx-soft' : ''} onClick={() => { if (news?.body) { playSound('modal_open'); vibrate(VIBRATE.light); setNewsModal(true) } }}>
-              <div style={{ width: 80, minHeight: 64, background: 'linear-gradient(135deg,#f5ede0,#f0e8d0)', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
-                {news.image_url ? <img src={news.image_url} alt="news" style={{ width: '100%', height: '100%', objectFit: 'cover' }} /> : <i className="fa-solid fa-image" style={{ fontSize: 20, color: '#D4A94A' }}></i>}
+        {/* ── 會員留言板（取代每日新聞） ── */}
+        <div style={{ padding: '12px 20px', borderBottom: '1px solid #f5f0e8' }}>
+          <div style={{ background: '#FFFBF2', border: '0.5px solid #F0E2C0', borderRadius: 16, padding: '14px 12px', overflow: 'hidden' }}>
+            {/* 標題列 */}
+            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 12 }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+                <i className="fa-solid fa-comment-dots" style={{ fontSize: 14, color: '#E07B00' }}></i>
+                <span style={{ fontSize: 13, fontWeight: 700, color: '#BA7517' }}>會員留言板</span>
               </div>
-              <div style={{ padding: '8px 10px', flex: 1 }}>
-                <div style={{ fontSize: 8, color: '#BA7517', fontWeight: 600, marginBottom: 2 }}>最新消息</div>
-                <div style={{ fontSize: 11, fontWeight: 500, color: '#222', lineHeight: 1.45 }}>{news.title}</div>
-                <div style={{ fontSize: 9, color: '#bbb', marginTop: 4 }}>{news.date}</div>
-              </div>
+              <span style={{ fontSize: 10, color: '#B89A5E', display: 'flex', alignItems: 'center', gap: 4 }}>
+                <span style={{ width: 5, height: 5, borderRadius: '50%', background: '#06C755', display: 'inline-block' }} />即時輪播
+              </span>
             </div>
+
+            {/* 跑馬燈 */}
+            {boardMsgs.length > 0 ? (
+              <div style={{ position: 'relative', height: 74, overflow: 'hidden', marginBottom: 12 }}>
+                <style>{`@keyframes boardScroll{0%{transform:translateX(0)}100%{transform:translateX(-50%)}}`}</style>
+                <div style={{ display: 'flex', gap: 10, position: 'absolute', width: 'max-content', animation: `boardScroll ${Math.max(boardMsgs.length * 4, 16)}s linear infinite` }}>
+                  {[...boardMsgs, ...boardMsgs].map((m, i) => {
+                    const th = boardLevelTheme(m.level)
+                    return (
+                      <div key={i} style={{ flexShrink: 0, width: 204, background: '#fff', border: '0.5px solid #F0E2C0', borderRadius: 10, padding: '9px 11px', display: 'flex', gap: 8, alignItems: 'flex-start' }}>
+                        {m.avatar_url
+                          ? <img src={m.avatar_url} alt="" style={{ width: 30, height: 30, borderRadius: '50%', objectFit: 'cover', flexShrink: 0, border: '1px solid #F0E2C0' }} />
+                          : <div style={{ width: 30, height: 30, borderRadius: '50%', background: '#FAEEDA', color: '#633806', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 12, fontWeight: 600, flexShrink: 0 }}>{(m.display_name || '?').charAt(0)}</div>
+                        }
+                        <div style={{ minWidth: 0, flex: 1 }}>
+                          <div style={{ display: 'flex', alignItems: 'center', gap: 5, marginBottom: 2 }}>
+                            <span style={{ fontSize: 12, fontWeight: 600, color: '#3A2A10', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis', maxWidth: 60 }}>{m.display_name}</span>
+                            <span style={{ fontSize: 9, padding: '1px 5px', borderRadius: 99, background: th.bg, color: th.c, whiteSpace: 'nowrap' }}>{m.level}</span>
+                          </div>
+                          <div style={{ fontSize: 12, color: '#5A4A30', lineHeight: 1.4, wordBreak: 'break-all' }}>{m.message}</div>
+                          <div style={{ fontSize: 9, color: '#B89A5E', marginTop: 2 }}>{boardTimeAgo(m.created_at)}</div>
+                        </div>
+                      </div>
+                    )
+                  })}
+                </div>
+              </div>
+            ) : (
+              <div style={{ height: 74, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: 4, marginBottom: 12, color: '#C4A86A' }}>
+                <i className="fa-solid fa-comment" style={{ fontSize: 20, opacity: 0.5 }}></i>
+                <span style={{ fontSize: 11 }}>成為今天第一個留言的人吧！</span>
+              </div>
+            )}
+
+            {/* 我要留言 按鈕 */}
+            {remainingMsgs > 0 ? (
+              <button onClick={openBoardModal} className="press-fx"
+                style={{ width: '100%', background: 'linear-gradient(135deg,#BA7517,#E07B00)', color: '#fff', border: 'none', height: 40, borderRadius: 10, fontSize: 13, fontWeight: 700, cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 6 }}>
+                <i className="fa-solid fa-pen" style={{ fontSize: 13 }}></i>我要留言
+                <span style={{ fontSize: 10, fontWeight: 600, opacity: 0.85 }}>（今日剩 {remainingMsgs} 則）</span>
+              </button>
+            ) : (
+              <div style={{ width: '100%', background: '#F2EDE2', color: '#A89876', height: 40, borderRadius: 10, fontSize: 12, fontWeight: 600, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 6 }}>
+                <i className="fa-solid fa-circle-check" style={{ fontSize: 12 }}></i>今日留言已達上限
+              </div>
+            )}
           </div>
-        )}
+        </div>
 
         <div style={{ padding: '16px 20px 0' }}>
 
-          {/* ── 直播下單區 + 積分排行榜 並排按鈕（方案 A：等高雙欄） ── */}
+          {/* ── 直播下單區 + 積分排行榜 並排 ── */}
           <style>{`@keyframes homeLiveDot{0%,100%{opacity:1;transform:scale(1)}50%{opacity:.45;transform:scale(.72)}}`}</style>
           <div style={{ display: 'grid', gridTemplateColumns: '1fr 80px', gap: 8, marginBottom: 16 }}>
 
-            {/* 直播下單區 — 縱向排列 */}
             <div
               onClick={() => { playSound('button_tap'); vibrate(VIBRATE.light); navigate('/shop?tab=live') }}
               className="press-fx-soft"
               style={{ background: 'linear-gradient(135deg,#1a1a1a,#2A2A2A)', border: '1px solid rgba(226,75,74,0.35)', borderRadius: 14, padding: '14px', cursor: 'pointer', boxShadow: '0 5px 18px rgba(0,0,0,.12)', position: 'relative', overflow: 'hidden', display: 'flex', flexDirection: 'column', justifyContent: 'center', gap: 6 }}>
               <div style={{ position: 'absolute', top: -18, right: -14, width: 72, height: 72, borderRadius: '50%', background: 'radial-gradient(circle,rgba(226,75,74,.22),transparent 70%)', pointerEvents: 'none' }} />
-              {/* LIVE badge + 標題 */}
               <div style={{ display: 'flex', alignItems: 'center', gap: 6, position: 'relative' }}>
                 <span style={{ display: 'inline-flex', alignItems: 'center', gap: 4, background: '#E24B4A', borderRadius: 5, padding: '2px 7px', flexShrink: 0 }}>
                   <span style={{ width: 4, height: 4, borderRadius: '50%', background: '#fff', animation: 'homeLiveDot 1s ease infinite' }} />
@@ -368,11 +520,9 @@ export default function HomePage() {
                 </span>
                 <span style={{ fontSize: 13, fontWeight: 800, color: '#fff' }}>直播下單區</span>
               </div>
-              {/* 副文字 */}
               <div style={{ fontSize: 10, color: '#888', position: 'relative' }}>
                 {liveItemCount > 0 ? `${liveItemCount} 件商品上架中，立即下單` : '等待直播商品上架'}
               </div>
-              {/* 進入 */}
               <div style={{ display: 'inline-flex', alignItems: 'center', gap: 4, color: '#E24B4A', fontSize: 11, fontWeight: 700, position: 'relative' }}>
                 <i className="fa-solid fa-video" style={{ fontSize: 11 }}></i>
                 進入
@@ -380,7 +530,6 @@ export default function HomePage() {
               </div>
             </div>
 
-            {/* 積分排行榜 — 等高縱向 */}
             <div
               onClick={() => { playSound('modal_open'); vibrate(VIBRATE.light); setShowLeaderboard(true) }}
               className="press-fx-soft"
@@ -567,17 +716,35 @@ export default function HomePage() {
         </div>
       )}
 
-      {/* 新聞彈窗 */}
-      {newsModal && news && (
-        <div onClick={() => { playSound('modal_close'); setNewsModal(false) }} style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.4)', display: 'flex', alignItems: 'flex-end', justifyContent: 'center', zIndex: 100 }}>
-          <div onClick={e => e.stopPropagation()} style={{ background: '#fff', borderRadius: '16px 16px 0 0', width: '100%', maxWidth: 390, maxHeight: '85vh', overflowY: 'auto' }}>
-            <div style={{ width: 36, height: 4, borderRadius: 2, background: '#f0e8d0', margin: '12px auto 0' }} />
-            {news.image_url && <img src={news.image_url} alt="" style={{ width: '100%', maxHeight: 200, objectFit: 'cover' }} />}
-            <div style={{ padding: '16px 20px 32px' }}>
-              <div style={{ fontSize: 10, color: '#BA7517', fontWeight: 600, marginBottom: 6 }}>最新消息</div>
-              <div style={{ fontSize: 18, fontWeight: 500, color: '#111', lineHeight: 1.4, marginBottom: 8 }}>{news.title}</div>
-              <div style={{ fontSize: 11, color: '#bbb', marginBottom: 16 }}>{news.date}</div>
-              <div style={{ fontSize: 14, color: '#444', lineHeight: 1.8, whiteSpace: 'pre-wrap' }}>{news.body}</div>
+      {/* 留言 Modal */}
+      {boardModal && (
+        <div onClick={closeBoardModal} style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.4)', display: 'flex', alignItems: 'flex-end', justifyContent: 'center', zIndex: 100 }}>
+          <div onClick={e => e.stopPropagation()} style={{ background: '#fff', borderRadius: '16px 16px 0 0', width: '100%', maxWidth: 390, padding: '0 0 28px' }}>
+            <div style={{ width: 36, height: 4, borderRadius: 2, background: '#f0e8d0', margin: '12px auto 16px' }} />
+            <div style={{ padding: '0 20px' }}>
+              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 14 }}>
+                <div style={{ fontSize: 17, fontWeight: 600, color: '#2D1A00' }}>留下你的留言</div>
+                <span style={{ fontSize: 11, color: '#B89A5E' }}>今日剩 <span style={{ color: '#E07B00', fontWeight: 700 }}>{remainingMsgs}</span> 則</span>
+              </div>
+              {boardError && <div style={{ background: '#FCEBEB', color: '#A32D2D', padding: '8px 12px', borderRadius: 8, fontSize: 13, marginBottom: 12 }}>{boardError}</div>}
+              <input
+                value={boardInput}
+                onChange={e => setBoardInput(e.target.value.slice(0, 15))}
+                maxLength={15}
+                placeholder="說點什麼…（最多 15 字）"
+                style={inp}
+                autoFocus
+              />
+              <div style={{ display: 'flex', justifyContent: 'flex-end', marginTop: 6, marginBottom: 16 }}>
+                <span style={{ fontSize: 11, color: boardInput.length >= 15 ? '#E24B4A' : '#bbb' }}>{boardInput.length} / 15</span>
+              </div>
+              <div style={{ display: 'flex', gap: 8 }}>
+                <button onClick={closeBoardModal} className="press-fx" style={{ flex: 1, padding: 12, border: '1px solid #f0e8d0', borderRadius: 10, fontSize: 14, color: '#888', background: '#fdfaf4', cursor: 'pointer' }}>取消</button>
+                <button onClick={handleSendMessage} disabled={boardSending || !boardInput.trim()} className="press-fx"
+                  style={{ flex: 2, padding: 12, background: boardSending || !boardInput.trim() ? '#ccc' : 'linear-gradient(135deg,#BA7517,#E07B00)', border: 'none', borderRadius: 10, fontSize: 14, fontWeight: 700, color: '#fff', cursor: 'pointer' }}>
+                  {boardSending ? '送出中...' : '送出留言'}
+                </button>
+              </div>
             </div>
           </div>
         </div>
