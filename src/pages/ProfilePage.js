@@ -5,6 +5,7 @@ import { useAuth } from '../hooks/useAuth'
 import { PokeballIcon, LevelBadge } from '../lib/pokeballs'
 import BottomNav from '../components/BottomNav'
 import { playSound, SoundToggle } from '../lib/sounds'
+import { vibrate, VIBRATE } from '../lib/haptics'
 
 const CDN = 'https://cdn.jsdelivr.net/gh/duiker101/pokemon-type-svg-icons@master/icons'
 const TYPE_BY_WEEKDAY = {
@@ -107,6 +108,7 @@ export default function ProfilePage() {
     setMember(updated)
     await fetchShowcase(cleaned.filter(Boolean))
     playSound('button_tap')
+    vibrate(VIBRATE.light)
     setShowCardPicker(null)
   }
 
@@ -128,6 +130,7 @@ export default function ProfilePage() {
     setMember({ ...member, display_name: editName.trim() })
     setSaving(false)
     playSound('shop_redeem_success')
+    vibrate(VIBRATE.success)
     setShowSettings(false)
   }
 
@@ -172,8 +175,10 @@ export default function ProfilePage() {
       await supabase.from('members').update({ avatar_url: newUrl }).eq('id', member.id)
       setMember({ ...member, avatar_url: newUrl })
       playSound('shop_redeem_success')
+      vibrate(VIBRATE.success)
     } catch (err) {
       playSound('error_system')
+      vibrate(VIBRATE.error)
       alert('頭貼上傳失敗：' + err.message)
     }
     setUploadingAvatar(false)
@@ -187,20 +192,23 @@ export default function ProfilePage() {
       await supabase.from('members').update({ avatar_url: member.line_avatar_url }).eq('id', member.id)
       setMember({ ...member, avatar_url: member.line_avatar_url })
       playSound('shop_redeem_success')
+      vibrate(VIBRATE.success)
     } catch (err) {
       playSound('error_system')
+      vibrate(VIBRATE.error)
       alert('恢復失敗：' + err.message)
     }
     setRestoringAvatar(false)
   }
 
   function switchTab(tab) {
-    if (profileTab !== tab) playSound('tab_switch')
+    if (profileTab !== tab) { playSound('tab_switch'); vibrate(VIBRATE.light) }
     setProfileTab(tab)
   }
 
   function openSettings() {
     playSound('modal_open')
+    vibrate(VIBRATE.light)
     setEditName(member.display_name || '')
     setShowSettings(true)
   }
@@ -265,7 +273,7 @@ export default function ProfilePage() {
                 </div>
             }
             <span style={{ fontSize: 6, color: '#E07B00', fontWeight: 600 }}>{member?.level}</span>
-            <button onClick={openSettings}
+            <button onClick={openSettings} className="press-fx"
               style={{ width: 26, height: 26, borderRadius: '50%', background: 'linear-gradient(135deg,#FAEEDA,#FFF3D0)', border: '0.5px solid #FAC775', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer', marginTop: 2 }}>
               <i className="fa-solid fa-gear" style={{ fontSize: 12, color: '#E07B00' }}></i>
             </button>
@@ -340,7 +348,8 @@ export default function ProfilePage() {
                 return (
                   <div key={i} style={{ position: 'relative' }}>
                     <div
-                      onClick={() => { playSound('modal_open'); setShowCardPicker(i) }}
+                      onClick={() => { playSound('modal_open'); vibrate(VIBRATE.light); setShowCardPicker(i) }}
+                      className="press-fx-soft"
                       style={{ aspectRatio: '3/4', borderRadius: 14, overflow: 'hidden', background: slot ? '#fff' : '#f5f0e8', border: slot ? 'none' : '2px dashed #F5E8C8', boxShadow: slot ? '0 4px 14px rgba(186,117,23,.12)' : 'none', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', flexDirection: 'column', position: 'relative' }}>
                       {slot?.cards?.image_url
                         ? <img src={slot.cards.image_url} alt="" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
@@ -395,7 +404,7 @@ export default function ProfilePage() {
             </div>
 
             {/* 福利入口 */}
-            <div onClick={() => { playSound('modal_open'); setShowBenefits(true) }} style={{ display: 'flex', alignItems: 'center', gap: 12, padding: '13px 14px', border: '0.5px solid #f0e8d0', borderRadius: 12, background: 'linear-gradient(135deg,#fdfaf4,#fff)', boxShadow: '0 1px 6px rgba(186,117,23,0.05)', cursor: 'pointer' }}>
+            <div onClick={() => { playSound('modal_open'); vibrate(VIBRATE.light); setShowBenefits(true) }} className="press-fx-soft" style={{ display: 'flex', alignItems: 'center', gap: 12, padding: '13px 14px', border: '0.5px solid #f0e8d0', borderRadius: 12, background: 'linear-gradient(135deg,#fdfaf4,#fff)', boxShadow: '0 1px 6px rgba(186,117,23,0.05)', cursor: 'pointer' }}>
               <div style={{ width: 38, height: 38, borderRadius: 10, background: 'linear-gradient(135deg,#FAEEDA,#FFF3D0)', border: '0.5px solid rgba(186,117,23,0.2)', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
                 <i className="fa-solid fa-gift" style={{ fontSize: 16, color: '#E07B00' }}></i>
               </div>
@@ -474,7 +483,7 @@ export default function ProfilePage() {
                 出貨記錄
               </div>
               {shippingOrders.length > 3 && (
-                <span onClick={() => { playSound('modal_open'); setShowShipping(true) }} style={{ fontSize: 11, color: '#E07B00', cursor: 'pointer', fontWeight: 400 }}>全部 →</span>
+                <span onClick={() => { playSound('modal_open'); vibrate(VIBRATE.light); setShowShipping(true) }} style={{ fontSize: 11, color: '#E07B00', cursor: 'pointer', fontWeight: 400 }}>全部 →</span>
               )}
             </div>
             <div style={{ marginBottom: 16 }}>
@@ -509,7 +518,7 @@ export default function ProfilePage() {
                 已送鑑定
               </div>
               {gradings.length > 3 && (
-                <span onClick={() => { playSound('modal_open'); setShowGrading(true) }} style={{ fontSize: 11, color: '#E07B00', cursor: 'pointer', fontWeight: 400 }}>全部 →</span>
+                <span onClick={() => { playSound('modal_open'); vibrate(VIBRATE.light); setShowGrading(true) }} style={{ fontSize: 11, color: '#E07B00', cursor: 'pointer', fontWeight: 400 }}>全部 →</span>
               )}
             </div>
             <div style={{ marginBottom: 16 }}>
@@ -591,6 +600,7 @@ export default function ProfilePage() {
                     return (
                       <div key={co.id}
                         onClick={() => !isSelected && handleSelectShowcase(showCardPicker, co.id)}
+                        className={isSelected ? '' : 'press-fx-soft'}
                         style={{ opacity: isSelected ? 0.4 : 1, cursor: isSelected ? 'not-allowed' : 'pointer' }}>
                         <div style={{ aspectRatio: '3/4', borderRadius: 12, overflow: 'hidden', background: '#f8f5f0', border: `1.5px solid ${isSelected ? '#F5E8C8' : rc.color + '44'}`, position: 'relative', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
                           {co.cards?.image_url
@@ -715,12 +725,12 @@ export default function ProfilePage() {
                 {canChangeAvatar ? (
                   <div style={{ flex: 1 }}>
                     <input ref={avatarFileRef} type="file" accept="image/*" onChange={handleAvatarUpload} style={{ display: 'none' }} />
-                    <button onClick={() => !uploadingAvatar && avatarFileRef.current?.click()} disabled={uploadingAvatar}
+                    <button onClick={() => !uploadingAvatar && avatarFileRef.current?.click()} disabled={uploadingAvatar} className="press-fx"
                       style={{ width: '100%', padding: '9px 12px', background: uploadingAvatar ? '#f0ebe3' : 'linear-gradient(135deg,#FAEEDA,#FFF3D0)', border: '0.5px solid #FAC775', borderRadius: 10, fontSize: 13, fontWeight: 500, color: uploadingAvatar ? '#ccc' : '#8B5A00', cursor: uploadingAvatar ? 'not-allowed' : 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 7, marginBottom: 6 }}>
                       {uploadingAvatar ? <><i className="fa-solid fa-spinner fa-spin" style={{ fontSize: 12 }}></i>上傳中...</> : <><i className="fa-solid fa-camera" style={{ fontSize: 12 }}></i>更換頭貼</>}
                     </button>
                     {member.line_avatar_url && member.avatar_url !== member.line_avatar_url && (
-                      <button onClick={handleRestoreLineAvatar} disabled={restoringAvatar}
+                      <button onClick={handleRestoreLineAvatar} disabled={restoringAvatar} className="press-fx"
                         style={{ width: '100%', padding: '8px 12px', background: restoringAvatar ? '#f0ebe3' : '#fff', border: '0.5px solid #f0e8d0', borderRadius: 10, fontSize: 12, fontWeight: 500, color: restoringAvatar ? '#ccc' : '#888', cursor: restoringAvatar ? 'not-allowed' : 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 6, marginBottom: 6 }}>
                         {restoringAvatar ? <><i className="fa-solid fa-spinner fa-spin" style={{ fontSize: 11 }}></i>恢復中...</> : <><i className="fa-brands fa-line" style={{ fontSize: 12, color: '#06C755' }}></i>恢復 LINE 頭貼</>}
                       </button>
@@ -746,7 +756,7 @@ export default function ProfilePage() {
               <input value={editName} onChange={e => setEditName(e.target.value)} placeholder="輸入你的暱稱"
                 style={{ width: '100%', padding: '10px 12px', border: '0.5px solid #f0e8d0', borderRadius: 8, fontSize: 14, color: '#111', outline: 'none', background: '#fdfaf4', boxSizing: 'border-box' }} />
             </div>
-            <button onClick={handleSaveName} disabled={saving || !editName.trim() || editName.trim() === member.display_name}
+            <button onClick={handleSaveName} disabled={saving || !editName.trim() || editName.trim() === member.display_name} className="press-fx"
               style={{ width: '100%', padding: 12, background: (saving || !editName.trim() || editName.trim() === member.display_name) ? '#f0ebe3' : 'linear-gradient(135deg,#FAEEDA,#FFF3D0)', border: '0.5px solid #FAC775', borderRadius: 10, fontSize: 14, fontWeight: 500, color: (saving || !editName.trim() || editName.trim() === member.display_name) ? '#ccc' : '#8B5A00', cursor: 'pointer', marginBottom: 10 }}>
               {saving ? '儲存中...' : '儲存暱稱'}
             </button>
@@ -758,10 +768,10 @@ export default function ProfilePage() {
               <SoundToggle />
             </div>
 
-            <button onClick={signOut} style={{ width: '100%', padding: 12, background: '#fff', border: '0.5px solid #F09595', borderRadius: 10, fontSize: 14, color: '#A32D2D', cursor: 'pointer', marginBottom: 10, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 7 }}>
+            <button onClick={signOut} className="press-fx" style={{ width: '100%', padding: 12, background: '#fff', border: '0.5px solid #F09595', borderRadius: 10, fontSize: 14, color: '#A32D2D', cursor: 'pointer', marginBottom: 10, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 7 }}>
               <i className="fa-solid fa-right-from-bracket" style={{ fontSize: 13 }}></i>登出
             </button>
-            <button onClick={closeSettings} style={{ width: '100%', padding: 12, background: '#f8f5f0', border: 'none', borderRadius: 10, fontSize: 14, color: '#888', cursor: 'pointer' }}>取消</button>
+            <button onClick={closeSettings} className="press-fx" style={{ width: '100%', padding: 12, background: '#f8f5f0', border: 'none', borderRadius: 10, fontSize: 14, color: '#888', cursor: 'pointer' }}>取消</button>
           </div>
         </div>
       )}
