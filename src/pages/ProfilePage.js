@@ -28,6 +28,22 @@ const GRADING_STATUS = {
 
 const AVATAR_ALLOWED_LEVELS = ['高級球', '豪華球', '貴重球', '究極球', '大師球']
 
+// ── 等級會員卡主題 ──
+// 依等級給「會員卡」一套配色：背景漸層、邊框、主文字、次文字、徽章光暈、
+// 是否深色卡（dark=true 用淺字）。找不到時 fallback general。
+const LEVEL_THEME = {
+  精靈球: { bg: 'linear-gradient(135deg,#FFFBF2,#FFF3D8)', border: '#F5E8C8', name: '#2D1A00', sub: '#A07040', accent: '#E07B00', glow: 'rgba(224,123,0,0.18)', dark: false },
+  超級球: { bg: 'linear-gradient(135deg,#EAF2FC,#D6E6F8)', border: '#AFCDEE', name: '#13355C', sub: '#4C6E96', accent: '#2F6FB5', glow: 'rgba(55,138,221,0.22)', dark: false },
+  高級球: { bg: 'linear-gradient(135deg,#FBF4E6,#F3E3C2)', border: '#E6C27A', name: '#3A2A0A', sub: '#7A5C2E', accent: '#B07A1E', glow: 'rgba(176,122,30,0.22)', dark: false },
+  豪華球: { bg: 'linear-gradient(135deg,#2A1B10,#3A2415)', border: '#BA7517', name: '#F7E4C0', sub: '#C9A06A', accent: '#EF9F27', glow: 'rgba(239,159,39,0.30)', dark: true },
+  貴重球: { bg: 'linear-gradient(135deg,#2A1414,#3B1C1C)', border: '#A32D2D', name: '#F7D6D0', sub: '#C98A82', accent: '#E24B4A', glow: 'rgba(226,75,74,0.30)', dark: true },
+  究極球: { bg: 'linear-gradient(135deg,#10204A,#1B2F66)', border: '#4466DD', name: '#CFE0FF', sub: '#8FA8DD', accent: '#6E9BFF', glow: 'rgba(110,155,255,0.32)', dark: true },
+  大師球: { bg: 'linear-gradient(135deg,#1A1A1A,#2A2030)', border: '#B8860B', name: '#F5D060', sub: '#B6A06A', accent: '#F5D060', glow: 'rgba(245,208,96,0.38)', dark: true },
+}
+function levelTheme(level) {
+  return LEVEL_THEME[level] || LEVEL_THEME['精靈球']
+}
+
 export default function ProfilePage() {
   const { member, setMember, signOut } = useAuth()
   const toast = useToast()
@@ -224,6 +240,7 @@ export default function ProfilePage() {
   if (!member) return null
 
   const canChangeAvatar = AVATAR_ALLOWED_LEVELS.includes(member.level)
+  const theme = levelTheme(member.level)
 
   const nextLevel = getNextLevel(member.points)
   const currentLevelMin = LEVELS.slice().reverse().find(l => member.points >= l.min)?.min || 0
@@ -254,6 +271,10 @@ export default function ProfilePage() {
 
   return (
     <div style={S.page}>
+      <style>{`
+        @keyframes memberCardGlow{0%,100%{box-shadow:0 6px 22px rgba(0,0,0,0.10)}50%{box-shadow:0 8px 30px var(--mc-glow)}}
+        @keyframes memberCardIn{0%{opacity:0;transform:translateY(10px)}100%{opacity:1;transform:translateY(0)}}
+      `}</style>
       <div style={{ flex: 1, overflowY: 'auto' }}>
 
         {/* Hero */}
@@ -314,28 +335,51 @@ export default function ProfilePage() {
               </span>
             </div>
 
-            {/* 等級徽章區 */}
-            <div style={{ display: 'flex', alignItems: 'center', gap: 12, padding: '14px 16px', background: '#fff', borderRadius: 16, boxShadow: '0 4px 14px rgba(186,117,23,.09)', marginBottom: 16 }}>
-              <div style={{ width: 52, height: 52, borderRadius: '50%', overflow: 'hidden', border: '2px solid #FAC775', flexShrink: 0, display: 'flex', alignItems: 'center', justifyContent: 'center', background: '#FAEEDA' }}>
-                {member.avatar_url
-                  ? <img src={member.avatar_url} alt="" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
-                  : <span style={{ fontSize: 20, fontWeight: 700, color: '#633806' }}>{member.display_name?.[0]?.toUpperCase()}</span>
-                }
+            {/* 等級會員卡（依等級主題） */}
+            <div style={{ '--mc-glow': theme.glow, position: 'relative', overflow: 'hidden', borderRadius: 18, padding: '16px 18px', background: theme.bg, border: `1.5px solid ${theme.border}`, marginBottom: 16, animation: 'memberCardIn 0.4s ease both, memberCardGlow 3.2s ease-in-out infinite' }}>
+              {/* 角落裝飾光暈 */}
+              <div style={{ position: 'absolute', top: -50, right: -40, width: 150, height: 150, borderRadius: '50%', background: `radial-gradient(circle, ${theme.glow} 0%, transparent 68%)`, pointerEvents: 'none' }} />
+              {/* 背景大徽章浮水印 */}
+              <div style={{ position: 'absolute', right: -10, bottom: -18, opacity: theme.dark ? 0.16 : 0.10, transform: 'rotate(-8deg)', pointerEvents: 'none' }}>
+                <PokeballIcon level={member.level} size={92} />
               </div>
-              <div style={{ flex: 1 }}>
-                <div style={{ fontSize: 16, fontWeight: 800, color: '#2D1A00', marginBottom: 4 }}>{member.display_name}</div>
-                <div style={{ display: 'flex', alignItems: 'center', gap: 6, marginBottom: 4 }}>
-                  <LevelBadge level={member.level} size='md' />
-                  <span style={{ fontSize: 11, color: '#bbb' }}>#{String(member.member_no || '0').padStart(4, '0')}</span>
+
+              <div style={{ position: 'relative', display: 'flex', alignItems: 'center', gap: 14 }}>
+                {/* 頭像 + 徽章光環 */}
+                <div style={{ position: 'relative', flexShrink: 0 }}>
+                  <div style={{ width: 58, height: 58, borderRadius: '50%', overflow: 'hidden', border: `2px solid ${theme.accent}`, display: 'flex', alignItems: 'center', justifyContent: 'center', background: theme.dark ? 'rgba(255,255,255,0.06)' : '#FAEEDA', boxShadow: `0 0 0 4px ${theme.glow}` }}>
+                    {member.avatar_url
+                      ? <img src={member.avatar_url} alt="" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+                      : <span style={{ fontSize: 22, fontWeight: 700, color: theme.dark ? theme.name : '#633806' }}>{member.display_name?.[0]?.toUpperCase()}</span>
+                    }
+                  </div>
+                  {/* 等級球小徽章 */}
+                  <div style={{ position: 'absolute', bottom: -2, right: -2, width: 24, height: 24, borderRadius: '50%', background: theme.dark ? '#000' : '#fff', display: 'flex', alignItems: 'center', justifyContent: 'center', boxShadow: '0 1px 4px rgba(0,0,0,0.25)' }}>
+                    <PokeballIcon level={member.level} size={20} />
+                  </div>
                 </div>
-                <div style={{ fontSize: 10, color: '#bbb', display: 'flex', alignItems: 'center', gap: 3 }}>
-                  <i className="fa-regular fa-clock" style={{ fontSize: 9 }}></i>
-                  加入於 {new Date(member.created_at).toLocaleDateString('zh-TW')}
+
+                {/* 名稱 + 等級 + 編號 */}
+                <div style={{ flex: 1, minWidth: 0 }}>
+                  <div style={{ fontSize: 17, fontWeight: 800, color: theme.name, marginBottom: 5, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{member.display_name}</div>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: 6, marginBottom: 5 }}>
+                    <span style={{ display: 'inline-flex', alignItems: 'center', gap: 4, fontSize: 11, fontWeight: 700, color: theme.accent, background: theme.dark ? 'rgba(255,255,255,0.08)' : 'rgba(255,255,255,0.6)', border: `0.5px solid ${theme.accent}55`, borderRadius: 99, padding: '2px 9px 2px 6px' }}>
+                      <PokeballIcon level={member.level} size={14} />
+                      {member.level}
+                    </span>
+                    <span style={{ fontSize: 11, color: theme.sub }}>#{String(member.member_no || '0').padStart(4, '0')}</span>
+                  </div>
+                  <div style={{ fontSize: 10, color: theme.sub, display: 'flex', alignItems: 'center', gap: 4 }}>
+                    <i className="fa-regular fa-clock" style={{ fontSize: 9 }}></i>
+                    加入於 {new Date(member.created_at).toLocaleDateString('zh-TW')}
+                  </div>
                 </div>
-              </div>
-              <div style={{ textAlign: 'right' }}>
-                <div style={{ fontSize: 18, fontWeight: 800, color: '#E07B00' }}><CountUp value={member.points || 0} separator /></div>
-                <div style={{ fontSize: 10, color: '#bbb' }}>積分</div>
+
+                {/* 積分 */}
+                <div style={{ textAlign: 'right', flexShrink: 0 }}>
+                  <div style={{ fontSize: 20, fontWeight: 900, color: theme.accent, letterSpacing: '-0.5px', lineHeight: 1.1 }}><CountUp value={member.points || 0} separator /></div>
+                  <div style={{ fontSize: 10, color: theme.sub, marginTop: 2 }}>積分</div>
+                </div>
               </div>
             </div>
 
@@ -402,7 +446,8 @@ export default function ProfilePage() {
                 <div style={{ height: '100%', width: `${levelProgress}%`, background: 'linear-gradient(90deg,#378ADD,#BA7517)', borderRadius: 99 }} />
               </div>
               <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 11, color: '#bbb' }}>
-                <span>{member.points?.toLocaleString()} 點</span><span>{levelProgress}%</span>
+                <span>{member.points?.toLocaleString()} 點</span>
+                {nextLevel ? <span>{levelProgress}%</span> : <span style={{ color: '#BA7517', fontWeight: 700 }}><i className="fa-solid fa-crown" style={{ fontSize: 9, marginRight: 3 }}></i>已達頂級</span>}
               </div>
             </div>
 
