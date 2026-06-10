@@ -55,7 +55,6 @@ export default function CountUp({
     }
     rafRef.current = requestAnimationFrame(tick)
     return () => { if (rafRef.current) cancelAnimationFrame(rafRef.current) }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [target, duration])
 
   const rounded = decimals > 0
