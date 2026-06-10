@@ -1,5 +1,6 @@
 // src/pages/WallPage.js
 import React, { useEffect, useState, useMemo } from 'react'
+import { useNavigate } from 'react-router-dom'
 import { supabase, RARITY_COLORS } from '../lib/supabase'
 import { useAuth } from '../hooks/useAuth'
 import { LevelBadge, PokeballIcon } from '../lib/pokeballs'
@@ -18,6 +19,7 @@ function formatDate(iso) {
 
 export default function WallPage() {
   const { member } = useAuth()
+  const navigate = useNavigate()
   const [cards, setCards] = useState([])
   const [myCards, setMyCards] = useState([])
   const [selected, setSelected] = useState(null)
@@ -176,6 +178,15 @@ export default function WallPage() {
             <div style={{ fontSize: 14 }}>
               {rarityFilter ? `沒有 ${rarityFilter} 稀有度的卡牌` : tab === 'my' ? '還沒有開箱紀錄' : '暫無卡牌'}
             </div>
+            {tab === 'my' && !rarityFilter && (
+              <button
+                onClick={() => { playSound('button_tap'); vibrate(VIBRATE.light); navigate('/shop?tab=live') }}
+                className="press-fx"
+                style={{ marginTop: 16, display: 'inline-flex', alignItems: 'center', gap: 6, padding: '9px 18px', background: 'linear-gradient(135deg,#BA7517,#D4A94A)', border: 'none', borderRadius: 99, fontSize: 12, fontWeight: 700, color: '#fff', cursor: 'pointer', boxShadow: '0 3px 12px rgba(186,117,23,0.25)' }}>
+                <i className="fa-solid fa-video" style={{ fontSize: 11 }}></i>
+                前往直播下單區
+              </button>
+            )}
           </div>
         ) : (
           <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2,1fr)', gap: 10, padding: '14px 20px 20px' }}>
