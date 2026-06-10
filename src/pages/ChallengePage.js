@@ -6,6 +6,8 @@ import { getLevel } from '../lib/supabase'
 import { LevelBadge, PokeballIcon } from '../lib/pokeballs'
 import BottomNav from '../components/BottomNav'
 import { playSound } from '../lib/sounds'
+import { vibrate, VIBRATE } from '../lib/haptics'
+import { SkeletonPanel, SkeletonList } from '../components/Skeleton'
 
 function BossHpBar({ targetPct, delay = 0 }) {
   const [pct, setPct] = useState(100)
@@ -134,7 +136,7 @@ function ChallengeHintSheet({ onClose }) {
               </div>
             </div>
           ))}
-          <button onClick={onClose} style={{ marginTop: 20, width: '100%', padding: 13, background: '#FCEBEB', border: '0.5px solid #F09595', borderRadius: 12, fontSize: 14, fontWeight: 600, color: '#A32D2D', cursor: 'pointer' }}>
+          <button onClick={onClose} className="press-fx" style={{ marginTop: 20, width: '100%', padding: 13, background: '#FCEBEB', border: '0.5px solid #F09595', borderRadius: 12, fontSize: 14, fontWeight: 600, color: '#A32D2D', cursor: 'pointer' }}>
             了解了
           </button>
         </div>
@@ -186,20 +188,20 @@ export default function ChallengePage() {
         if (!introSoundPlayedRef.current) {
           introSoundPlayedRef.current = true
           if (dmgPct >= 100) {
-            playSound('boss_defeated')
+            playSound('boss_defeated'); vibrate(VIBRATE.weekComplete)
           } else {
             // 找出目前已解鎖的最高里程碑，播對應音
             const unlocked = ms.filter(m => dmgPct >= m.pct)
-            if (unlocked.length > 0) playSound('milestone')
+            if (unlocked.length > 0) { playSound('milestone'); vibrate(VIBRATE.success) }
           }
         }
       } else if (dmgPct > prev) {
         // 後續更新：偵測是否跨過新的里程碑或擊敗 Boss
         if (dmgPct >= 100 && prev < 100) {
-          playSound('boss_defeated')
+          playSound('boss_defeated'); vibrate(VIBRATE.weekComplete)
         } else {
           const crossed = ms.some(m => prev < m.pct && dmgPct >= m.pct)
-          if (crossed) playSound('milestone')
+          if (crossed) { playSound('milestone'); vibrate(VIBRATE.weekComplete) }
         }
       }
       prevDamagedPctRef.current = dmgPct
@@ -209,6 +211,7 @@ export default function ChallengePage() {
 
   function openHint() {
     playSound('modal_open')
+    vibrate(VIBRATE.light)
     setShowHint(true)
   }
 
@@ -220,8 +223,17 @@ export default function ChallengePage() {
   const currentLevel = member ? getLevel(member.points || 0) : null
 
   if (loading) return (
-    <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', height: '100vh', fontSize: 14, color: '#bbb' }}>
-      載入中...
+    <div style={{ maxWidth: 390, margin: '0 auto', background: '#fdfaf4', minHeight: '100vh', display: 'flex', flexDirection: 'column' }}>
+      <div style={{ background: '#fdfaf4', padding: '16px 20px 12px', borderBottom: '0.5px solid #f0e8d0' }}>
+        <div style={{ fontSize: 9, color: '#BA7517', fontWeight: 600, opacity: 0.55, letterSpacing: '0.1em', marginBottom: 6 }}>W/NA PTCG × HUGO COLLECTIONS</div>
+        <div style={{ fontSize: 15, fontWeight: 500, color: '#1a1a1a', display: 'flex', alignItems: 'center', gap: 5 }}>
+          <i className="fa-solid fa-shield" style={{ fontSize: 13, color: '#BA7517' }} aria-hidden="true"></i>
+          共同挑戰
+        </div>
+      </div>
+      <SkeletonPanel height={260} padding="0" radius={0} />
+      <SkeletonList count={5} padding="16px" />
+      <BottomNav />
     </div>
   )
 
@@ -232,7 +244,7 @@ export default function ChallengePage() {
         <div style={{ fontSize: 15, fontWeight: 500, color: '#1a1a1a', display: 'flex', alignItems: 'center', gap: 5 }}>
           <i className="fa-solid fa-shield" style={{ fontSize: 13, color: '#BA7517' }} aria-hidden="true"></i>
           共同挑戰
-          <button onClick={openHint} style={{ marginLeft: 4, width: 18, height: 18, borderRadius: '50%', background: '#F5E8C8', border: 'none', cursor: 'pointer', display: 'inline-flex', alignItems: 'center', justifyContent: 'center', padding: 0 }}>
+          <button onClick={openHint} className="press-fx" style={{ marginLeft: 4, width: 18, height: 18, borderRadius: '50%', background: '#F5E8C8', border: 'none', cursor: 'pointer', display: 'inline-flex', alignItems: 'center', justifyContent: 'center', padding: 0 }}>
             <i className="fa-solid fa-question" style={{ fontSize: 8, color: '#BA7517' }}></i>
           </button>
         </div>
@@ -289,7 +301,7 @@ export default function ChallengePage() {
           <div style={{ fontSize: 15, fontWeight: 500, color: '#1a1a1a', display: 'flex', alignItems: 'center', gap: 5 }}>
             <i className="fa-solid fa-shield" style={{ fontSize: 13, color: '#BA7517' }} aria-hidden="true"></i>
             共同挑戰
-            <button onClick={openHint} style={{ marginLeft: 4, width: 18, height: 18, borderRadius: '50%', background: '#F5E8C8', border: 'none', cursor: 'pointer', display: 'inline-flex', alignItems: 'center', justifyContent: 'center', padding: 0, flexShrink: 0 }}>
+            <button onClick={openHint} className="press-fx" style={{ marginLeft: 4, width: 18, height: 18, borderRadius: '50%', background: '#F5E8C8', border: 'none', cursor: 'pointer', display: 'inline-flex', alignItems: 'center', justifyContent: 'center', padding: 0, flexShrink: 0 }}>
               <i className="fa-solid fa-question" style={{ fontSize: 8, color: '#BA7517' }}></i>
             </button>
           </div>
