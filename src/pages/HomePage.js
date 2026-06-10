@@ -181,7 +181,7 @@ export default function HomePage() {
 
   async function handleSubmitShipping() {
     if (!shippingForm.store_name.trim() || !shippingForm.recipient_name.trim() || !shippingForm.phone.trim()) {
-      setShippingError('請填寫所有必填欄位'); playSound('error_general'); return
+      setShippingError('請填寫所有必填欄位'); playSound('error_general'); vibrate(VIBRATE.error); return
     }
     setShippingSaving(true); setShippingError('')
     const { error } = await supabase.from('shipping_orders').insert({
@@ -189,8 +189,8 @@ export default function HomePage() {
       recipient_name: shippingForm.recipient_name.trim(), phone: shippingForm.phone.trim(),
       note: shippingForm.note.trim(), status: 'pending',
     })
-    if (error) { setShippingError('申請失敗，請稍後再試'); playSound('error_system') }
-    else { playSound('shop_redeem_success'); setShippingModal(false); await fetchShippingStatus(member.id) }
+    if (error) { setShippingError('申請失敗，請稍後再試'); playSound('error_system'); vibrate(VIBRATE.error) }
+    else { playSound('shop_redeem_success'); vibrate(VIBRATE.success); setShippingModal(false); await fetchShippingStatus(member.id) }
     setShippingSaving(false)
   }
 
@@ -206,7 +206,7 @@ export default function HomePage() {
   function openMakeUp(day) {
     const today = new Date().toISOString().split('T')[0]
     if (day.done || day.date >= today) return
-    playSound('modal_open')
+    playSound('modal_open'); vibrate(VIBRATE.light)
     setMakeUpError(''); setMakeUpModal(day)
   }
 
@@ -227,7 +227,7 @@ export default function HomePage() {
       setMember({ ...member, points: newPoints, level: newLevel })
       playSound('checkin_success'); vibrate(VIBRATE.makeUp)
       setMakeUpModal(null); await fetchWeekLogins(member.id)
-    } catch { setMakeUpError('補簽失敗，請稍後再試'); playSound('error_system') }
+    } catch { setMakeUpError('補簽失敗，請稍後再試'); playSound('error_system'); vibrate(VIBRATE.error) }
     setMakeUpSaving(false)
   }
 
@@ -334,7 +334,7 @@ export default function HomePage() {
             <div style={{ fontSize: 11, fontWeight: 500, color: '#888', display: 'flex', alignItems: 'center', gap: 5, marginBottom: 8 }}>
               <i className="fa-solid fa-newspaper" style={{ fontSize: 13, color: '#BA7517' }}></i>每日新聞
             </div>
-            <div style={{ border: '1px solid #f0e8d0', borderRadius: 8, overflow: 'hidden', display: 'flex', cursor: news?.body ? 'pointer' : 'default', background: 'linear-gradient(135deg,#fdfaf4,#fff)' }} onClick={() => { if (news?.body) { playSound('modal_open'); setNewsModal(true) } }}>
+            <div style={{ border: '1px solid #f0e8d0', borderRadius: 8, overflow: 'hidden', display: 'flex', cursor: news?.body ? 'pointer' : 'default', background: 'linear-gradient(135deg,#fdfaf4,#fff)' }} className={news?.body ? 'press-fx-soft' : ''} onClick={() => { if (news?.body) { playSound('modal_open'); vibrate(VIBRATE.light); setNewsModal(true) } }}>
               <div style={{ width: 80, minHeight: 64, background: 'linear-gradient(135deg,#f5ede0,#f0e8d0)', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
                 {news.image_url ? <img src={news.image_url} alt="news" style={{ width: '100%', height: '100%', objectFit: 'cover' }} /> : <i className="fa-solid fa-image" style={{ fontSize: 20, color: '#D4A94A' }}></i>}
               </div>
@@ -355,7 +355,8 @@ export default function HomePage() {
 
             {/* 直播下單區 — 縱向排列 */}
             <div
-              onClick={() => { playSound('button_tap'); navigate('/shop?tab=live') }}
+              onClick={() => { playSound('button_tap'); vibrate(VIBRATE.light); navigate('/shop?tab=live') }}
+              className="press-fx-soft"
               style={{ background: 'linear-gradient(135deg,#1a1a1a,#2A2A2A)', border: '1px solid rgba(226,75,74,0.35)', borderRadius: 14, padding: '14px', cursor: 'pointer', boxShadow: '0 5px 18px rgba(0,0,0,.12)', position: 'relative', overflow: 'hidden', display: 'flex', flexDirection: 'column', justifyContent: 'center', gap: 6 }}>
               <div style={{ position: 'absolute', top: -18, right: -14, width: 72, height: 72, borderRadius: '50%', background: 'radial-gradient(circle,rgba(226,75,74,.22),transparent 70%)', pointerEvents: 'none' }} />
               {/* LIVE badge + 標題 */}
@@ -380,7 +381,8 @@ export default function HomePage() {
 
             {/* 積分排行榜 — 等高縱向 */}
             <div
-              onClick={() => { playSound('modal_open'); setShowLeaderboard(true) }}
+              onClick={() => { playSound('modal_open'); vibrate(VIBRATE.light); setShowLeaderboard(true) }}
+              className="press-fx-soft"
               style={{ background: 'linear-gradient(135deg,#FFF8EE,#FFFBF2)', border: '1px solid #F5E8C8', borderRadius: 14, padding: '12px 8px', cursor: 'pointer', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: 7, boxShadow: '0 2px 8px rgba(186,117,23,.07)' }}>
               <div style={{ width: 36, height: 36, borderRadius: 10, background: 'linear-gradient(135deg,#BA7517,#D4A94A)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
                 <i className="fa-solid fa-ranking-star" style={{ fontSize: 16, color: '#fff' }}></i>
@@ -395,11 +397,11 @@ export default function HomePage() {
               <span style={S.typeBadge('linear-gradient(135deg,#BA7517,#D4A94A)')}><i className="fa-solid fa-trophy"></i></span>
               戰績牆
             </div>
-            <span style={{ fontSize: 11, color: '#ccc', cursor: 'pointer' }} onClick={() => { playSound('button_tap'); navigate('/wall') }}>全部 →</span>
+            <span style={{ fontSize: 11, color: '#ccc', cursor: 'pointer' }} onClick={() => { playSound('button_tap'); vibrate(VIBRATE.light); navigate('/wall') }}>全部 →</span>
           </div>
           <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3,1fr)', gap: 7, marginBottom: 16 }}>
             {recentCards.map((card, idx) => (
-              <div key={card.id} onClick={() => { playSound('button_tap'); navigate('/wall') }} style={S.card}>
+              <div key={card.id} onClick={() => { playSound('button_tap'); vibrate(VIBRATE.light); navigate('/wall') }} className="press-fx-soft" style={S.card}>
                 <div style={{ aspectRatio: '3/4', background: '#f8f5f0', display: 'flex', alignItems: 'center', justifyContent: 'center', position: 'relative', overflow: 'hidden' }}>
                   {card.image_url ? <img src={card.image_url} alt={card.name} style={{ width: '100%', height: '100%', objectFit: 'cover' }} /> : <i className="fa-solid fa-id-card" style={{ fontSize: 28, color: '#D4A94A', opacity: 0.4 }}></i>}
                   <span style={{ position: 'absolute', top: 5, left: 5, fontSize: 8, fontWeight: 700, padding: '2px 5px', borderRadius: 99, background: '#FCEBEB', color: '#791F1F' }}>{card.rarity}</span>
@@ -421,7 +423,7 @@ export default function HomePage() {
                   <span style={S.typeBadge('linear-gradient(135deg,#A32D2D,#E24B4A)')}><i className="fa-solid fa-shield"></i></span>
                   共同挑戰
                 </div>
-                <span style={{ fontSize: 11, color: '#ccc', cursor: 'pointer' }} onClick={() => { playSound('button_tap'); navigate('/challenge') }}>詳情 →</span>
+                <span style={{ fontSize: 11, color: '#ccc', cursor: 'pointer' }} onClick={() => { playSound('button_tap'); vibrate(VIBRATE.light); navigate('/challenge') }}>詳情 →</span>
               </div>
               <div style={S.bossCard}>
                 <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 12 }}>
@@ -474,7 +476,7 @@ export default function HomePage() {
                     ? (isToday ? '#F09595' : '#FAC775')
                     : d.isFuture ? '#eee' : isToday ? '#F09595' : canMakeUp ? '#e5ddd0' : '#eee'
                   return (
-                    <div key={d.date} onClick={() => canMakeUp && openMakeUp(d)}
+                    <div key={d.date} onClick={() => canMakeUp && openMakeUp(d)} className={canMakeUp ? 'press-fx' : ''}
                       style={{ aspectRatio: 1, borderRadius: 9, background: bg, border: `1px solid ${borderColor}`, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: 2, cursor: canMakeUp ? 'pointer' : 'default', position: 'relative', transition: 'transform 0.1s' }}>
                       <div style={{ width: 26, height: 26, borderRadius: 10, background: d.done ? tc.color : d.isFuture ? '#ddd' : isToday ? tc.color : '#d0c8be', display: 'flex', alignItems: 'center', justifyContent: 'center', opacity: d.done ? 1 : d.isFuture ? 0.3 : isToday ? 0.35 : 0.45 }}>
                         <img src={`${CDN}/${tc.type}.svg`} alt={tc.name} style={{ width: 13, height: 13 }} />
@@ -507,7 +509,7 @@ export default function HomePage() {
             </div>
             <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-end', gap: 4 }}>
               <span style={{ fontSize: 10, background: STATUS_COLOR.pending.bg, color: STATUS_COLOR.pending.color, padding: '2px 8px', borderRadius: 20, fontWeight: 500 }}>待出貨</span>
-              <span onClick={() => { playSound('modal_open'); setCancelModal(true) }} style={{ fontSize: 10, color: '#A32D2D', cursor: 'pointer', textDecoration: 'underline' }}>取消申請</span>
+              <span onClick={() => { playSound('modal_open'); vibrate(VIBRATE.light); setCancelModal(true) }} style={{ fontSize: 10, color: '#A32D2D', cursor: 'pointer', textDecoration: 'underline' }}>取消申請</span>
             </div>
           </div>
         ) : cannotOrderUntil ? (
@@ -519,7 +521,7 @@ export default function HomePage() {
             </div>
           </div>
         ) : (
-          <button onClick={() => { playSound('modal_open'); setShippingModal(true) }} style={{ pointerEvents: 'auto', width: '100%', padding: '13px 0', background: 'linear-gradient(135deg,#BA7517,#D4A94A)', border: 'none', borderRadius: 14, fontSize: 14, fontWeight: 700, color: '#fff', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8, boxShadow: '0 4px 20px rgba(186,117,23,.35)' }}>
+          <button onClick={() => { playSound('modal_open'); vibrate(VIBRATE.light); setShippingModal(true) }} className="press-fx" style={{ pointerEvents: 'auto', width: '100%', padding: '13px 0', background: 'linear-gradient(135deg,#BA7517,#D4A94A)', border: 'none', borderRadius: 14, fontSize: 14, fontWeight: 700, color: '#fff', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8, boxShadow: '0 4px 20px rgba(186,117,23,.35)' }}>
             <i className="fa-solid fa-truck"></i> 我要出貨
           </button>
         )}
@@ -607,8 +609,8 @@ export default function HomePage() {
             </div>
             {makeUpError && <div style={{ background: '#FCEBEB', color: '#A32D2D', padding: '8px 12px', borderRadius: 8, fontSize: 12, marginBottom: 12 }}>{makeUpError}</div>}
             <div style={{ display: 'flex', gap: 8 }}>
-              <button onClick={() => { playSound('modal_close'); setMakeUpModal(null) }} style={{ flex: 1, padding: 10, border: '1px solid #f0e8d0', borderRadius: 10, fontSize: 13, color: '#888', background: '#fdfaf4', cursor: 'pointer' }}>取消</button>
-              <button onClick={handleMakeUp} disabled={makeUpSaving || (member?.points || 0) < 10}
+              <button onClick={() => { playSound('modal_close'); setMakeUpModal(null) }} className="press-fx" style={{ flex: 1, padding: 10, border: '1px solid #f0e8d0', borderRadius: 10, fontSize: 13, color: '#888', background: '#fdfaf4', cursor: 'pointer' }}>取消</button>
+              <button onClick={handleMakeUp} disabled={makeUpSaving || (member?.points || 0) < 10} className="press-fx"
                 style={{ flex: 2, padding: 10, background: makeUpSaving || (member?.points || 0) < 10 ? '#ccc' : 'linear-gradient(135deg,#BA7517,#D4A94A)', border: 'none', borderRadius: 10, fontSize: 13, fontWeight: 700, color: '#fff', cursor: 'pointer' }}>
                 {makeUpSaving ? '補簽中...' : '確認補簽 (-10點)'}
               </button>
@@ -638,8 +640,8 @@ export default function HomePage() {
                 </div>
               ))}
               <div style={{ display: 'flex', gap: 8, marginTop: 8 }}>
-                <button onClick={() => { playSound('modal_close'); setShippingModal(false) }} style={{ flex: 1, padding: 12, border: '1px solid #f0e8d0', borderRadius: 10, fontSize: 14, color: '#888', background: '#fdfaf4', cursor: 'pointer' }}>取消</button>
-                <button onClick={handleSubmitShipping} disabled={shippingSaving} style={{ flex: 2, padding: 12, background: shippingSaving ? '#ccc' : 'linear-gradient(135deg,#BA7517,#D4A94A)', border: 'none', borderRadius: 10, fontSize: 14, fontWeight: 700, color: '#fff', cursor: 'pointer' }}>
+                <button onClick={() => { playSound('modal_close'); setShippingModal(false) }} className="press-fx" style={{ flex: 1, padding: 12, border: '1px solid #f0e8d0', borderRadius: 10, fontSize: 14, color: '#888', background: '#fdfaf4', cursor: 'pointer' }}>取消</button>
+                <button onClick={handleSubmitShipping} disabled={shippingSaving} className="press-fx" style={{ flex: 2, padding: 12, background: shippingSaving ? '#ccc' : 'linear-gradient(135deg,#BA7517,#D4A94A)', border: 'none', borderRadius: 10, fontSize: 14, fontWeight: 700, color: '#fff', cursor: 'pointer' }}>
                   {shippingSaving ? '申請中...' : '確認申請'}
                 </button>
               </div>
@@ -660,8 +662,8 @@ export default function HomePage() {
               取消後 <strong style={{ color: '#E24B4A' }}>7 天內</strong>將無法再申請出貨
             </div>
             <div style={{ display: 'flex', gap: 8 }}>
-              <button onClick={() => { playSound('modal_close'); setCancelModal(false) }} style={{ flex: 1, padding: 11, border: '1px solid #ddd', borderRadius: 10, fontSize: 13, color: '#666', background: 'transparent', cursor: 'pointer' }}>保留申請</button>
-              <button onClick={handleCancelShipping} disabled={shippingSaving} style={{ flex: 1, padding: 11, background: shippingSaving ? '#ccc' : '#E24B4A', border: 'none', borderRadius: 10, fontSize: 13, fontWeight: 600, color: '#fff', cursor: 'pointer' }}>
+              <button onClick={() => { playSound('modal_close'); setCancelModal(false) }} className="press-fx" style={{ flex: 1, padding: 11, border: '1px solid #ddd', borderRadius: 10, fontSize: 13, color: '#666', background: 'transparent', cursor: 'pointer' }}>保留申請</button>
+              <button onClick={handleCancelShipping} disabled={shippingSaving} className="press-fx" style={{ flex: 1, padding: 11, background: shippingSaving ? '#ccc' : '#E24B4A', border: 'none', borderRadius: 10, fontSize: 13, fontWeight: 600, color: '#fff', cursor: 'pointer' }}>
                 {shippingSaving ? '處理中...' : '確認取消'}
               </button>
             </div>
