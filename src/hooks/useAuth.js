@@ -1,8 +1,17 @@
+// src/hooks/useAuth.js
 import { useState, useEffect, createContext, useContext } from 'react'
 import { supabase } from '../lib/supabase'
 
 const AuthContext = createContext(null)
 const LAST_LEVEL_KEY = 'wnaptcg_last_level'
+
+// ── 並發鎖（module 層級，同步生效）──────────────────────────
+// 頁面載入時 getSession 與 onAuthStateChange 可能近乎同時觸發 fetchMember，
+// 導致 handleDailyLogin 並發執行、重複加分。用 module 層級的 Set 記錄
+// 「正在處理中的 userId」，第二次進入直接略過。
+// 之所以不用 React state：state 更新是非同步的，擋不住同一輪事件的並發；
+// module 變數是同步寫入、立即生效，才能真正鎖住。
+const processingUsers = new Set()
 
 export function AuthProvider({ children }) {
   const [member, setMember] = useState(null)
@@ -22,52 +31,59 @@ export function AuthProvider({ children }) {
   }, [])
 
   async function fetchMember(userId) {
-    let { data } = await supabase.from('members').select('*').eq('id', userId).single()
-    let isNewMember = false
+    // 並發鎖：若此 user 正在處理中，直接略過第二次呼叫
+    if (processingUsers.has(userId)) return
+    processingUsers.add(userId)
+    try {
+      let { data } = await supabase.from('members').select('*').eq('id', userId).single()
+      let isNewMember = false
 
-    if (!data) {
-      isNewMember = true
-      const { data: userData } = await supabase.auth.getUser()
-      const email = userData?.user?.email || ''
-      const { data: newMember } = await supabase.from('members').insert({
-        id: userId, email, display_name: email.split('@')[0],
-      }).select().single()
-      data = newMember
-    }
-
-    if (data) {
-      const lastLevel = localStorage.getItem(LAST_LEVEL_KEY)
-      const levelUp = lastLevel && lastLevel !== data.level
-      const oldLevel = lastLevel || null
-      const dailyResult = await handleDailyLogin(data, isNewMember)
-      localStorage.setItem(LAST_LEVEL_KEY, data.level)
-
-      const { data: refreshed } = await supabase.from('members').select('*').eq('id', userId).single()
-      const finalMember = refreshed || data
-      setMember(finalMember)
-
-      const hasLevelUp = levelUp || (dailyResult?.levelUp)
-      const effectiveOldLevel = dailyResult?.oldLevel || oldLevel
-      const effectiveNewLevel = dailyResult?.newLevel || finalMember.level
-
-      if (isNewMember || dailyResult?.pointsEarned > 0 || hasLevelUp) {
-        setLoginResult({
-          isNewMember,
-          pointsEarned: dailyResult?.pointsEarned || 0,
-          bonusEarned: dailyResult?.bonusEarned || 0,
-          levelUp: hasLevelUp,
-          oldLevel: effectiveOldLevel,
-          newLevel: effectiveNewLevel,
-          newStreak: dailyResult?.newStreak || finalMember.login_streak,
-          // ── 新增：7日全勤旗標 ──
-          weekComplete: dailyResult?.weekComplete || false,
-        })
+      if (!data) {
+        isNewMember = true
+        const { data: userData } = await supabase.auth.getUser()
+        const email = userData?.user?.email || ''
+        const { data: newMember } = await supabase.from('members').insert({
+          id: userId, email, display_name: email.split('@')[0],
+        }).select().single()
+        data = newMember
       }
 
-      if (hasLevelUp) localStorage.setItem(LAST_LEVEL_KEY, effectiveNewLevel)
-    }
+      if (data) {
+        const lastLevel = localStorage.getItem(LAST_LEVEL_KEY)
+        const levelUp = lastLevel && lastLevel !== data.level
+        const oldLevel = lastLevel || null
+        const dailyResult = await handleDailyLogin(data, isNewMember)
+        localStorage.setItem(LAST_LEVEL_KEY, data.level)
 
-    setLoading(false)
+        const { data: refreshed } = await supabase.from('members').select('*').eq('id', userId).single()
+        const finalMember = refreshed || data
+        setMember(finalMember)
+
+        const hasLevelUp = levelUp || (dailyResult?.levelUp)
+        const effectiveOldLevel = dailyResult?.oldLevel || oldLevel
+        const effectiveNewLevel = dailyResult?.newLevel || finalMember.level
+
+        if (isNewMember || dailyResult?.pointsEarned > 0 || hasLevelUp) {
+          setLoginResult({
+            isNewMember,
+            pointsEarned: dailyResult?.pointsEarned || 0,
+            bonusEarned: dailyResult?.bonusEarned || 0,
+            levelUp: hasLevelUp,
+            oldLevel: effectiveOldLevel,
+            newLevel: effectiveNewLevel,
+            newStreak: dailyResult?.newStreak || finalMember.login_streak,
+            // ── 新增：7日全勤旗標 ──
+            weekComplete: dailyResult?.weekComplete || false,
+          })
+        }
+
+        if (hasLevelUp) localStorage.setItem(LAST_LEVEL_KEY, effectiveNewLevel)
+      }
+    } finally {
+      // 無論成功或出錯都要解鎖，否則此 user 之後永遠無法再進入
+      processingUsers.delete(userId)
+      setLoading(false)
+    }
   }
 
   async function handleDailyLogin(m, isNewMember) {
