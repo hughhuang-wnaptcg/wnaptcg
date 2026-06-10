@@ -458,8 +458,8 @@ export default function HomePage() {
             {boardMsgs.length > 0 ? (
               <div style={{ position: 'relative', height: 74, overflow: 'hidden', marginBottom: 12 }}>
                 <style>{`@keyframes boardScroll{0%{transform:translateX(0)}100%{transform:translateX(-50%)}}`}</style>
-                <div style={{ display: 'flex', gap: 10, position: 'absolute', width: 'max-content', animation: `boardScroll ${Math.max(boardMsgs.length * 4, 16)}s linear infinite` }}>
-                  {[...boardMsgs, ...boardMsgs].map((m, i) => {
+                <div style={{ display: 'flex', gap: 10, position: 'absolute', width: 'max-content', animation: boardMsgs.length >= 3 ? `boardScroll ${Math.max(boardMsgs.length * 2.2, 10)}s linear infinite` : 'none' }}>
+                  {(boardMsgs.length >= 3 ? [...boardMsgs, ...boardMsgs] : boardMsgs).map((m, i) => {
                     const th = boardLevelTheme(m.level)
                     return (
                       <div key={i} style={{ flexShrink: 0, width: 204, background: '#fff', border: '0.5px solid #F0E2C0', borderRadius: 10, padding: '9px 11px', display: 'flex', gap: 8, alignItems: 'flex-start' }}>
