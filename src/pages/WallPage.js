@@ -5,6 +5,8 @@ import { useAuth } from '../hooks/useAuth'
 import { LevelBadge, PokeballIcon } from '../lib/pokeballs'
 import BottomNav from '../components/BottomNav'
 import { playSound } from '../lib/sounds'
+import { vibrate, VIBRATE } from '../lib/haptics'
+import { SkeletonCardGrid } from '../components/Skeleton'
 
 const RARITIES = ['UR','HR','SAR','CSR','SSR','SR','AR','CHR','PROMO','Other']
 
@@ -50,18 +52,20 @@ export default function WallPage() {
   }
 
   function switchTab(nextTab) {
-    if (tab !== nextTab) playSound('tab_switch')
+    if (tab !== nextTab) { playSound('tab_switch'); vibrate(VIBRATE.light) }
     setTab(nextTab)
     setRarityFilter('')
   }
 
   function selectRarity(r) {
     playSound('button_tap')
+    vibrate(VIBRATE.light)
     setRarityFilter(r)
   }
 
   function openCard(card) {
     playSound('modal_open')
+    vibrate(VIBRATE.light)
     setSelected(card)
   }
 
@@ -141,6 +145,7 @@ export default function WallPage() {
       {!loading && availableRarities.length > 0 && (
         <div style={{ padding: '10px 16px', borderBottom: '0.5px solid #f5f0e8', overflowX: 'auto', display: 'flex', gap: 6, background: '#fff' }}>
           <button
+            className="press-fx"
             onClick={() => selectRarity('')}
             style={{ flexShrink: 0, padding: '4px 10px', borderRadius: 99, fontSize: 11, fontWeight: 600, cursor: 'pointer', border: `1px solid ${!rarityFilter ? '#FAC775' : '#f0e8d0'}`, background: !rarityFilter ? 'linear-gradient(135deg,#FAEEDA,#FFF3D0)' : '#f8f5f0', color: !rarityFilter ? '#8B5A00' : '#999' }}>
             全部
@@ -151,6 +156,7 @@ export default function WallPage() {
             return (
               <button
                 key={r}
+                className="press-fx"
                 onClick={() => selectRarity(active ? '' : r)}
                 style={{ flexShrink: 0, padding: '4px 10px', borderRadius: 99, fontSize: 11, fontWeight: 600, cursor: 'pointer', border: `1px solid ${active ? rc.color : '#f0e8d0'}`, background: active ? rc.bg : '#f8f5f0', color: active ? rc.color : '#999', display: 'flex', alignItems: 'center', gap: 4 }}>
                 {r}
@@ -163,7 +169,7 @@ export default function WallPage() {
 
       <div style={{ flex: 1, overflowY: 'auto' }}>
         {loading ? (
-          <div style={{ textAlign: 'center', padding: 40, color: '#bbb', fontSize: 14 }}>載入中...</div>
+          <SkeletonCardGrid count={6} />
         ) : displayCards.length === 0 ? (
           <div style={{ textAlign: 'center', padding: 60, color: '#bbb' }}>
             <i className="fa-solid fa-id-card" style={{ fontSize: 40, marginBottom: 12, display: 'block', opacity: 0.3 }}></i>
@@ -177,7 +183,7 @@ export default function WallPage() {
               const rc = RARITY_COLORS[card.rarity] || RARITY_COLORS.Other
               const owner = card.card_owners?.[0]
               return (
-                <div key={card.id} onClick={() => openCard(card)}
+                <div key={card.id} className="press-fx-soft" onClick={() => openCard(card)}
                   style={{ border: 'none', borderRadius: 18, overflow: 'hidden', background: '#fff', cursor: 'pointer', boxShadow: '0 4px 16px rgba(186,117,23,.10)' }}>
                   <div style={{ aspectRatio: '3/4', background: '#f8f5f0', display: 'flex', alignItems: 'center', justifyContent: 'center', position: 'relative', overflow: 'hidden' }}>
                     {card.image_url
