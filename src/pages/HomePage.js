@@ -498,6 +498,11 @@ export default function HomePage() {
       </div>
 
       {/* 我要出貨 固定按鈕（浮動橫幅） */}
+      <style>{`
+        @keyframes shipBarIn{0%{opacity:0;transform:translateY(16px) scale(0.97)}100%{opacity:1;transform:translateY(0) scale(1)}}
+        @keyframes shipBarGlow{0%,100%{box-shadow:0 4px 20px rgba(186,117,23,.35),0 0 0 0 rgba(224,123,0,0.5)}50%{box-shadow:0 6px 24px rgba(186,117,23,.45),0 0 0 8px rgba(224,123,0,0)}}
+        @keyframes shipIconBob{0%,100%{transform:translateY(0)}50%{transform:translateY(-2px)}}
+      `}</style>
       <div style={{ position: 'fixed', bottom: 72, left: '50%', transform: 'translateX(-50%)', width: '100%', maxWidth: 390, padding: '0 20px', pointerEvents: 'none', zIndex: 90 }}>
         {currentOrder ? (
           <div style={{ pointerEvents: 'auto', background: 'linear-gradient(135deg,#fdfaf4,#fff)', border: '1px solid #FAC775', borderRadius: 14, padding: '10px 14px', display: 'flex', alignItems: 'center', gap: 10, boxShadow: '0 4px 20px rgba(186,117,23,.15)' }}>
@@ -522,8 +527,8 @@ export default function HomePage() {
             </div>
           </div>
         ) : (
-          <button onClick={() => { playSound('modal_open'); vibrate(VIBRATE.light); setShippingModal(true) }} className="press-fx" style={{ pointerEvents: 'auto', width: '100%', padding: '13px 0', background: 'linear-gradient(135deg,#BA7517,#D4A94A)', border: 'none', borderRadius: 14, fontSize: 14, fontWeight: 700, color: '#fff', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8, boxShadow: '0 4px 20px rgba(186,117,23,.35)' }}>
-            <i className="fa-solid fa-truck"></i> 我要出貨
+          <button onClick={() => { playSound('modal_open'); vibrate(VIBRATE.light); setShippingModal(true) }} className="press-fx" style={{ pointerEvents: 'auto', width: '100%', padding: '14px 0', background: 'linear-gradient(135deg,#BA7517,#E07B00)', border: '1.5px solid #FFF3D0', borderRadius: 14, fontSize: 15, fontWeight: 800, color: '#fff', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8, animation: 'shipBarIn 0.32s cubic-bezier(0.34,1.56,0.64,1), shipBarGlow 2.2s ease infinite' }}>
+            <i className="fa-solid fa-truck" style={{ animation: 'shipIconBob 1.6s ease infinite' }}></i> 我要出貨
           </button>
         )}
       </div>
