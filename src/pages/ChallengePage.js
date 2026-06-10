@@ -160,6 +160,24 @@ export default function ChallengePage() {
 
   useEffect(() => { fetchData() }, [])
 
+  // ── Realtime：監聽當前 Boss 的傷害紀錄，有人造成傷害就即時更新 ──
+  // 新增 boss_purchases 時自動 re-fetch，觸發上方 fetchData 內的
+  // 「跨里程碑 / 擊敗 Boss」音效＋震動偵測，HP 條與戰報也即時刷新。
+  // 依賴 boss?.id：拿到 Boss 後才訂閱、換 Boss 重新訂閱、離開頁面時清理。
+  useEffect(() => {
+    if (!boss?.id) return
+    const channel = supabase
+      .channel(`boss_purchases_realtime_${boss.id}`)
+      .on('postgres_changes', {
+        event: 'INSERT',
+        schema: 'public',
+        table: 'boss_purchases',
+        filter: `boss_id=eq.${boss.id}`,
+      }, () => { fetchData() })
+      .subscribe()
+    return () => { supabase.removeChannel(channel) }
+  }, [boss?.id])
+
   async function fetchData() {
     const { data: bossData } = await supabase.from('boss_challenges').select('*').eq('is_active', true).single()
     if (bossData) {
