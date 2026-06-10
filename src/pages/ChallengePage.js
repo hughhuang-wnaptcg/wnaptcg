@@ -1,9 +1,11 @@
-import React, { useEffect, useState } from 'react'
+// src/pages/ChallengePage.js
+import React, { useEffect, useRef, useState } from 'react'
 import { supabase } from '../lib/supabase'
 import { useAuth } from '../hooks/useAuth'
 import { getLevel } from '../lib/supabase'
 import { LevelBadge, PokeballIcon } from '../lib/pokeballs'
 import BottomNav from '../components/BottomNav'
+import { playSound } from '../lib/sounds'
 
 function BossHpBar({ targetPct, delay = 0 }) {
   const [pct, setPct] = useState(100)
@@ -149,6 +151,11 @@ export default function ChallengePage() {
   const [loading, setLoading] = useState(true)
   const [showHint, setShowHint] = useState(false)
 
+  // 記住上一次偵測到的討伐百分比，避免重播音效
+  const prevDamagedPctRef = useRef(null)
+  // 確保「進頁成就音」只播一次
+  const introSoundPlayedRef = useRef(false)
+
   useEffect(() => { fetchData() }, [])
 
   async function fetchData() {
@@ -168,8 +175,46 @@ export default function ChallengePage() {
       ])
       setPurchases(pData || [])
       setRecentPurchases(recentData || [])
+
+      // ── 音效偵測 ──
+      const dmgPct = Math.min(Math.round((bossData.current_amount / bossData.target_amount) * 100), 100)
+      const ms = parseMilestones(bossData)
+      const prev = prevDamagedPctRef.current
+
+      if (prev === null) {
+        // 首次載入：播放一次「進頁成就音」反映目前最高進度
+        if (!introSoundPlayedRef.current) {
+          introSoundPlayedRef.current = true
+          if (dmgPct >= 100) {
+            playSound('boss_defeated')
+          } else {
+            // 找出目前已解鎖的最高里程碑，播對應音
+            const unlocked = ms.filter(m => dmgPct >= m.pct)
+            if (unlocked.length > 0) playSound('milestone')
+          }
+        }
+      } else if (dmgPct > prev) {
+        // 後續更新：偵測是否跨過新的里程碑或擊敗 Boss
+        if (dmgPct >= 100 && prev < 100) {
+          playSound('boss_defeated')
+        } else {
+          const crossed = ms.some(m => prev < m.pct && dmgPct >= m.pct)
+          if (crossed) playSound('milestone')
+        }
+      }
+      prevDamagedPctRef.current = dmgPct
     }
     setLoading(false)
+  }
+
+  function openHint() {
+    playSound('modal_open')
+    setShowHint(true)
+  }
+
+  function closeHint() {
+    playSound('modal_close')
+    setShowHint(false)
   }
 
   const currentLevel = member ? getLevel(member.points || 0) : null
@@ -187,7 +232,7 @@ export default function ChallengePage() {
         <div style={{ fontSize: 15, fontWeight: 500, color: '#1a1a1a', display: 'flex', alignItems: 'center', gap: 5 }}>
           <i className="fa-solid fa-shield" style={{ fontSize: 13, color: '#BA7517' }} aria-hidden="true"></i>
           共同挑戰
-          <button onClick={() => setShowHint(true)} style={{ marginLeft: 4, width: 18, height: 18, borderRadius: '50%', background: '#F5E8C8', border: 'none', cursor: 'pointer', display: 'inline-flex', alignItems: 'center', justifyContent: 'center', padding: 0 }}>
+          <button onClick={openHint} style={{ marginLeft: 4, width: 18, height: 18, borderRadius: '50%', background: '#F5E8C8', border: 'none', cursor: 'pointer', display: 'inline-flex', alignItems: 'center', justifyContent: 'center', padding: 0 }}>
             <i className="fa-solid fa-question" style={{ fontSize: 8, color: '#BA7517' }}></i>
           </button>
         </div>
@@ -198,7 +243,7 @@ export default function ChallengePage() {
         <div style={{ fontSize: 12, color: '#ddd' }}>敬請期待下一波 Boss 挑戰</div>
       </div>
       <BottomNav />
-      {showHint && <ChallengeHintSheet onClose={() => setShowHint(false)} />}
+      {showHint && <ChallengeHintSheet onClose={closeHint} />}
     </div>
   )
 
@@ -244,7 +289,7 @@ export default function ChallengePage() {
           <div style={{ fontSize: 15, fontWeight: 500, color: '#1a1a1a', display: 'flex', alignItems: 'center', gap: 5 }}>
             <i className="fa-solid fa-shield" style={{ fontSize: 13, color: '#BA7517' }} aria-hidden="true"></i>
             共同挑戰
-            <button onClick={() => setShowHint(true)} style={{ marginLeft: 4, width: 18, height: 18, borderRadius: '50%', background: '#F5E8C8', border: 'none', cursor: 'pointer', display: 'inline-flex', alignItems: 'center', justifyContent: 'center', padding: 0, flexShrink: 0 }}>
+            <button onClick={openHint} style={{ marginLeft: 4, width: 18, height: 18, borderRadius: '50%', background: '#F5E8C8', border: 'none', cursor: 'pointer', display: 'inline-flex', alignItems: 'center', justifyContent: 'center', padding: 0, flexShrink: 0 }}>
               <i className="fa-solid fa-question" style={{ fontSize: 8, color: '#BA7517' }}></i>
             </button>
           </div>
@@ -495,7 +540,7 @@ export default function ChallengePage() {
       </div>
 
       <BottomNav />
-      {showHint && <ChallengeHintSheet onClose={() => setShowHint(false)} />}
+      {showHint && <ChallengeHintSheet onClose={closeHint} />}
     </div>
   )
 }
