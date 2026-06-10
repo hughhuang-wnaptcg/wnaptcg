@@ -8,6 +8,7 @@ import BottomNav from '../components/BottomNav'
 import LeaderboardSheet from '../components/LeaderboardSheet'
 import { vibrate, VIBRATE } from '../lib/haptics'
 import { playSound } from '../lib/sounds'
+import CountUp from '../components/CountUp'
 
 const CDN = 'https://cdn.jsdelivr.net/gh/duiker101/pokemon-type-svg-icons@master/icons'
 
@@ -306,7 +307,7 @@ export default function HomePage() {
           {todayPoints > 0 && (
             <div style={{ display: 'inline-flex', alignItems: 'center', gap: 6, background: '#fff', border: '2px solid #FAC775', borderRadius: 999, padding: '6px 14px', fontSize: 12, color: '#8B4A00', fontWeight: 700, boxShadow: '0 2px 8px rgba(186,117,23,.12)' }}>
               <i className="fa-solid fa-star" style={{ color: '#E07B00', fontSize: 12 }}></i>
-              今日已獲得 <strong style={{ color: '#E07B00', margin: '0 1px' }}>+{todayPoints}</strong> 點
+              今日已獲得 <strong style={{ color: '#E07B00', margin: '0 1px' }}>+<CountUp value={todayPoints} /></strong> 點
             </div>
           )}
           <svg style={{ position: 'absolute', bottom: -1, left: 0, right: 0, width: '100%' }} viewBox="0 0 390 22" preserveAspectRatio="none" height="22">
