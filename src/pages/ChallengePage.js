@@ -440,8 +440,8 @@ export default function ChallengePage() {
                   position: 'relative',
                 }}>
                   {active && (
-                    <div style={{ position: 'absolute', top: -7, left: '50%', transform: 'translateX(-50%)', background: '#E24B4A', borderRadius: 4, padding: '1px 5px', whiteSpace: 'nowrap' }}>
-                      <span style={{ fontSize: 8, color: '#fff', fontWeight: 500 }}>進行中</span>
+                    <div style={{ position: 'absolute', top: -7, left: 0, right: 0, display: 'flex', justifyContent: 'center', pointerEvents: 'none' }}>
+                      <span style={{ background: '#E24B4A', borderRadius: 4, padding: '1px 5px', whiteSpace: 'nowrap', fontSize: 8, color: '#fff', fontWeight: 500, textAlign: 'center' }}>進行中</span>
                     </div>
                   )}
                   <div style={{ fontSize: 11, fontWeight: 500, color: unlocked ? '#854F0B' : active ? '#A32D2D' : '#B4B2A9', marginBottom: 6, marginTop: active ? 4 : 0 }}>
