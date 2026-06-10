@@ -1,3 +1,4 @@
+// src/App.js
 import React, { useState, useEffect } from 'react'
 import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom'
 import { AuthProvider, useAuth } from './hooks/useAuth'
@@ -8,6 +9,7 @@ import ChallengePage from './pages/ChallengePage'
 import ProfilePage from './pages/ProfilePage'
 import ShopPage from './pages/ShopPage'
 import WelcomeOverlay from './components/WelcomeOverlay'
+import { InteractionFXStyles } from './components/InteractionFX'
 
 function AppLoader() {
   return (
@@ -52,16 +54,13 @@ function PrivateRoute({ children }) {
   const { member, loading, loginResult, clearLoginResult } = useAuth()
   const [showWelcome, setShowWelcome] = useState(false)
   const [welcomed, setWelcomed] = useState(false)
-
   useEffect(() => {
     if (!loading && member && loginResult && !welcomed) {
       setShowWelcome(true)
     }
   }, [loading, member, loginResult, welcomed])
-
   if (loading) return <AppLoader />
   if (!member) return <Navigate to="/login" replace />
-
   return (
     <>
       {showWelcome && (
@@ -84,6 +83,7 @@ export default function App() {
   return (
     <BrowserRouter>
       <AuthProvider>
+        <InteractionFXStyles />
         <Routes>
           <Route path="/login" element={<LoginPage />} />
           <Route path="/" element={<PrivateRoute><HomePage /></PrivateRoute>} />
