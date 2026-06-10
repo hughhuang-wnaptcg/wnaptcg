@@ -497,15 +497,9 @@ export default function HomePage() {
         </div>
       </div>
 
-      {/* 我要出貨 固定按鈕 */}
-      <style>{`
-        @keyframes fabIn{0%{opacity:0;transform:scale(0.4) translateY(20px)}60%{transform:scale(1.1)}100%{opacity:1;transform:scale(1) translateY(0)}}
-        @keyframes fabGlow{0%,100%{box-shadow:0 6px 22px rgba(186,117,23,.4),0 0 0 0 rgba(224,123,0,0.5)}50%{box-shadow:0 8px 26px rgba(186,117,23,.5),0 0 0 10px rgba(224,123,0,0)}}
-      `}</style>
-
-      {/* 狀態一：已有待出貨申請 — 維持資訊橫條 */}
-      {currentOrder && (
-        <div style={{ position: 'fixed', bottom: 72, left: '50%', transform: 'translateX(-50%)', width: '100%', maxWidth: 390, padding: '0 20px', pointerEvents: 'none', zIndex: 50 }}>
+      {/* 我要出貨 固定按鈕（浮動橫幅） */}
+      <div style={{ position: 'fixed', bottom: 88, left: '50%', transform: 'translateX(-50%)', width: '100%', maxWidth: 390, padding: '0 20px', pointerEvents: 'none', zIndex: 50 }}>
+        {currentOrder ? (
           <div style={{ pointerEvents: 'auto', background: 'linear-gradient(135deg,#fdfaf4,#fff)', border: '1px solid #FAC775', borderRadius: 14, padding: '10px 14px', display: 'flex', alignItems: 'center', gap: 10, boxShadow: '0 4px 20px rgba(186,117,23,.15)' }}>
             <div style={{ width: 36, height: 36, borderRadius: 10, background: 'linear-gradient(135deg,#FAEEDA,#FFF3D0)', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
               <i className="fa-solid fa-truck" style={{ fontSize: 16, color: '#BA7517' }}></i>
@@ -519,12 +513,7 @@ export default function HomePage() {
               <span onClick={() => { playSound('modal_open'); vibrate(VIBRATE.light); setCancelModal(true) }} style={{ fontSize: 10, color: '#A32D2D', cursor: 'pointer', textDecoration: 'underline' }}>取消申請</span>
             </div>
           </div>
-        </div>
-      )}
-
-      {/* 狀態二：冷卻期 — 維持資訊橫條 */}
-      {!currentOrder && cannotOrderUntil && (
-        <div style={{ position: 'fixed', bottom: 72, left: '50%', transform: 'translateX(-50%)', width: '100%', maxWidth: 390, padding: '0 20px', pointerEvents: 'none', zIndex: 50 }}>
+        ) : cannotOrderUntil ? (
           <div style={{ pointerEvents: 'auto', background: '#f8f8f8', border: '1px solid #e5e5e5', borderRadius: 14, padding: '10px 16px', display: 'flex', alignItems: 'center', gap: 10 }}>
             <i className="fa-solid fa-clock" style={{ fontSize: 18, color: '#ccc' }}></i>
             <div>
@@ -532,17 +521,12 @@ export default function HomePage() {
               <div style={{ fontSize: 10, color: '#bbb' }}>取消後 {blockedDaysLeft} 天內無法再申請</div>
             </div>
           </div>
-        </div>
-      )}
-
-      {/* 狀態三：可申請 — 右下角圓形 FAB */}
-      {!currentOrder && !cannotOrderUntil && (
-        <button onClick={() => { playSound('modal_open'); vibrate(VIBRATE.light); setShippingModal(true) }} className="press-fx"
-          style={{ position: 'fixed', bottom: 84, left: '50%', marginLeft: 195 - 16 - 60, transform: 'translateX(-100%)', zIndex: 50, width: 60, height: 60, borderRadius: '50%', background: 'linear-gradient(135deg,#BA7517,#E07B00)', border: '2px solid #FFF3D0', color: '#fff', cursor: 'pointer', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: 1, animation: 'fabIn 0.4s cubic-bezier(0.34,1.56,0.64,1) both, fabGlow 2.2s ease infinite' }}>
-          <i className="fa-solid fa-truck" style={{ fontSize: 18 }}></i>
-          <span style={{ fontSize: 8, fontWeight: 700, letterSpacing: '0.02em' }}>我要出貨</span>
-        </button>
-      )}
+        ) : (
+          <button onClick={() => { playSound('modal_open'); vibrate(VIBRATE.light); setShippingModal(true) }} className="press-fx" style={{ pointerEvents: 'auto', width: '100%', padding: '13px 0', background: 'linear-gradient(135deg,#BA7517,#D4A94A)', border: 'none', borderRadius: 14, fontSize: 14, fontWeight: 700, color: '#fff', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8, boxShadow: '0 4px 20px rgba(186,117,23,.35)' }}>
+            <i className="fa-solid fa-truck"></i> 我要出貨
+          </button>
+        )}
+      </div>
 
       {/* 全勤慶祝 */}
       {showWeekCelebration && (
