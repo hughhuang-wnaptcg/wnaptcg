@@ -4,6 +4,7 @@ import { supabase, RARITY_COLORS } from '../lib/supabase'
 import { useAuth } from '../hooks/useAuth'
 import { LevelBadge, PokeballIcon } from '../lib/pokeballs'
 import BottomNav from '../components/BottomNav'
+import { playSound } from '../lib/sounds'
 
 const RARITIES = ['UR','HR','SAR','CSR','SSR','SR','AR','CHR','PROMO','Other']
 
@@ -46,6 +47,27 @@ export default function WallPage() {
       setMyCards(myData || [])
     }
     setLoading(false)
+  }
+
+  function switchTab(nextTab) {
+    if (tab !== nextTab) playSound('tab_switch')
+    setTab(nextTab)
+    setRarityFilter('')
+  }
+
+  function selectRarity(r) {
+    playSound('button_tap')
+    setRarityFilter(r)
+  }
+
+  function openCard(card) {
+    playSound('modal_open')
+    setSelected(card)
+  }
+
+  function closeCard() {
+    playSound('modal_close')
+    setSelected(null)
   }
 
   const baseCards = tab === 'my' ? myCards : cards
@@ -107,10 +129,10 @@ export default function WallPage() {
 
       {/* Tab 切換 */}
       <div style={S.tabBar}>
-        <button style={S.tabBtn(tab === 'all')} onClick={() => { setTab('all'); setRarityFilter('') }}>
+        <button style={S.tabBtn(tab === 'all')} onClick={() => switchTab('all')}>
           <i className="fa-solid fa-globe" style={{ marginRight: 5, fontSize: 12 }}></i>全部紀錄
         </button>
-        <button style={S.tabBtn(tab === 'my')} onClick={() => { setTab('my'); setRarityFilter('') }}>
+        <button style={S.tabBtn(tab === 'my')} onClick={() => switchTab('my')}>
           <i className="fa-solid fa-user" style={{ marginRight: 5, fontSize: 12 }}></i>我的戰績
         </button>
       </div>
@@ -119,7 +141,7 @@ export default function WallPage() {
       {!loading && availableRarities.length > 0 && (
         <div style={{ padding: '10px 16px', borderBottom: '0.5px solid #f5f0e8', overflowX: 'auto', display: 'flex', gap: 6, background: '#fff' }}>
           <button
-            onClick={() => setRarityFilter('')}
+            onClick={() => selectRarity('')}
             style={{ flexShrink: 0, padding: '4px 10px', borderRadius: 99, fontSize: 11, fontWeight: 600, cursor: 'pointer', border: `1px solid ${!rarityFilter ? '#FAC775' : '#f0e8d0'}`, background: !rarityFilter ? 'linear-gradient(135deg,#FAEEDA,#FFF3D0)' : '#f8f5f0', color: !rarityFilter ? '#8B5A00' : '#999' }}>
             全部
           </button>
@@ -129,7 +151,7 @@ export default function WallPage() {
             return (
               <button
                 key={r}
-                onClick={() => setRarityFilter(active ? '' : r)}
+                onClick={() => selectRarity(active ? '' : r)}
                 style={{ flexShrink: 0, padding: '4px 10px', borderRadius: 99, fontSize: 11, fontWeight: 600, cursor: 'pointer', border: `1px solid ${active ? rc.color : '#f0e8d0'}`, background: active ? rc.bg : '#f8f5f0', color: active ? rc.color : '#999', display: 'flex', alignItems: 'center', gap: 4 }}>
                 {r}
                 <span style={{ fontSize: 9, opacity: 0.7 }}>{rarityCount[r]}</span>
@@ -155,7 +177,7 @@ export default function WallPage() {
               const rc = RARITY_COLORS[card.rarity] || RARITY_COLORS.Other
               const owner = card.card_owners?.[0]
               return (
-                <div key={card.id} onClick={() => setSelected(card)}
+                <div key={card.id} onClick={() => openCard(card)}
                   style={{ border: 'none', borderRadius: 18, overflow: 'hidden', background: '#fff', cursor: 'pointer', boxShadow: '0 4px 16px rgba(186,117,23,.10)' }}>
                   <div style={{ aspectRatio: '3/4', background: '#f8f5f0', display: 'flex', alignItems: 'center', justifyContent: 'center', position: 'relative', overflow: 'hidden' }}>
                     {card.image_url
@@ -213,7 +235,7 @@ export default function WallPage() {
 
       {/* 卡牌詳情彈窗 */}
       {selected && (
-        <div onClick={() => setSelected(null)} style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.4)', display: 'flex', alignItems: 'flex-end', justifyContent: 'center', zIndex: 100 }}>
+        <div onClick={closeCard} style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.4)', display: 'flex', alignItems: 'flex-end', justifyContent: 'center', zIndex: 100 }}>
           <div onClick={e => e.stopPropagation()} style={{ background: '#fff', borderRadius: '16px 16px 0 0', width: '100%', maxWidth: 390, padding: 20, maxHeight: '85vh', overflowY: 'auto' }}>
             <div style={{ width: 36, height: 4, borderRadius: 2, background: '#f0e8d0', margin: '0 auto 16px' }} />
             <div style={{ width: '100%', aspectRatio: '3/4', maxWidth: 130, margin: '0 auto 14px', borderRadius: 10, background: '#f8f5f0', overflow: 'hidden', display: 'flex', alignItems: 'center', justifyContent: 'center', border: '0.5px solid #f0e8d0' }}>
