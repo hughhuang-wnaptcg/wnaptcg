@@ -4,9 +4,9 @@ import { PokeballIcon, LevelBadge } from '../lib/pokeballs'
 
 // ── 等級會員卡主題（與 ProfilePage 一致）──
 const LEVEL_THEME = {
-  精靈球: { bg: 'linear-gradient(135deg,#FFFBF2,#FFF3D8)', border: '#F5E8C8', name: '#2D1A00', sub: '#A07040', accent: '#E07B00', glow: 'rgba(224,123,0,0.18)', dark: false },
+  精靈球: { bg: 'linear-gradient(135deg,#FFFFFF,#FFE3E3)', border: '#E24B4A', name: '#9A1F1F', sub: '#C06A6A', accent: '#E24B4A', glow: 'rgba(226,75,74,0.20)', dark: false },
   超級球: { bg: 'linear-gradient(135deg,#EAF2FC,#D6E6F8)', border: '#AFCDEE', name: '#13355C', sub: '#4C6E96', accent: '#2F6FB5', glow: 'rgba(55,138,221,0.22)', dark: false },
-  高級球: { bg: 'linear-gradient(135deg,#FBF4E6,#F3E3C2)', border: '#E6C27A', name: '#3A2A0A', sub: '#7A5C2E', accent: '#B07A1E', glow: 'rgba(176,122,30,0.22)', dark: false },
+  高級球: { bg: 'linear-gradient(135deg,#FFF0B8,#F5D04A)', border: '#1A1A1A', name: '#1A1A1A', sub: '#6B5A12', accent: '#5A4A0A', glow: 'rgba(245,200,24,0.30)', dark: false },
   豪華球: { bg: 'linear-gradient(135deg,#2A1B10,#3A2415)', border: '#BA7517', name: '#F7E4C0', sub: '#C9A06A', accent: '#EF9F27', glow: 'rgba(239,159,39,0.30)', dark: true },
   貴重球: { bg: 'linear-gradient(135deg,#2A1414,#3B1C1C)', border: '#A32D2D', name: '#F7D6D0', sub: '#C98A82', accent: '#E24B4A', glow: 'rgba(226,75,74,0.30)', dark: true },
   究極球: { bg: 'linear-gradient(135deg,#10204A,#1B2F66)', border: '#4466DD', name: '#CFE0FF', sub: '#8FA8DD', accent: '#6E9BFF', glow: 'rgba(110,155,255,0.32)', dark: true },
