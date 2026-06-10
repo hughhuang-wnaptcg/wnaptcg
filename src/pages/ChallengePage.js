@@ -1,5 +1,6 @@
 // src/pages/ChallengePage.js
 import React, { useEffect, useRef, useState } from 'react'
+import { useNavigate } from 'react-router-dom'
 import { supabase } from '../lib/supabase'
 import { useAuth } from '../hooks/useAuth'
 import { getLevel } from '../lib/supabase'
@@ -147,6 +148,7 @@ function ChallengeHintSheet({ onClose }) {
 
 export default function ChallengePage() {
   const { member } = useAuth()
+  const navigate = useNavigate()
   const [boss, setBoss] = useState(null)
   const [purchases, setPurchases] = useState([])
   const [recentPurchases, setRecentPurchases] = useState([])
@@ -578,7 +580,14 @@ export default function ChallengePage() {
             ) : (
               <div style={{ textAlign: 'center', padding: '12px 0' }}>
                 <div style={{ fontSize: 12, color: '#bbb', marginBottom: 4 }}>本月尚未貢獻傷害</div>
-                <div style={{ fontSize: 11, color: '#ddd' }}>前往商城消費即可參與挑戰</div>
+                <div style={{ fontSize: 11, color: '#ddd', marginBottom: 12 }}>前往商城消費即可參與挑戰</div>
+                <button
+                  onClick={() => { playSound('button_tap'); vibrate(VIBRATE.light); navigate('/shop?tab=live') }}
+                  className="press-fx"
+                  style={{ display: 'inline-flex', alignItems: 'center', gap: 6, padding: '9px 18px', background: 'linear-gradient(135deg,#E24B4A,#c0392b)', border: 'none', borderRadius: 99, fontSize: 12, fontWeight: 700, color: '#fff', cursor: 'pointer', boxShadow: '0 3px 12px rgba(226,75,74,0.25)' }}>
+                  <i className="fa-solid fa-bolt" style={{ fontSize: 11 }}></i>
+                  前往商城造成傷害
+                </button>
               </div>
             )}
           </div>
