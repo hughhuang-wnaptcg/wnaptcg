@@ -10,6 +10,7 @@ import ProfilePage from './pages/ProfilePage'
 import ShopPage from './pages/ShopPage'
 import WelcomeOverlay from './components/WelcomeOverlay'
 import { InteractionFXStyles } from './components/InteractionFX'
+import { ToastProvider } from './components/Toast'
 
 function AppLoader() {
   return (
@@ -82,18 +83,20 @@ function PrivateRoute({ children }) {
 export default function App() {
   return (
     <BrowserRouter>
-      <AuthProvider>
-        <InteractionFXStyles />
-        <Routes>
-          <Route path="/login" element={<LoginPage />} />
-          <Route path="/" element={<PrivateRoute><HomePage /></PrivateRoute>} />
-          <Route path="/wall" element={<PrivateRoute><WallPage /></PrivateRoute>} />
-          <Route path="/shop" element={<PrivateRoute><ShopPage /></PrivateRoute>} />
-          <Route path="/challenge" element={<PrivateRoute><ChallengePage /></PrivateRoute>} />
-          <Route path="/profile" element={<PrivateRoute><ProfilePage /></PrivateRoute>} />
-          <Route path="*" element={<Navigate to="/" replace />} />
-        </Routes>
-      </AuthProvider>
+      <ToastProvider>
+        <AuthProvider>
+          <InteractionFXStyles />
+          <Routes>
+            <Route path="/login" element={<LoginPage />} />
+            <Route path="/" element={<PrivateRoute><HomePage /></PrivateRoute>} />
+            <Route path="/wall" element={<PrivateRoute><WallPage /></PrivateRoute>} />
+            <Route path="/shop" element={<PrivateRoute><ShopPage /></PrivateRoute>} />
+            <Route path="/challenge" element={<PrivateRoute><ChallengePage /></PrivateRoute>} />
+            <Route path="/profile" element={<PrivateRoute><ProfilePage /></PrivateRoute>} />
+            <Route path="*" element={<Navigate to="/" replace />} />
+          </Routes>
+        </AuthProvider>
+      </ToastProvider>
     </BrowserRouter>
   )
 }
