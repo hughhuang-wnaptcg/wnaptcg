@@ -311,6 +311,8 @@ export default function ShopPage() {
   }
 
   function removeFromCart(itemId) {
+    playSound('button_tap')
+    vibrate(VIBRATE.light)
     setCart(prev => prev.filter(c => c.item.id !== itemId))
   }
 
@@ -465,7 +467,7 @@ export default function ShopPage() {
               const inactiveBg = isVip ? '#1A1A1A' : '#fff'
               const inactiveBorder = isVip ? '#333' : '#e8e8e8'
               return (
-                <button key={ft.key} onClick={() => setTierFilter(ft.key)} className="press-fx"
+                <button key={ft.key} onClick={() => { playSound('tab_switch'); vibrate(VIBRATE.light); setTierFilter(ft.key) }} className="press-fx"
                   style={{ flexShrink: 0, marginBottom: 10, border: `1px solid ${active ? activeBorder : inactiveBorder}`, background: active ? activeBg : inactiveBg, color: active ? activeColor : inactiveColor, borderRadius: 99, padding: '6px 11px', fontSize: 11, fontWeight: active ? 700 : 400, cursor: 'pointer', display: 'flex', alignItems: 'center', gap: 5, transition: 'all 0.15s' }}>
                   <i className={`fa-solid ${ft.icon}`} style={{ fontSize: 10 }}></i>
                   {ft.label}
@@ -612,6 +614,9 @@ export default function ShopPage() {
         @keyframes liveDot{0%,100%{opacity:1;transform:scale(1)}50%{opacity:0.5;transform:scale(0.7)}}
         @keyframes liveGlow{0%,100%{box-shadow:0 0 0 0 rgba(226,75,74,0.4)}50%{box-shadow:0 0 0 6px rgba(226,75,74,0)}}
         @keyframes slideInItem{from{opacity:0;transform:translateY(12px)}to{opacity:1;transform:translateY(0)}}
+        @keyframes cartBarIn{0%{opacity:0;transform:translate(-50%,24px) scale(0.96)}100%{opacity:1;transform:translate(-50%,0) scale(1)}}
+        @keyframes cartBarGlow{0%,100%{box-shadow:0 6px 24px rgba(0,0,0,.3),0 0 0 0 rgba(226,75,74,0.5)}50%{box-shadow:0 8px 28px rgba(0,0,0,.4),0 0 0 8px rgba(226,75,74,0)}}
+        @keyframes cartIconBob{0%,100%{transform:translateY(0)}50%{transform:translateY(-2px)}}
       `}</style>
       <div style={{ flex: 1, overflowY: 'auto' }}>
 
@@ -691,7 +696,7 @@ export default function ShopPage() {
               const active = liveTagFilter === tag
               const count = tag === '全部' ? liveItems.length : liveItems.filter(item => (item.product_tag || '其他') === tag).length
               return (
-                <button key={tag} onClick={() => setLiveTagFilter(tag)} className="press-fx"
+                <button key={tag} onClick={() => { if (liveTagFilter !== tag) { playSound('tab_switch'); vibrate(VIBRATE.light) } setLiveTagFilter(tag) }} className="press-fx"
                   style={{ flexShrink: 0, border: `1px solid ${active ? '#E24B4A' : '#E8E8E8'}`, background: active ? '#FCEBEB' : '#fff', color: active ? '#E24B4A' : '#777', borderRadius: 99, padding: '6px 10px', fontSize: 11, fontWeight: 800, cursor: 'pointer', display: 'flex', alignItems: 'center', gap: 5 }}>
                   {tag !== '全部' && <i className={`fa-solid ${PRODUCT_TAG_CONFIG[tag]?.icon || 'fa-tag'}`} style={{ fontSize: 9 }}></i>}
                   {tag}
@@ -871,17 +876,17 @@ export default function ShopPage() {
 
       {/* 購物車固定按鈕 */}
       {mainTab === 'live' && cartCount > 0 && (
-        <div style={{ position: 'fixed', bottom: 72, left: '50%', transform: 'translateX(-50%)', width: '100%', maxWidth: 390, padding: '0 16px', zIndex: 50 }}>
+        <div style={{ position: 'fixed', bottom: 72, left: '50%', transform: 'translateX(-50%)', width: '100%', maxWidth: 390, padding: '0 16px', zIndex: 50, animation: 'cartBarIn 0.32s cubic-bezier(0.34,1.56,0.64,1) both' }}>
           <button onClick={openCart} className="press-fx"
-            style={{ width: '100%', padding: '14px 20px', background: '#1a1a1a', border: 'none', borderRadius: 14, fontSize: 14, fontWeight: 700, color: '#fff', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'space-between', boxShadow: '0 6px 24px rgba(0,0,0,.3)' }}>
+            style={{ width: '100%', padding: '15px 20px', background: 'linear-gradient(135deg,#1a1a1a,#2a2a2a)', border: '1.5px solid rgba(226,75,74,0.45)', borderRadius: 16, fontSize: 14, fontWeight: 700, color: '#fff', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'space-between', animation: 'cartBarGlow 2s ease infinite' }}>
             <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
-              <div style={{ position: 'relative' }}>
-                <i className="fa-solid fa-cart-shopping" style={{ fontSize: 16 }}></i>
-                <span style={{ position: 'absolute', top: -6, right: -8, background: '#E24B4A', color: '#fff', borderRadius: 99, fontSize: 9, fontWeight: 900, padding: '1px 5px', minWidth: 16, textAlign: 'center' }}>{cartCount}</span>
+              <div style={{ position: 'relative', animation: 'cartIconBob 1.6s ease infinite' }}>
+                <i className="fa-solid fa-cart-shopping" style={{ fontSize: 17 }}></i>
+                <span style={{ position: 'absolute', top: -7, right: -9, background: '#E24B4A', color: '#fff', borderRadius: 99, fontSize: 9, fontWeight: 900, padding: '1px 5px', minWidth: 16, textAlign: 'center', boxShadow: '0 0 0 2px #1a1a1a' }}>{cartCount}</span>
               </div>
-              <span>查看購物車</span>
+              <span style={{ fontSize: 15, fontWeight: 800 }}>查看購物車</span>
             </div>
-            <span style={{ fontSize: 15, fontWeight: 900 }}>$ {cartTotal}</span>
+            <span style={{ fontSize: 16, fontWeight: 900, color: '#FAC775' }}>$ {cartTotal}</span>
           </button>
         </div>
       )}
@@ -1087,6 +1092,7 @@ export default function ShopPage() {
                 <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 10 }}>
                   <span style={{ fontSize: 12, color: '#888' }}>{selectedIds.length > 0 ? `已選 ${selectedIds.length} 件` : '請勾選要出貨的商品'}</span>
                   <span onClick={() => {
+                    playSound('button_tap'); vibrate(VIBRATE.light)
                     const selectable = pendingOrders.filter(o => o.status === 'pending').map(o => o.id)
                     setSelectedIds(selectedIds.length === selectable.length ? [] : selectable)
                   }} style={{ fontSize: 11, color: '#BA7517', cursor: 'pointer', fontWeight: 600 }}>
