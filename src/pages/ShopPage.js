@@ -5,6 +5,7 @@ import { useAuth } from '../hooks/useAuth'
 import { useSearchParams } from 'react-router-dom'
 import BottomNav from '../components/BottomNav'
 import { playSound } from '../lib/sounds'
+import { vibrate, VIBRATE } from '../lib/haptics'
 
 const TIER_CONFIG = {
   general: {
@@ -106,7 +107,7 @@ function SuccessOverlay({ product, qty, onClose }) {
         <div style={{ fontSize: 11, color: '#bbb', marginBottom: 20, padding: '8px 12px', background: '#FFFBF2', borderRadius: 8, border: '0.5px solid #F5E8C8' }}>
           商品已進入「我的物品」，可前往申請出貨
         </div>
-        <button onClick={onClose} style={{ width: '100%', padding: 12, background: 'linear-gradient(135deg,#BA7517,#D4A94A)', border: 'none', borderRadius: 10, fontSize: 14, fontWeight: 700, color: '#fff', cursor: 'pointer' }}>確定</button>
+        <button onClick={onClose} className="press-fx" style={{ width: '100%', padding: 12, background: 'linear-gradient(135deg,#BA7517,#D4A94A)', border: 'none', borderRadius: 10, fontSize: 14, fontWeight: 700, color: '#fff', cursor: 'pointer' }}>確定</button>
       </div>
     </div>
   )
@@ -160,7 +161,7 @@ function OrderSuccessOverlay({ order, onClose }) {
             <span style={{ color: '#E24B4A' }}>$ {order.total_amount}</span>
           </div>
         </div>
-        <button onClick={onClose} style={{ width: '100%', padding: 13, background: 'linear-gradient(135deg,#1a1a1a,#333)', border: 'none', borderRadius: 12, fontSize: 14, fontWeight: 700, color: '#fff', cursor: 'pointer', letterSpacing: '0.03em' }}>
+        <button onClick={onClose} className="press-fx" style={{ width: '100%', padding: 13, background: 'linear-gradient(135deg,#1a1a1a,#333)', border: 'none', borderRadius: 12, fontSize: 14, fontWeight: 700, color: '#fff', cursor: 'pointer', letterSpacing: '0.03em' }}>
           確認
         </button>
       </div>
@@ -207,7 +208,7 @@ export default function ShopPage() {
   const [showPointsLog, setShowPointsLog] = useState(false)
   const [showMyItems, setShowMyItems] = useState(false)
   const [showShipped, setShowShipped] = useState(false)
-  const [showPointsHint, setShowPointsHint] = useState(false)  // ── 新增：如何獲得點數說明
+  const [showPointsHint, setShowPointsHint] = useState(false)
   const [successProduct, setSuccessProduct] = useState(null)
   const [successQty, setSuccessQty] = useState(1)
   const [selectedIds, setSelectedIds] = useState([])
@@ -281,10 +282,11 @@ export default function ShopPage() {
 
   function addToCart(item) {
     playSound('button_tap')
+    vibrate(VIBRATE.light)
     setCart(prev => {
       const existing = prev.find(c => c.item.id === item.id)
       if (existing) {
-        if (existing.quantity >= item.stock) { playSound('error_stock'); return prev }
+        if (existing.quantity >= item.stock) { playSound('error_stock'); vibrate(VIBRATE.error); return prev }
         return prev.map(c => c.item.id === item.id ? { ...c, quantity: c.quantity + 1 } : c)
       }
       return [...prev, { item, quantity: 1, dine_type: 'dine_in' }]
@@ -296,7 +298,7 @@ export default function ShopPage() {
       if (c.item.id !== itemId) return c
       const newQty = c.quantity + delta
       if (newQty <= 0) return null
-      if (newQty > c.item.stock) { playSound('error_stock'); return c }
+      if (newQty > c.item.stock) { playSound('error_stock'); vibrate(VIBRATE.error); return c }
       return { ...c, quantity: newQty }
     }).filter(Boolean))
   }
@@ -317,6 +319,7 @@ export default function ShopPage() {
 
   function openCart() {
     playSound('modal_open')
+    vibrate(VIBRATE.light)
     setShowCart(true)
   }
 
@@ -356,15 +359,17 @@ export default function ShopPage() {
       closeCart()
       setOrderSuccess(successData)
       playSound('order_success')
+      vibrate(VIBRATE.success)
       await fetchLiveData()
     } catch (err) {
       playSound('error_system')
+      vibrate(VIBRATE.error)
       alert('下單失敗：' + err.message)
     }
     setCheckingOut(false)
   }
 
-  function openConfirm(prod) { playSound('modal_open'); setConfirmProduct(prod); setConfirmQty(1) }
+  function openConfirm(prod) { playSound('modal_open'); vibrate(VIBRATE.light); setConfirmProduct(prod); setConfirmQty(1) }
   function remainingAllowance(prod) {
     const max = prod.max_per_member || 1
     const bought = purchasedCounts[prod.id] || 0
@@ -373,7 +378,7 @@ export default function ShopPage() {
   async function handleBuy() {
     if (!confirmProduct || !member) return
     const totalCost = confirmProduct.price * confirmQty
-    if (member.shop_points < totalCost) { playSound('error_points'); return }
+    if (member.shop_points < totalCost) { playSound('error_points'); vibrate(VIBRATE.error); return }
     setBuying(true)
     try {
       const { data, error } = await supabase.rpc('purchase_shop_product', { p_product_id: confirmProduct.id, p_quantity: confirmQty })
@@ -382,8 +387,9 @@ export default function ShopPage() {
       setSuccessProduct(confirmProduct); setSuccessQty(confirmQty)
       setConfirmProduct(null)
       playSound('shop_redeem_success')
+      vibrate(VIBRATE.success)
       await fetchShopData()
-    } catch (err) { playSound('error_system'); alert('兌換失敗：' + err.message) }
+    } catch (err) { playSound('error_system'); vibrate(VIBRATE.error); alert('兌換失敗：' + err.message) }
     setBuying(false)
   }
   async function handleRequestShipping() {
@@ -394,9 +400,10 @@ export default function ShopPage() {
       if (error) throw error
       setSelectedIds([]); setRequestSuccess(true)
       playSound('shop_redeem_success')
+      vibrate(VIBRATE.success)
       await fetchShopData()
       setTimeout(() => setRequestSuccess(false), 3000)
-    } catch (err) { playSound('error_system'); alert('申請失敗：' + err.message) }
+    } catch (err) { playSound('error_system'); vibrate(VIBRATE.error); alert('申請失敗：' + err.message) }
     setRequesting(false)
   }
   function toggleSelect(id) { setSelectedIds(prev => prev.includes(id) ? prev.filter(i => i !== id) : [...prev, id]) }
@@ -429,7 +436,7 @@ export default function ShopPage() {
         <div style={{ flex: 1, overflowY: 'auto' }}>
           <div style={{ background: isVip ? '#1A1A1A' : 'linear-gradient(160deg,#FFFBF2 0%,#FFF5DC 60%,#FFEDBB 100%)', padding: '18px 20px 16px', borderBottom: `0.5px solid ${cfg.divider}` }}>
             <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
-              <button onClick={() => { setActiveTier(null); setTierFilter('all') }} style={{ width: 32, height: 32, borderRadius: '50%', border: `0.5px solid ${cfg.divider}`, background: isVip ? '#222' : '#fff', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
+              <button onClick={() => { setActiveTier(null); setTierFilter('all') }} className="press-fx" style={{ width: 32, height: 32, borderRadius: '50%', border: `0.5px solid ${cfg.divider}`, background: isVip ? '#222' : '#fff', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
                 <i className="fa-solid fa-arrow-left" style={{ fontSize: 12, color: isVip ? '#F5D060' : '#888' }}></i>
               </button>
               <div style={{ flex: 1 }}>
@@ -455,7 +462,7 @@ export default function ShopPage() {
               const inactiveBg = isVip ? '#1A1A1A' : '#fff'
               const inactiveBorder = isVip ? '#333' : '#e8e8e8'
               return (
-                <button key={ft.key} onClick={() => setTierFilter(ft.key)}
+                <button key={ft.key} onClick={() => setTierFilter(ft.key)} className="press-fx"
                   style={{ flexShrink: 0, marginBottom: 10, border: `1px solid ${active ? activeBorder : inactiveBorder}`, background: active ? activeBg : inactiveBg, color: active ? activeColor : inactiveColor, borderRadius: 99, padding: '6px 11px', fontSize: 11, fontWeight: active ? 700 : 400, cursor: 'pointer', display: 'flex', alignItems: 'center', gap: 5, transition: 'all 0.15s' }}>
                   <i className={`fa-solid ${ft.icon}`} style={{ fontSize: 10 }}></i>
                   {ft.label}
@@ -494,7 +501,7 @@ export default function ShopPage() {
                   const disabled = soldOut || maxed
                   const canAfford = member ? (member.shop_points || 0) >= prod.price : null
                   return (
-                    <div key={prod.id} onClick={() => !disabled && openConfirm(prod)}
+                    <div key={prod.id} onClick={() => !disabled && openConfirm(prod)} className={disabled ? '' : 'press-fx-soft'}
                       style={{ background: isVip ? '#222' : '#fff', border: `0.5px solid ${cfg.divider}`, borderRadius: 14, overflow: 'hidden', cursor: disabled ? 'not-allowed' : 'pointer', opacity: disabled ? 0.5 : 1, boxShadow: isVip ? 'none' : '0 2px 10px rgba(186,117,23,.07)' }}>
                       <div style={{ aspectRatio: '1', background: isVip ? '#1A1A1A' : '#FFF8EE', display: 'flex', alignItems: 'center', justifyContent: 'center', position: 'relative', overflow: 'hidden' }}>
                         {prod.image_url ? <img src={prod.image_url} alt="" style={{ width: '100%', height: '100%', objectFit: 'cover' }} /> : <i className="fa-solid fa-gift" style={{ fontSize: 36, color: isVip ? '#B8860B' : '#D4A94A', opacity: 0.4 }}></i>}
@@ -554,9 +561,9 @@ export default function ShopPage() {
                     <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '10px 14px', background: '#f8f5f0', borderRadius: 10, marginBottom: 14 }}>
                       <span style={{ fontSize: 13, color: '#666' }}>兌換數量</span>
                       <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
-                        <button onClick={() => setConfirmQty(q => Math.max(1, q - 1))} style={{ width: 28, height: 28, borderRadius: '50%', border: '1.5px solid #f0e8d0', background: '#fff', fontSize: 16, color: '#BA7517', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: 700 }}>−</button>
+                        <button onClick={() => setConfirmQty(q => Math.max(1, q - 1))} className="press-fx" style={{ width: 28, height: 28, borderRadius: '50%', border: '1.5px solid #f0e8d0', background: '#fff', fontSize: 16, color: '#BA7517', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: 700 }}>−</button>
                         <span style={{ fontSize: 16, fontWeight: 800, color: '#2D1A00', minWidth: 24, textAlign: 'center' }}>{confirmQty}</span>
-                        <button onClick={() => setConfirmQty(q => Math.min(maxQty, q + 1))} style={{ width: 28, height: 28, borderRadius: '50%', border: '1.5px solid #f0e8d0', background: '#fff', fontSize: 16, color: '#BA7517', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: 700 }}>＋</button>
+                        <button onClick={() => setConfirmQty(q => Math.min(maxQty, q + 1))} className="press-fx" style={{ width: 28, height: 28, borderRadius: '50%', border: '1.5px solid #f0e8d0', background: '#fff', fontSize: 16, color: '#BA7517', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: 700 }}>＋</button>
                       </div>
                       <span style={{ fontSize: 11, color: '#bbb' }}>最多 {maxQty} 個</span>
                     </div>
@@ -580,8 +587,8 @@ export default function ShopPage() {
                     </div>
                   )}
                   <div style={{ display: 'flex', gap: 8 }}>
-                    <button onClick={() => setConfirmProduct(null)} style={{ flex: 1, padding: 12, border: '0.5px solid #f0e8d0', borderRadius: 10, fontSize: 14, color: '#888', background: '#fdfaf4', cursor: 'pointer' }}>取消</button>
-                    <button onClick={handleBuy} disabled={buying || !canAfford}
+                    <button onClick={() => setConfirmProduct(null)} className="press-fx" style={{ flex: 1, padding: 12, border: '0.5px solid #f0e8d0', borderRadius: 10, fontSize: 14, color: '#888', background: '#fdfaf4', cursor: 'pointer' }}>取消</button>
+                    <button onClick={handleBuy} disabled={buying || !canAfford} className="press-fx"
                       style={{ flex: 2, padding: 12, background: buying || !canAfford ? '#ccc' : 'linear-gradient(135deg,#BA7517,#D4A94A)', border: 'none', borderRadius: 10, fontSize: 14, fontWeight: 700, color: '#fff', cursor: buying || !canAfford ? 'not-allowed' : 'pointer' }}>
                       {buying ? '處理中...' : `確認兌換${confirmQty > 1 ? ` × ${confirmQty}` : ''}`}
                     </button>
@@ -634,7 +641,7 @@ export default function ShopPage() {
               </div>
             )}
             {mainTab === 'live' && (
-              <button onClick={() => { playSound('modal_open'); setShowMyOrders(true) }}
+              <button onClick={() => { playSound('modal_open'); vibrate(VIBRATE.light); setShowMyOrders(true) }} className="press-fx"
                 style={{ background: '#fff', border: '1.5px solid #E0E0E0', borderRadius: 12, padding: '8px 14px', textAlign: 'center', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: 7 }}>
                 <i className="fa-solid fa-receipt" style={{ fontSize: 14, color: '#555' }}></i>
                 <div style={{ textAlign: 'left' }}>
@@ -652,7 +659,7 @@ export default function ShopPage() {
               { key: 'shop', label: '點數商城',   icon: 'fa-store',  activeColor: '#E07B00', activeBg: 'rgba(224,123,0,0.04)' },
             ].map(t => (
               <button key={t.key}
-                onClick={() => { if (mainTab !== t.key) playSound('tab_switch'); setMainTab(t.key); setSearchParams(t.key === 'shop' ? { tab: 'shop' } : {}) }}
+                onClick={() => { if (mainTab !== t.key) { playSound('tab_switch'); vibrate(VIBRATE.light) } setMainTab(t.key); setSearchParams(t.key === 'shop' ? { tab: 'shop' } : {}) }}
                 style={{ flex: 1, padding: '10px 0', border: 'none', background: mainTab === t.key ? t.activeBg : 'transparent', fontSize: 13, fontWeight: mainTab === t.key ? 700 : 400, color: mainTab === t.key ? t.activeColor : '#bbb', cursor: 'pointer', borderBottom: mainTab === t.key ? `2.5px solid ${t.activeColor}` : '2.5px solid transparent', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 6, transition: 'all 0.2s' }}>
                 <i className={`fa-solid ${t.icon}`} style={{ fontSize: 12 }}></i>
                 {t.label}
@@ -666,7 +673,7 @@ export default function ShopPage() {
 
         {mainTab === 'live' && (
           <div style={{ padding: '12px 16px 0' }}>
-            <a href="https://www.hugocollections.com" target="_blank" rel="noopener noreferrer"
+            <a href="https://www.hugocollections.com" target="_blank" rel="noopener noreferrer" className="press-fx"
               style={{ width: '100%', boxSizing: 'border-box', border: '1px solid rgba(226,75,74,0.35)', background: 'linear-gradient(135deg,#1a1a1a,#2A2A2A)', color: '#fff', borderRadius: 12, padding: '11px 14px', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8, fontSize: 13, fontWeight: 800, cursor: 'pointer', boxShadow: '0 3px 12px rgba(0,0,0,0.12)', textDecoration: 'none' }}>
               <i className="fa-solid fa-credit-card" style={{ fontSize: 13, color: '#E24B4A' }}></i>
               我要刷卡
@@ -681,7 +688,7 @@ export default function ShopPage() {
               const active = liveTagFilter === tag
               const count = tag === '全部' ? liveItems.length : liveItems.filter(item => (item.product_tag || '其他') === tag).length
               return (
-                <button key={tag} onClick={() => setLiveTagFilter(tag)}
+                <button key={tag} onClick={() => setLiveTagFilter(tag)} className="press-fx"
                   style={{ flexShrink: 0, border: `1px solid ${active ? '#E24B4A' : '#E8E8E8'}`, background: active ? '#FCEBEB' : '#fff', color: active ? '#E24B4A' : '#777', borderRadius: 99, padding: '6px 10px', fontSize: 11, fontWeight: 800, cursor: 'pointer', display: 'flex', alignItems: 'center', gap: 5 }}>
                   {tag !== '全部' && <i className={`fa-solid ${PRODUCT_TAG_CONFIG[tag]?.icon || 'fa-tag'}`} style={{ fontSize: 9 }}></i>}
                   {tag}
@@ -755,12 +762,12 @@ export default function ShopPage() {
                           {!soldOut && (
                             cartQty > 0 ? (
                               <div style={{ display: 'flex', alignItems: 'center', gap: 0, background: '#F5F5F5', borderRadius: 99, overflow: 'hidden' }}>
-                                <button onClick={() => updateCartQty(item.id, -1)} style={{ width: 28, height: 28, border: 'none', background: 'transparent', fontSize: 16, color: '#333', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: 700 }}>−</button>
+                                <button onClick={() => updateCartQty(item.id, -1)} className="press-fx" style={{ width: 28, height: 28, border: 'none', background: 'transparent', fontSize: 16, color: '#333', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: 700 }}>−</button>
                                 <span style={{ fontSize: 13, fontWeight: 800, color: '#1a1a1a', minWidth: 22, textAlign: 'center' }}>{cartQty}</span>
-                                <button onClick={() => addToCart(item)} style={{ width: 28, height: 28, border: 'none', background: '#1a1a1a', fontSize: 16, color: '#fff', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: 700 }}>＋</button>
+                                <button onClick={() => addToCart(item)} className="press-fx" style={{ width: 28, height: 28, border: 'none', background: '#1a1a1a', fontSize: 16, color: '#fff', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: 700 }}>＋</button>
                               </div>
                             ) : (
-                              <button onClick={() => addToCart(item)} style={{ padding: '6px 14px', background: '#1a1a1a', border: 'none', borderRadius: 99, fontSize: 11, fontWeight: 700, color: '#fff', cursor: 'pointer', letterSpacing: '0.02em' }}>+ 加入</button>
+                              <button onClick={() => addToCart(item)} className="press-fx" style={{ padding: '6px 14px', background: '#1a1a1a', border: 'none', borderRadius: 99, fontSize: 11, fontWeight: 700, color: '#fff', cursor: 'pointer', letterSpacing: '0.02em' }}>+ 加入</button>
                             )
                           )}
                         </div>
@@ -777,7 +784,6 @@ export default function ShopPage() {
         {mainTab === 'shop' && (
           <>
             <div style={{ padding: '14px 16px 10px' }}>
-              {/* ── 我的點數統計列（含累計點數旁的 ？icon）── */}
               <div style={{ display: 'flex', gap: 8, marginBottom: 10 }}>
                 {[
                   { label: '本月獲得', icon: 'fa-arrow-up', iconColor: '#78C850', value: `+${pointsLogs.filter(l => l.points > 0 && new Date(l.created_at).getMonth() === new Date().getMonth() && new Date(l.created_at).getFullYear() === new Date().getFullYear()).reduce((s, l) => s + l.points, 0)} 點` },
@@ -787,10 +793,9 @@ export default function ShopPage() {
                   <div key={i} style={{ flex: 1, background: '#fff', border: '0.5px solid #F5E8C8', borderRadius: 10, padding: '8px 10px', position: 'relative' }}>
                     <div style={{ fontSize: 10, color: '#bbb', display: 'flex', alignItems: 'center', gap: 4 }}>
                       <i className={`fa-solid fa-${s.icon}`} style={{ fontSize: 9, color: s.iconColor }}></i>{s.label}
-                      {/* ── ？icon，僅累計點數格顯示 ── */}
                       {s.hint && (
                         <button
-                          onClick={() => { playSound('modal_open'); setShowPointsHint(true) }}
+                          onClick={() => { playSound('modal_open'); vibrate(VIBRATE.light); setShowPointsHint(true) }} className="press-fx"
                           style={{ marginLeft: 'auto', width: 16, height: 16, borderRadius: '50%', background: '#F5E8C8', border: 'none', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0, padding: 0 }}>
                           <i className="fa-solid fa-question" style={{ fontSize: 8, color: '#BA7517' }}></i>
                         </button>
@@ -801,14 +806,14 @@ export default function ShopPage() {
                 ))}
               </div>
               <div style={{ display: 'flex', gap: 8 }}>
-                <button onClick={() => { playSound('modal_open'); setShowPointsLog(true) }} style={{ flex: 1, padding: 8, background: '#FFFBF2', border: '0.5px solid #F5E8C8', borderRadius: 8, fontSize: 11, color: '#BA7517', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 5 }}>
+                <button onClick={() => { playSound('modal_open'); vibrate(VIBRATE.light); setShowPointsLog(true) }} className="press-fx" style={{ flex: 1, padding: 8, background: '#FFFBF2', border: '0.5px solid #F5E8C8', borderRadius: 8, fontSize: 11, color: '#BA7517', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 5 }}>
                   <i className="fa-solid fa-clock-rotate-left" style={{ fontSize: 11 }}></i>點數紀錄
                 </button>
-                <button onClick={() => { playSound('modal_open'); setShowMyItems(true) }} style={{ flex: 1, padding: 8, background: '#FFFBF2', border: '0.5px solid #F5E8C8', borderRadius: 8, fontSize: 11, color: '#BA7517', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 5, position: 'relative' }}>
+                <button onClick={() => { playSound('modal_open'); vibrate(VIBRATE.light); setShowMyItems(true) }} className="press-fx" style={{ flex: 1, padding: 8, background: '#FFFBF2', border: '0.5px solid #F5E8C8', borderRadius: 8, fontSize: 11, color: '#BA7517', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 5, position: 'relative' }}>
                   <i className="fa-solid fa-box" style={{ fontSize: 11 }}></i>我的物品
                   {pendingOrders.length > 0 && <span style={{ position: 'absolute', top: 4, right: 8, background: '#E24B4A', color: '#fff', borderRadius: 99, fontSize: 9, fontWeight: 700, padding: '1px 5px' }}>{pendingOrders.length}</span>}
                 </button>
-                <button onClick={() => { playSound('modal_open'); setShowShipped(true) }} style={{ flex: 1, padding: 8, background: '#FFFBF2', border: '0.5px solid #F5E8C8', borderRadius: 8, fontSize: 11, color: '#BA7517', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 5 }}>
+                <button onClick={() => { playSound('modal_open'); vibrate(VIBRATE.light); setShowShipped(true) }} className="press-fx" style={{ flex: 1, padding: 8, background: '#FFFBF2', border: '0.5px solid #F5E8C8', borderRadius: 8, fontSize: 11, color: '#BA7517', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 5 }}>
                   <i className="fa-solid fa-truck" style={{ fontSize: 11 }}></i>出貨紀錄
                 </button>
               </div>
@@ -843,7 +848,7 @@ export default function ShopPage() {
                         <div style={{ fontSize: 11, color: isVip ? '#555' : '#bbb', display: 'flex', alignItems: 'center', gap: 5 }}>
                           <i className="fa-solid fa-box-open" style={{ fontSize: 11, color: isVip ? '#B8860B' : '#D4A94A' }}></i>共 {count} 項商品
                         </div>
-                        <div onClick={() => { playSound('tab_switch'); setActiveTier(tier); setTierFilter('all') }} style={{ fontSize: 12, color: cfg.enterColor, fontWeight: 700, display: 'flex', alignItems: 'center', gap: 4, cursor: 'pointer' }}>
+                        <div onClick={() => { playSound('tab_switch'); vibrate(VIBRATE.light); setActiveTier(tier); setTierFilter('all') }} className="press-fx" style={{ fontSize: 12, color: cfg.enterColor, fontWeight: 700, display: 'flex', alignItems: 'center', gap: 4, cursor: 'pointer' }}>
                           進入點數商城 <i className="fa-solid fa-chevron-right" style={{ fontSize: 10 }}></i>
                         </div>
                       </div>
@@ -864,7 +869,7 @@ export default function ShopPage() {
       {/* 購物車固定按鈕 */}
       {mainTab === 'live' && cartCount > 0 && (
         <div style={{ position: 'fixed', bottom: 72, left: '50%', transform: 'translateX(-50%)', width: '100%', maxWidth: 390, padding: '0 16px', zIndex: 50 }}>
-          <button onClick={openCart}
+          <button onClick={openCart} className="press-fx"
             style={{ width: '100%', padding: '14px 20px', background: '#1a1a1a', border: 'none', borderRadius: 14, fontSize: 14, fontWeight: 700, color: '#fff', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'space-between', boxShadow: '0 6px 24px rgba(0,0,0,.3)' }}>
             <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
               <div style={{ position: 'relative' }}>
@@ -901,9 +906,9 @@ export default function ShopPage() {
                       <div style={{ fontSize: 13, color: '#E24B4A', fontWeight: 800, marginTop: 2 }}>$ {c.item.price}</div>
                     </div>
                     <div style={{ display: 'flex', alignItems: 'center', gap: 0, background: '#F5F5F5', borderRadius: 99, overflow: 'hidden', flexShrink: 0 }}>
-                      <button onClick={() => updateCartQty(c.item.id, -1)} style={{ width: 30, height: 30, border: 'none', background: 'transparent', fontSize: 16, color: '#333', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: 700 }}>−</button>
+                      <button onClick={() => updateCartQty(c.item.id, -1)} className="press-fx" style={{ width: 30, height: 30, border: 'none', background: 'transparent', fontSize: 16, color: '#333', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: 700 }}>−</button>
                       <span style={{ fontSize: 13, fontWeight: 800, color: '#1a1a1a', minWidth: 24, textAlign: 'center' }}>{c.quantity}</span>
-                      <button onClick={() => updateCartQty(c.item.id, 1)} style={{ width: 30, height: 30, border: 'none', background: '#1a1a1a', fontSize: 16, color: '#fff', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: 700 }}>＋</button>
+                      <button onClick={() => updateCartQty(c.item.id, 1)} className="press-fx" style={{ width: 30, height: 30, border: 'none', background: '#1a1a1a', fontSize: 16, color: '#fff', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: 700 }}>＋</button>
                     </div>
                     <div style={{ textAlign: 'right', minWidth: 48, flexShrink: 0 }}>
                       <div style={{ fontSize: 13, fontWeight: 800, color: '#1a1a1a' }}>$ {c.item.price * c.quantity}</div>
@@ -917,7 +922,7 @@ export default function ShopPage() {
                     ].map(opt => {
                       const active = c.dine_type === opt.key
                       return (
-                        <button key={opt.key} onClick={() => updateCartDineType(c.item.id, opt.key)}
+                        <button key={opt.key} onClick={() => updateCartDineType(c.item.id, opt.key)} className="press-fx"
                           style={{ flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 6, padding: '7px 0', borderRadius: 9, border: `${active ? '1.5px' : '0.5px'} solid ${active ? opt.activeBorder : '#E8E8E8'}`, background: active ? opt.activeBg : '#fff', cursor: 'pointer', transition: 'all 0.15s' }}>
                           <i className={`fa-solid ${opt.icon}`} style={{ fontSize: 12, color: active ? opt.activeColor : '#BDBDBD' }}></i>
                           <div style={{ textAlign: 'left' }}>
@@ -936,7 +941,7 @@ export default function ShopPage() {
                 <span style={{ fontSize: 13, color: '#9E9E9E' }}>訂單總計</span>
                 <span style={{ fontSize: 20, fontWeight: 900, color: '#E24B4A', letterSpacing: '-0.5px' }}>$ {cartTotal}</span>
               </div>
-              <button onClick={handleCheckout} disabled={checkingOut || cart.length === 0}
+              <button onClick={handleCheckout} disabled={checkingOut || cart.length === 0} className="press-fx"
                 style={{ width: '100%', padding: 15, background: checkingOut ? '#ccc' : '#1a1a1a', border: 'none', borderRadius: 13, fontSize: 15, fontWeight: 800, color: '#fff', cursor: checkingOut ? 'not-allowed' : 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8, letterSpacing: '0.02em' }}>
                 {checkingOut ? (
                   <><svg width="16" height="16" viewBox="0 0 16 16" fill="none" style={{ animation: 'spin 0.8s linear infinite' }}><style>{`@keyframes spin{to{transform:rotate(360deg)}}`}</style><circle cx="8" cy="8" r="6" stroke="rgba(255,255,255,0.3)" strokeWidth="2"/><path d="M8 2 A6 6 0 0 1 14 8" stroke="#fff" strokeWidth="2" strokeLinecap="round"/></svg>送出中...</>
@@ -1085,7 +1090,7 @@ export default function ShopPage() {
                     {selectedIds.length === pendingOrders.filter(o => o.status === 'pending').length ? '取消全選' : '全選'}
                   </span>
                 </div>
-                <button onClick={handleRequestShipping} disabled={selectedIds.length === 0 || requesting}
+                <button onClick={handleRequestShipping} disabled={selectedIds.length === 0 || requesting} className="press-fx"
                   style={{ width: '100%', padding: 13, background: selectedIds.length === 0 || requesting ? '#ccc' : 'linear-gradient(135deg,#BA7517,#D4A94A)', border: 'none', borderRadius: 12, fontSize: 14, fontWeight: 700, color: '#fff', cursor: selectedIds.length === 0 ? 'not-allowed' : 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 7 }}>
                   <i className="fa-solid fa-truck"></i>
                   {requesting ? '申請中...' : `申請出貨${selectedIds.length > 0 ? `（${selectedIds.length} 件）` : ''}`}
@@ -1128,7 +1133,7 @@ export default function ShopPage() {
         </div>
       )}
 
-      {/* ── 如何獲得點數 Sheet ── */}
+      {/* 如何獲得點數 Sheet */}
       {showPointsHint && (
         <div onClick={() => { playSound('modal_close'); setShowPointsHint(false) }} style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.4)', zIndex: 100, display: 'flex', alignItems: 'flex-end', justifyContent: 'center' }}>
           <div onClick={e => e.stopPropagation()} style={{ width: '100%', maxWidth: 390, background: '#fff', borderRadius: '16px 16px 0 0', padding: '0 0 40px' }}>
@@ -1157,7 +1162,7 @@ export default function ShopPage() {
                   </div>
                 </div>
               ))}
-              <button onClick={() => { playSound('modal_close'); setShowPointsHint(false) }}
+              <button onClick={() => { playSound('modal_close'); setShowPointsHint(false) }} className="press-fx"
                 style={{ marginTop: 20, width: '100%', padding: 13, background: 'linear-gradient(135deg,#FAEEDA,#FFF3D0)', border: '0.5px solid #FAC775', borderRadius: 12, fontSize: 14, fontWeight: 600, color: '#8B5A00', cursor: 'pointer' }}>
                 了解了
               </button>
