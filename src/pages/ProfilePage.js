@@ -7,6 +7,7 @@ import BottomNav from '../components/BottomNav'
 import { playSound, SoundToggle } from '../lib/sounds'
 import { vibrate, VIBRATE } from '../lib/haptics'
 import { useToast } from '../components/Toast'
+import CountUp from '../components/CountUp'
 
 const CDN = 'https://cdn.jsdelivr.net/gh/duiker101/pokemon-type-svg-icons@master/icons'
 const TYPE_BY_WEEKDAY = {
@@ -333,7 +334,7 @@ export default function ProfilePage() {
                 </div>
               </div>
               <div style={{ textAlign: 'right' }}>
-                <div style={{ fontSize: 18, fontWeight: 800, color: '#E07B00' }}>{member.points?.toLocaleString()}</div>
+                <div style={{ fontSize: 18, fontWeight: 800, color: '#E07B00' }}><CountUp value={member.points || 0} separator /></div>
                 <div style={{ fontSize: 10, color: '#bbb' }}>積分</div>
               </div>
             </div>
