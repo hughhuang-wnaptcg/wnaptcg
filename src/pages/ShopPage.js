@@ -7,6 +7,7 @@ import BottomNav from '../components/BottomNav'
 import { playSound } from '../lib/sounds'
 import { vibrate, VIBRATE } from '../lib/haptics'
 import { useToast } from '../components/Toast'
+import CountUp from '../components/CountUp'
 
 const TIER_CONFIG = {
   general: {
@@ -448,7 +449,7 @@ export default function ShopPage() {
                 <div style={{ fontSize: 11, color: isVip ? '#666' : '#bbb', marginTop: 2 }}>{tierProds.length} 項商品</div>
               </div>
               <div style={{ background: isVip ? '#2A2200' : '#fff', border: `1.5px solid ${isVip ? '#B8860B' : '#FAC775'}`, borderRadius: 12, padding: '6px 12px', textAlign: 'center' }}>
-                <div style={{ fontSize: 15, fontWeight: 800, color: isVip ? '#F5D060' : '#E07B00' }}>{(member.shop_points || 0).toLocaleString()}</div>
+                <div style={{ fontSize: 15, fontWeight: 800, color: isVip ? '#F5D060' : '#E07B00' }}><CountUp value={member.shop_points || 0} separator /></div>
                 <div style={{ fontSize: 9, color: isVip ? '#666' : '#bbb', marginTop: 1 }}>可用點數</div>
               </div>
             </div>
@@ -638,7 +639,7 @@ export default function ShopPage() {
             </div>
             {mainTab === 'shop' && (
               <div style={{ background: '#fff', border: '1.5px solid #FAC775', borderRadius: 12, padding: '8px 14px', textAlign: 'center' }}>
-                <div style={{ fontSize: 16, fontWeight: 800, color: '#E07B00' }}>{(member.shop_points || 0).toLocaleString()}</div>
+                <div style={{ fontSize: 16, fontWeight: 800, color: '#E07B00' }}><CountUp value={member.shop_points || 0} separator /></div>
                 <div style={{ fontSize: 9, color: '#bbb', marginTop: 1 }}>可用點數</div>
               </div>
             )}
