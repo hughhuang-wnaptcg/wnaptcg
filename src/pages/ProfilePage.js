@@ -6,6 +6,7 @@ import { PokeballIcon, LevelBadge } from '../lib/pokeballs'
 import BottomNav from '../components/BottomNav'
 import { playSound, SoundToggle } from '../lib/sounds'
 import { vibrate, VIBRATE } from '../lib/haptics'
+import { useToast } from '../components/Toast'
 
 const CDN = 'https://cdn.jsdelivr.net/gh/duiker101/pokemon-type-svg-icons@master/icons'
 const TYPE_BY_WEEKDAY = {
@@ -28,6 +29,7 @@ const AVATAR_ALLOWED_LEVELS = ['高級球', '豪華球', '貴重球', '究極球
 
 export default function ProfilePage() {
   const { member, setMember, signOut } = useAuth()
+  const toast = useToast()
   const [profileTab, setProfileTab] = useState('home')
   const [logs, setLogs] = useState([])
   const [weekLogins, setWeekLogins] = useState([])
@@ -179,7 +181,7 @@ export default function ProfilePage() {
     } catch (err) {
       playSound('error_system')
       vibrate(VIBRATE.error)
-      alert('頭貼上傳失敗：' + err.message)
+      toast.error('頭貼上傳失敗：' + err.message)
     }
     setUploadingAvatar(false)
     if (avatarFileRef.current) avatarFileRef.current.value = ''
@@ -196,7 +198,7 @@ export default function ProfilePage() {
     } catch (err) {
       playSound('error_system')
       vibrate(VIBRATE.error)
-      alert('恢復失敗：' + err.message)
+      toast.error('恢復失敗：' + err.message)
     }
     setRestoringAvatar(false)
   }
