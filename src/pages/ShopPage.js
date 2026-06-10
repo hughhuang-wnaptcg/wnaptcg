@@ -1,5 +1,5 @@
 // src/pages/ShopPage.js
-import React, { useEffect, useState } from 'react'
+import React, { useEffect, useState, useRef } from 'react'
 import { supabase, getLevel } from '../lib/supabase'
 import { useAuth } from '../hooks/useAuth'
 import { useSearchParams } from 'react-router-dom'
@@ -189,6 +189,11 @@ const ORDER_STATUS = {
   cancelled:  { label: '已取消', color: '#999',    bg: '#F5F5F5' },
 }
 
+const REMIT_ACCOUNTS = [
+  { bank: '中國信託', code: '822', name: '林紹瑜', account: '314540666409' },
+  { bank: '一卡通',   code: '391', name: '林紹瑜', account: '0000002556592737' },
+]
+
 export default function ShopPage() {
   const { member, setMember } = useAuth()
   const toast = useToast()
@@ -228,6 +233,9 @@ export default function ShopPage() {
   const [orderSuccess, setOrderSuccess] = useState(null)
   const [myOrders, setMyOrders] = useState([])
   const [showMyOrders, setShowMyOrders] = useState(false)
+  const [payOrder, setPayOrder] = useState(null)        // 待匯款訂單 { id, order_no, total_amount, items }
+  const [uploadingProof, setUploadingProof] = useState(false)
+  const proofFileRef = useRef()
 
   useEffect(() => {
     if (member) { fetchShopData(); fetchLiveData() }
@@ -350,7 +358,23 @@ export default function ShopPage() {
         p_items: p_items,
       })
       if (rpcErr) throw rpcErr
+
+      // 取得訂單 id（優先用 RPC 回傳，否則用 order_no 查回）
+      let orderId = result.order_id || result.id || null
+      if (!orderId && result.order_no != null) {
+        const { data: found } = await supabase
+          .from('menu_orders')
+          .select('id')
+          .eq('member_id', member.id)
+          .eq('order_no', result.order_no)
+          .order('created_at', { ascending: false })
+          .limit(1)
+          .maybeSingle()
+        orderId = found?.id || null
+      }
+
       const successData = {
+        id: orderId,
         order_no: result.order_no,
         total_amount: result.total_amount,
         items: cart.map(c => ({
@@ -362,8 +386,8 @@ export default function ShopPage() {
       }
       setCart([])
       closeCart()
-      setOrderSuccess(successData)
-      playSound('order_success')
+      setPayOrder(successData)   // 改：開匯款 sheet，而非直接成功
+      playSound('modal_open')
       vibrate(VIBRATE.success)
       await fetchLiveData()
     } catch (err) {
@@ -372,6 +396,62 @@ export default function ShopPage() {
       toast.error('下單失敗：' + err.message)
     }
     setCheckingOut(false)
+  }
+
+  function compressProofImage(file) {
+    return new Promise((resolve) => {
+      const MAX = 1400, QUALITY = 0.82
+      const reader = new FileReader()
+      reader.onload = (e) => {
+        const img = new Image()
+        img.onload = () => {
+          const ratio = Math.min(MAX / img.width, MAX / img.height, 1)
+          const w = Math.round(img.width * ratio), h = Math.round(img.height * ratio)
+          const canvas = document.createElement('canvas')
+          canvas.width = w; canvas.height = h
+          canvas.getContext('2d').drawImage(img, 0, 0, w, h)
+          canvas.toBlob((blob) => resolve(new File([blob], 'proof.webp', { type: 'image/webp' })), 'image/webp', QUALITY)
+        }
+        img.src = e.target.result
+      }
+      reader.readAsDataURL(file)
+    })
+  }
+
+  async function handleUploadProof(e) {
+    const raw = e.target.files[0]
+    if (!raw || !payOrder) return
+    setUploadingProof(true)
+    try {
+      const file = await compressProofImage(raw)
+      const path = `payment-proofs/${member.id}_${payOrder.order_no}_${Date.now()}.webp`
+      const { error: upErr } = await supabase.storage
+        .from('card-images')
+        .upload(path, file, { upsert: false, contentType: 'image/webp' })
+      if (upErr) throw upErr
+      const { data: urlData } = supabase.storage.from('card-images').getPublicUrl(path)
+      const proofUrl = urlData.publicUrl
+      if (payOrder.id) {
+        const { error: updErr } = await supabase
+          .from('menu_orders')
+          .update({ payment_proof_url: proofUrl })
+          .eq('id', payOrder.id)
+        if (updErr) throw updErr
+      }
+      // 上傳成功 → 關匯款 sheet → 顯示下單成功
+      const done = { ...payOrder }
+      setPayOrder(null)
+      setOrderSuccess(done)
+      playSound('order_success')
+      vibrate(VIBRATE.success)
+      await fetchLiveData()
+    } catch (err) {
+      playSound('error_system')
+      vibrate(VIBRATE.error)
+      toast.error('上傳失敗：' + err.message)
+    }
+    setUploadingProof(false)
+    if (proofFileRef.current) proofFileRef.current.value = ''
   }
 
   function openConfirm(prod) { playSound('modal_open'); vibrate(VIBRATE.light); setConfirmProduct(prod); setConfirmQty(1) }
@@ -1003,6 +1083,70 @@ export default function ShopPage() {
                   </div>
                 )
               })}
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* 匯款 + 上傳證明 Sheet */}
+      {payOrder && (
+        <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.5)', zIndex: 250, display: 'flex', alignItems: 'flex-end', justifyContent: 'center' }}>
+          <div style={{ width: '100%', maxWidth: 390, maxHeight: '92vh', background: '#fff', borderRadius: '20px 20px 0 0', display: 'flex', flexDirection: 'column' }}>
+            <div style={{ width: 36, height: 4, borderRadius: 2, background: '#E0E0E0', margin: '12px auto 0', flexShrink: 0 }} />
+            <div style={{ padding: '14px 20px 12px', borderBottom: '0.5px solid #F0F0F0', flexShrink: 0 }}>
+              <div style={{ display: 'inline-flex', alignItems: 'center', gap: 6, background: 'linear-gradient(135deg,#E24B4A,#c0392b)', borderRadius: 99, padding: '3px 11px', marginBottom: 8 }}>
+                <i className="fa-solid fa-circle-check" style={{ fontSize: 10, color: '#fff' }}></i>
+                <span style={{ fontSize: 11, fontWeight: 800, color: '#fff', letterSpacing: '0.05em' }}>訂單已成立 #{String(payOrder.order_no).padStart(4, '0')}</span>
+              </div>
+              <div style={{ fontSize: 16, fontWeight: 800, color: '#1a1a1a' }}>請完成匯款並上傳證明</div>
+              <div style={{ fontSize: 11, color: '#9E9E9E', marginTop: 3 }}>上傳匯款證明後即完成下單</div>
+            </div>
+
+            <div style={{ overflowY: 'auto', flex: 1, padding: '16px 20px 24px' }}>
+              {/* 應匯金額 */}
+              <div style={{ background: 'linear-gradient(135deg,#1a1a1a,#2a2a2a)', borderRadius: 14, padding: '16px 18px', marginBottom: 16, textAlign: 'center' }}>
+                <div style={{ fontSize: 11, color: '#bbb', marginBottom: 4 }}>應匯金額</div>
+                <div style={{ fontSize: 32, fontWeight: 900, color: '#FAC775', letterSpacing: '-0.5px' }}>$ {payOrder.total_amount}</div>
+              </div>
+
+              {/* 匯款帳號 */}
+              <div style={{ fontSize: 12, fontWeight: 700, color: '#555', marginBottom: 8, display: 'flex', alignItems: 'center', gap: 6 }}>
+                <i className="fa-solid fa-building-columns" style={{ fontSize: 12, color: '#E24B4A' }}></i>匯款帳號（擇一）
+              </div>
+              {REMIT_ACCOUNTS.map((a, i) => (
+                <div key={i} style={{ border: '1px solid #F0E0E0', borderRadius: 12, padding: '12px 14px', marginBottom: 10, background: '#FFFCFC' }}>
+                  <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 8 }}>
+                    <span style={{ fontSize: 13, fontWeight: 800, color: '#1a1a1a' }}>{a.bank} <span style={{ fontSize: 11, fontWeight: 600, color: '#999' }}>（{a.code}）</span></span>
+                    <span style={{ fontSize: 11, color: '#999' }}>戶名：{a.name}</span>
+                  </div>
+                  <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 8, background: '#fff', border: '0.5px solid #EEE', borderRadius: 8, padding: '8px 12px' }}>
+                    <span style={{ fontSize: 15, fontWeight: 800, color: '#1a1a1a', letterSpacing: '0.5px', fontFamily: 'monospace' }}>{a.account}</span>
+                    <button onClick={() => {
+                      navigator.clipboard?.writeText(a.account)
+                      playSound('button_tap'); vibrate(VIBRATE.light)
+                      toast.success('已複製帳號')
+                    }} className="press-fx" style={{ flexShrink: 0, padding: '5px 10px', background: '#FCEBEB', border: '0.5px solid #F09595', borderRadius: 7, fontSize: 11, fontWeight: 700, color: '#E24B4A', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: 4 }}>
+                      <i className="fa-solid fa-copy" style={{ fontSize: 10 }}></i>複製
+                    </button>
+                  </div>
+                </div>
+              ))}
+
+              <div style={{ background: '#FFF8EE', border: '0.5px solid #F5E8C8', borderRadius: 10, padding: '10px 12px', marginTop: 4, marginBottom: 18, fontSize: 11, color: '#8B5A00', lineHeight: 1.6, display: 'flex', gap: 7 }}>
+                <i className="fa-solid fa-circle-info" style={{ fontSize: 12, marginTop: 1, flexShrink: 0 }}></i>
+                <span>請匯款 <strong>$ {payOrder.total_amount}</strong> 至上方任一帳戶，完成後上傳匯款證明（轉帳截圖／收據）以完成下單。</span>
+              </div>
+
+              {/* 上傳按鈕 */}
+              <input ref={proofFileRef} type="file" accept="image/*" onChange={handleUploadProof} style={{ display: 'none' }} />
+              <button onClick={() => !uploadingProof && proofFileRef.current?.click()} disabled={uploadingProof} className="press-fx"
+                style={{ width: '100%', padding: 15, background: uploadingProof ? '#ccc' : '#1a1a1a', border: 'none', borderRadius: 13, fontSize: 15, fontWeight: 800, color: '#fff', cursor: uploadingProof ? 'not-allowed' : 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8 }}>
+                {uploadingProof
+                  ? <><svg width="16" height="16" viewBox="0 0 16 16" fill="none" style={{ animation: 'spin 0.8s linear infinite' }}><style>{`@keyframes spin{to{transform:rotate(360deg)}}`}</style><circle cx="8" cy="8" r="6" stroke="rgba(255,255,255,0.3)" strokeWidth="2"/><path d="M8 2 A6 6 0 0 1 14 8" stroke="#fff" strokeWidth="2" strokeLinecap="round"/></svg>上傳中...</>
+                  : <><i className="fa-solid fa-cloud-arrow-up" style={{ fontSize: 14 }}></i>上傳匯款證明</>
+                }
+              </button>
+              <div style={{ fontSize: 10, color: '#bbb', textAlign: 'center', marginTop: 8 }}>支援 JPG、PNG、WebP，上傳後即完成下單</div>
             </div>
           </div>
         </div>
