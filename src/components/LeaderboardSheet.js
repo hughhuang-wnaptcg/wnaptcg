@@ -16,21 +16,11 @@ function levelTheme(level) {
   return LEVEL_THEME[level] || LEVEL_THEME['精靈球']
 }
 
-// ── 展示卡稀有度光暈（與 ProfilePage 一致）──
-const RARITY_GLOW = {
-  UR:    { kind: 'solid',   color: '#F5C518', ring: '#F5C518' },
-  HR:    { kind: 'rainbow', color: '#ff5e6c', ring: '#ff9a3d' },
-  SSR:   { kind: 'rainbow', color: '#ff5e6c', ring: '#ff9a3d' },
-  SAR:   { kind: 'solid',   color: '#C9A227', ring: '#1a1a1a' },
-  CSR:   { kind: 'solid',   color: '#C9A227', ring: '#1a1a1a' },
-  SR:    { kind: 'solid',   color: '#FFFFFF', ring: '#E8E8E8' },
-  AR:    { kind: 'solid',   color: '#FFFFFF', ring: '#E8E8E8' },
-  CHR:   { kind: 'solid',   color: '#FFFFFF', ring: '#E8E8E8' },
-  PROMO: { kind: 'solid',   color: '#1a1a1a', ring: '#1a1a1a' },
-  Other: { kind: 'solid',   color: '#1a1a1a', ring: '#1a1a1a' },
-}
-function rarityGlow(rarity) {
-  return RARITY_GLOW[rarity] || RARITY_GLOW.Other
+// ── 展示卡光暈（與 ProfilePage 一致）──
+// 統一淡暖金柔光，僅高級球以上會員可使用（依被檢視的會員等級判斷）。
+const GLOW_ALLOWED_LEVELS = ['高級球', '豪華球', '貴重球', '究極球', '大師球']
+function canGlow(level) {
+  return GLOW_ALLOWED_LEVELS.includes(level)
 }
 
 export default function LeaderboardSheet({ onClose, currentMemberId }) {
@@ -81,9 +71,7 @@ export default function LeaderboardSheet({ onClose, currentMemberId }) {
     <>
       <style>{`
         @keyframes lbMemberCardGlow{0%,100%{box-shadow:0 6px 22px rgba(0,0,0,0.10)}50%{box-shadow:0 8px 30px var(--mc-glow)}}
-        @keyframes lbCardGlowSolidStrong{0%,100%{box-shadow:0 0 0 1px var(--cg-ring),0 0 10px 1px var(--cg-color),0 4px 14px rgba(0,0,0,0.14)}50%{box-shadow:0 0 0 1px var(--cg-ring),0 0 20px 5px var(--cg-color),0 4px 16px rgba(0,0,0,0.16)}}
-        @keyframes lbCardGlowSolidSoft{0%,100%{box-shadow:0 0 0 1px var(--cg-ring),0 0 6px 0px var(--cg-color),0 4px 12px rgba(0,0,0,0.10)}50%{box-shadow:0 0 0 1px var(--cg-ring),0 0 12px 2px var(--cg-color),0 4px 14px rgba(0,0,0,0.12)}}
-        @keyframes lbCardGlowRainbow{0%{box-shadow:0 0 14px 3px rgba(255,94,108,0.65),0 4px 14px rgba(0,0,0,0.15)}25%{box-shadow:0 0 14px 3px rgba(255,206,86,0.65),0 4px 14px rgba(0,0,0,0.15)}50%{box-shadow:0 0 14px 3px rgba(120,200,80,0.65),0 4px 14px rgba(0,0,0,0.15)}75%{box-shadow:0 0 14px 3px rgba(110,155,255,0.65),0 4px 14px rgba(0,0,0,0.15)}100%{box-shadow:0 0 14px 3px rgba(255,94,108,0.65),0 4px 14px rgba(0,0,0,0.15)}}
+        @keyframes lbCardSoftGlow{0%,100%{box-shadow:0 0 0 1px rgba(250,199,117,0.45),0 0 8px 1px rgba(224,123,0,0.16),0 4px 14px rgba(186,117,23,0.10)}50%{box-shadow:0 0 0 1px rgba(250,199,117,0.6),0 0 14px 3px rgba(224,123,0,0.24),0 5px 16px rgba(186,117,23,0.12)}}
       `}</style>
 
       {/* 排行榜 Sheet */}
@@ -227,17 +215,10 @@ export default function LeaderboardSheet({ onClose, currentMemberId }) {
                 {[0,1,2].map(i => {
                   const slot = showcaseCards[i]
                   const rc = slot?.cards ? (RARITY_COLORS[slot.cards.rarity] || RARITY_COLORS.Other) : null
-                  const glow = slot?.cards ? rarityGlow(slot.cards.rarity) : null
-                  const isStrongGlow = slot?.cards ? ['UR', 'SAR', 'CSR'].includes(slot.cards.rarity) : false
-                  const glowAnim = glow
-                    ? (glow.kind === 'rainbow'
-                        ? 'lbCardGlowRainbow 4s linear infinite'
-                        : `${isStrongGlow ? 'lbCardGlowSolidStrong' : 'lbCardGlowSolidSoft'} 2.6s ease-in-out infinite`)
-                    : undefined
-                  const glowVars = glow && glow.kind !== 'rainbow' ? { '--cg-color': glow.color, '--cg-ring': glow.ring } : {}
+                  const showGlow = slot?.cards && canGlow(selected.level)
                   return (
                     <div key={i}>
-                      <div style={{ ...glowVars, aspectRatio: '3/4', borderRadius: 14, overflow: 'hidden', background: slot ? '#fff' : '#f5f0e8', border: slot ? 'none' : '2px dashed #F5E8C8', boxShadow: slot && !glowAnim ? '0 4px 14px rgba(186,117,23,.12)' : 'none', animation: glowAnim, display: 'flex', alignItems: 'center', justifyContent: 'center', position: 'relative' }}>
+                      <div style={{ aspectRatio: '3/4', borderRadius: 14, overflow: 'hidden', background: slot ? '#fff' : '#f5f0e8', border: slot ? 'none' : '2px dashed #F5E8C8', boxShadow: slot && !showGlow ? '0 4px 14px rgba(186,117,23,.12)' : 'none', animation: showGlow ? 'lbCardSoftGlow 3s ease-in-out infinite' : undefined, display: 'flex', alignItems: 'center', justifyContent: 'center', position: 'relative' }}>
                         {slot?.cards?.image_url
                           ? <img src={slot.cards.image_url} alt="" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
                           : slot
