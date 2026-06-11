@@ -186,7 +186,7 @@ export default function LeaderboardSheet({ onClose, currentMemberId }) {
 
               {/* 頂部華麗球種標 */}
               <div style={{ position: 'relative', fontFamily: FONT_CINZEL, fontWeight: 600, fontSize: 10, letterSpacing: '0.26em', color: theme.accent, opacity: theme.dark ? 0.9 : 0.75, marginBottom: 12 }}>
-                {levelEn(selected.level)}{'\u00A0'}MEMBER
+                {levelEn(selected.level)} MEMBER
               </div>
 
               <div style={{ position: 'relative', display: 'flex', alignItems: 'center', gap: 14 }}>
@@ -223,7 +223,7 @@ export default function LeaderboardSheet({ onClose, currentMemberId }) {
               {/* 分隔線 + 華麗底列：編號 · 加入日期 */}
               <div style={{ position: 'relative', height: 1, background: theme.dark ? 'rgba(255,255,255,0.12)' : `${theme.accent}33`, margin: '13px 0 10px' }} />
               <div style={{ position: 'relative', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-                <span style={{ fontFamily: FONT_CINZEL, fontWeight: 500, fontSize: 11, letterSpacing: '0.1em', color: theme.accent, opacity: theme.dark ? 0.95 : 0.85 }}>NO.{'\u00A0'}{String(selected.member_no || '0').padStart(4, '0')}</span>
+                <span style={{ fontFamily: FONT_CINZEL, fontWeight: 500, fontSize: 11, letterSpacing: '0.1em', color: theme.accent, opacity: theme.dark ? 0.95 : 0.85 }}>NO. {String(selected.member_no || '0').padStart(4, '0')}</span>
                 <span style={{ fontFamily: FONT_PLAYFAIR, fontStyle: 'italic', fontSize: 12, color: theme.sub }}>since {new Date(selected.created_at).toLocaleDateString('zh-TW')}</span>
               </div>
             </div>
