@@ -10,6 +10,19 @@ const hasLiffCallback = () => {
   return params.has('code') || params.has('state') || params.has('liff.state')
 }
 
+// iOS「加到主畫面」獨立視窗偵測：此情境下 LIFF 整頁 OAuth 會被丟去 Safari，
+// 主畫面 WebView 與 Safari storage 隔離，登入結果回不來 → 必定卡死。
+// 因此在 iOS standalone 直接擋登入，引導使用者改用 Safari 開啟。
+const isIOSStandalone = () => {
+  const nav = window.navigator
+  const ua = nav.userAgent || ''
+  const isIOS = /iPad|iPhone|iPod/.test(ua) ||
+    (nav.platform === 'MacIntel' && nav.maxTouchPoints > 1) // iPadOS 偽裝桌面
+  const standalone = nav.standalone === true ||
+    (window.matchMedia && window.matchMedia('(display-mode: standalone)').matches)
+  return isIOS && standalone
+}
+
 const BENEFITS = [
   { icon: 'fa-trophy', text: '戰績牆開箱紀錄' },
   { icon: 'fa-star', text: '積分升級制度' },
@@ -20,9 +33,13 @@ const BENEFITS = [
 export default function LoginPage() {
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState('')
+  const [blockedStandalone, setBlockedStandalone] = useState(false)
+  const [copied, setCopied] = useState(false)
   const navigate = useNavigate()
 
   useEffect(() => {
+    if (isIOSStandalone()) setBlockedStandalone(true)
+
     if (!document.getElementById('fa-css')) {
       const link = document.createElement('link')
       link.id = 'fa-css'
@@ -34,6 +51,8 @@ export default function LoginPage() {
     let script = document.getElementById('liff-sdk')
 
     async function resumeLineLogin() {
+      // iOS standalone 不嘗試恢復登入，避免在隔離容器內白繞
+      if (isIOSStandalone()) return
       try {
         await window.liff.init({ liffId: LIFF_ID })
         if (!cancelled && hasLiffCallback() && window.liff.isLoggedIn()) {
@@ -61,7 +80,37 @@ export default function LoginPage() {
     return () => { cancelled = true }
   }, [])
 
+  async function handleCopyUrl() {
+    playSound('button_tap')
+    const url = window.location.origin + '/login'
+    try {
+      await navigator.clipboard.writeText(url)
+      setCopied(true)
+      playSound('checkin_success')
+      setTimeout(() => setCopied(false), 2200)
+    } catch {
+      // clipboard API 不可用時的退路：用舊式 execCommand
+      try {
+        const ta = document.createElement('textarea')
+        ta.value = url
+        ta.style.position = 'fixed'
+        ta.style.opacity = '0'
+        document.body.appendChild(ta)
+        ta.focus()
+        ta.select()
+        document.execCommand('copy')
+        document.body.removeChild(ta)
+        setCopied(true)
+        setTimeout(() => setCopied(false), 2200)
+      } catch {
+        setError('複製失敗，請手動複製網址列的網址，改用 Safari 開啟')
+      }
+    }
+  }
+
   async function handleLineLogin() {
+    // 保險：理論上 standalone 時按鈕已不顯示，但仍擋一層
+    if (isIOSStandalone()) { setBlockedStandalone(true); return }
     playSound('button_tap')
     setLoading(true)
     setError('')
@@ -116,7 +165,7 @@ export default function LoginPage() {
           }).eq('id', user.id)
         }
       }
-      playSound('order_success')
+      playSound('checkin_success')
       navigate('/')
     } catch (err) {
       console.error(err)
@@ -136,6 +185,7 @@ export default function LoginPage() {
         .line-btn:hover:not(:disabled){filter:brightness(1.05)} 
         .line-btn:active:not(:disabled){transform:scale(0.97)}
         .benefit-card:hover{background:linear-gradient(135deg,#faf4e8,#fff8ee)!important;border-color:#FAC775!important}
+        .copy-btn:active{transform:scale(0.97)}
       `}</style>
 
       <div style={S.glow1}/><div style={S.glow2}/><div style={S.glow3}/>
@@ -200,16 +250,39 @@ export default function LoginPage() {
           </div>
         )}
 
-        <button className="line-btn" onClick={handleLineLogin} disabled={loading} style={{...S.lineBtn,...(loading?S.lineBtnOff:{})}}>
-          {!loading && <div style={S.shimmer}/>}
-          <svg width="22" height="22" viewBox="0 0 24 24" fill="white">
-            <path d="M19.365 9.863c.349 0 .63.285.63.631 0 .345-.281.63-.63.63H17.61v1.125h1.755c.349 0 .63.283.63.63 0 .344-.281.629-.63.629h-2.386c-.345 0-.627-.285-.627-.629V8.108c0-.345.282-.63.63-.63h2.386c.346 0 .627.285.627.63 0 .349-.281.63-.63.63H17.61v1.125h1.755zm-3.855 3.016c0 .27-.174.51-.432.596-.064.021-.133.031-.199.031-.211 0-.391-.09-.51-.25l-2.443-3.317v2.94c0 .344-.279.629-.631.629-.346 0-.626-.285-.626-.629V8.108c0-.27.173-.51.43-.595.06-.023.136-.033.194-.033.195 0 .375.104.494.25l2.462 3.33V8.108c0-.345.282-.63.63-.63.345 0 .63.285.63.63v4.771zm-5.741 0c0 .344-.282.629-.631.629-.345 0-.627-.285-.627-.629V8.108c0-.345.282-.63.63-.63.346 0 .628.285.628.63v4.771zm-2.466.629H4.917c-.345 0-.63-.285-.63-.629V8.108c0-.345.285-.63.63-.63.348 0 .63.285.63.63v4.141h1.756c.348 0 .629.283.629.63 0 .344-.282.629-.629.629M24 10.314C24 4.943 18.615.572 12 .572S0 4.943 0 10.314c0 4.811 4.27 8.842 10.035 9.608.391.082.923.258 1.058.59.12.301.079.766.038 1.08l-.164 1.02c-.045.301-.24 1.186 1.049.645 1.291-.539 6.916-4.078 9.436-6.975C23.176 14.393 24 12.458 24 10.314"/>
-          </svg>
-          <span style={{fontSize:15,fontWeight:600,letterSpacing:'0.03em'}}>
-            {loading ? 'LINE 登入中...' : '使用 LINE 登入'}
-          </span>
-          {loading && <i className="fa-solid fa-spinner fa-spin" style={{fontSize:13,opacity:0.8}}></i>}
-        </button>
+        {blockedStandalone ? (
+          <div style={S.standaloneCard}>
+            <div style={S.standaloneIconRow}>
+              <div style={S.standaloneIcon}>
+                <i className="fa-solid fa-triangle-exclamation" style={{fontSize:18,color:'#E24B4A'}}></i>
+              </div>
+              <div style={S.standaloneTitle}>請改用 Safari 開啟登入</div>
+            </div>
+            <div style={S.standaloneDesc}>
+              你目前從「主畫面」開啟，此模式下無法完成 LINE 登入。<br/>
+              請<strong style={{color:'#BA7517'}}>複製網址</strong>，貼到 <strong>Safari</strong> 瀏覽器開啟並登入即可。
+            </div>
+            <button className="copy-btn" onClick={handleCopyUrl} style={{...S.copyBtn, ...(copied ? S.copyBtnDone : {})}}>
+              <i className={`fa-solid ${copied ? 'fa-circle-check' : 'fa-copy'}`} style={{fontSize:14}}></i>
+              <span>{copied ? '已複製，請到 Safari 貼上開啟' : '複製網址'}</span>
+            </button>
+            <div style={S.standaloneHint}>
+              <i className="fa-solid fa-circle-info" style={{fontSize:10,color:'#BA7517',opacity:0.6,marginRight:5}}></i>
+              登入成功後，仍可正常使用主畫面的圖示開啟 App
+            </div>
+          </div>
+        ) : (
+          <button className="line-btn" onClick={handleLineLogin} disabled={loading} style={{...S.lineBtn,...(loading?S.lineBtnOff:{})}}>
+            {!loading && <div style={S.shimmer}/>}
+            <svg width="22" height="22" viewBox="0 0 24 24" fill="white">
+              <path d="M19.365 9.863c.349 0 .63.285.63.631 0 .345-.281.63-.63.63H17.61v1.125h1.755c.349 0 .63.283.63.63 0 .344-.281.629-.63.629h-2.386c-.345 0-.627-.285-.627-.629V8.108c0-.345.282-.63.63-.63h2.386c.346 0 .627.285.627.63 0 .349-.281.63-.63.63H17.61v1.125h1.755zm-3.855 3.016c0 .27-.174.51-.432.596-.064.021-.133.031-.199.031-.211 0-.391-.09-.51-.25l-2.443-3.317v2.94c0 .344-.279.629-.631.629-.346 0-.626-.285-.626-.629V8.108c0-.27.173-.51.43-.595.06-.023.136-.033.194-.033.195 0 .375.104.494.25l2.462 3.33V8.108c0-.345.282-.63.63-.63.345 0 .63.285.63.63v4.771zm-5.741 0c0 .344-.282.629-.631.629-.345 0-.627-.285-.627-.629V8.108c0-.345.282-.63.63-.63.346 0 .628.285.628.63v4.771zm-2.466.629H4.917c-.345 0-.63-.285-.63-.629V8.108c0-.345.285-.63.63-.63.348 0 .63.285.63.63v4.141h1.756c.348 0 .629.283.629.63 0 .344-.282.629-.629.629M24 10.314C24 4.943 18.615.572 12 .572S0 4.943 0 10.314c0 4.811 4.27 8.842 10.035 9.608.391.082.923.258 1.058.59.12.301.079.766.038 1.08l-.164 1.02c-.045.301-.24 1.186 1.049.645 1.291-.539 6.916-4.078 9.436-6.975C23.176 14.393 24 12.458 24 10.314"/>
+            </svg>
+            <span style={{fontSize:15,fontWeight:600,letterSpacing:'0.03em'}}>
+              {loading ? 'LINE 登入中...' : '使用 LINE 登入'}
+            </span>
+            {loading && <i className="fa-solid fa-spinner fa-spin" style={{fontSize:13,opacity:0.8}}></i>}
+          </button>
+        )}
 
         <div style={S.decoRow}>
           <div style={S.decoLine}/><span style={S.decoText}>安全登入</span><div style={S.decoLine}/>
@@ -258,6 +331,14 @@ const S = {
   lineBtn: { display:'flex', alignItems:'center', justifyContent:'center', gap:10, background:'#06C755', color:'white', border:'none', borderRadius:14, padding:'15px 32px', fontSize:15, fontWeight:600, cursor:'pointer', width:'100%', boxShadow:'0 4px 16px rgba(6,199,85,0.28)', transition:'all 0.2s ease', position:'relative', overflow:'hidden', marginBottom:14 },
   lineBtnOff: { background:'#ccc', cursor:'not-allowed', boxShadow:'none' },
   shimmer: { position:'absolute', top:0, left:0, width:'40%', height:'100%', background:'linear-gradient(90deg,transparent,rgba(255,255,255,0.25),transparent)', animation:'shimmer 2.5s ease-in-out infinite', pointerEvents:'none' },
+  standaloneCard: { width:'100%', background:'linear-gradient(135deg,#fff,#fdfaf4)', border:'1px solid #FAC775', borderRadius:14, padding:'16px 16px 14px', marginBottom:14, boxShadow:'0 4px 18px rgba(186,117,23,0.12)' },
+  standaloneIconRow: { display:'flex', alignItems:'center', gap:9, marginBottom:10 },
+  standaloneIcon: { width:34, height:34, borderRadius:10, background:'#FCEBEB', display:'flex', alignItems:'center', justifyContent:'center', flexShrink:0 },
+  standaloneTitle: { fontSize:15, fontWeight:700, color:'#2D1A00' },
+  standaloneDesc: { fontSize:12, color:'#7A5A2A', lineHeight:1.7, marginBottom:14 },
+  copyBtn: { display:'flex', alignItems:'center', justifyContent:'center', gap:8, width:'100%', background:'linear-gradient(135deg,#BA7517,#E07B00)', color:'#fff', border:'none', borderRadius:12, padding:'13px 0', fontSize:14, fontWeight:700, cursor:'pointer', transition:'transform 0.1s ease', marginBottom:10 },
+  copyBtnDone: { background:'linear-gradient(135deg,#3B6D11,#639922)' },
+  standaloneHint: { fontSize:10, color:'#A07040', textAlign:'center', lineHeight:1.5 },
   decoRow: { display:'flex', alignItems:'center', gap:10, width:'80%', marginBottom:18 },
   decoLine: { flex:1, height:0.5, background:'linear-gradient(90deg,transparent,rgba(186,117,23,0.25),transparent)' },
   decoText: { fontSize:10, color:'#BA7517', opacity:0.55, letterSpacing:'0.08em', fontWeight:500, whiteSpace:'nowrap' },
