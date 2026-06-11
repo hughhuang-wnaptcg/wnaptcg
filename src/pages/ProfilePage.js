@@ -64,14 +64,6 @@ function levelEn(level) {
 const FONT_CINZEL = "'Cinzel', 'Times New Roman', serif"
 const FONT_PLAYFAIR = "'Playfair Display', 'Times New Roman', serif"
 
-// ── 展示卡光暈 ──
-// 統一的低調暖金柔光，呼應整體暖色 UI，不依稀有度分色。
-// 僅高級球以上會員可使用（與頭貼自訂同門檻）。
-const GLOW_ALLOWED_LEVELS = ['高級球', '豪華球', '貴重球', '究極球', '大師球']
-function canGlow(level) {
-  return GLOW_ALLOWED_LEVELS.includes(level)
-}
-
 export default function ProfilePage() {
   const { member, setMember, signOut } = useAuth()
   const toast = useToast()
@@ -362,7 +354,6 @@ export default function ProfilePage() {
         @keyframes memberCardGlow{0%,100%{box-shadow:0 6px 22px rgba(0,0,0,0.10)}50%{box-shadow:0 8px 30px var(--mc-glow)}}
         @keyframes memberCardIn{0%{opacity:0;transform:translateY(10px)}100%{opacity:1;transform:translateY(0)}}
         @keyframes cardSoftGlow{0%,100%{box-shadow:0 0 0 1px rgba(250,199,117,0.45),0 0 8px 1px rgba(224,123,0,0.16),0 4px 14px rgba(186,117,23,0.10)}50%{box-shadow:0 0 0 1px rgba(250,199,117,0.6),0 0 14px 3px rgba(224,123,0,0.24),0 5px 16px rgba(186,117,23,0.12)}}
-        @keyframes podiumBeam{0%,100%{opacity:0.85}50%{opacity:1}}
         @keyframes mcLift{0%{opacity:0;transform:translateY(22px) scale(0.96)}50%{opacity:1;transform:translateY(-3px) scale(1.008)}75%{transform:translateY(1px) scale(0.998)}100%{opacity:1;transform:translateY(0) scale(1)}}
         @keyframes mcItem{0%{opacity:0;transform:translateY(8px)}100%{opacity:1;transform:translateY(0)}}
         @keyframes mcShimmer{0%{left:-50%;opacity:0}40%{opacity:0.7}70%{opacity:0.7}100%{left:130%;opacity:0}}
@@ -502,100 +493,45 @@ export default function ProfilePage() {
               <span style={{ fontSize: 11, color: '#bbb', fontWeight: 400, marginLeft: 4 }}>最多 3 張</span>
             </div>
 
-            {canGlow(member.level) ? (
-              /* ── 黑金頒獎台（高級球以上） ── */
-              <div style={{ position: 'relative', borderRadius: 18, overflow: 'hidden', background: 'radial-gradient(ellipse 80% 60% at 50% 0%, #2a2218 0%, #1a1510 45%, #0e0c0a 100%)', border: '1.5px solid #B8860B', padding: '20px 14px 18px', marginBottom: 20, boxShadow: '0 6px 26px rgba(0,0,0,0.4)' }}>
-                {/* 交叉掃射聚光燈 */}
-                <div style={{ position: 'absolute', top: -6, left: '8%', width: 8, height: 8, borderRadius: '50%', background: 'radial-gradient(circle,#FFF6D8,#F5D060 60%,transparent)', boxShadow: '0 0 8px rgba(245,208,96,0.7)', zIndex: 1 }} />
-                <div style={{ position: 'absolute', top: 0, left: '9%', width: 200, height: 230, background: 'linear-gradient(180deg,rgba(245,222,140,0.22) 0%,rgba(245,222,140,0.06) 50%,transparent 78%)', clipPath: 'polygon(0% 0%, 5% 0%, 70% 100%, 30% 100%)', animation: 'podiumBeam 3.4s ease-in-out infinite', pointerEvents: 'none', zIndex: 1 }} />
-                <div style={{ position: 'absolute', top: -6, right: '8%', width: 8, height: 8, borderRadius: '50%', background: 'radial-gradient(circle,#FFF6D8,#F5D060 60%,transparent)', boxShadow: '0 0 8px rgba(245,208,96,0.7)', zIndex: 1 }} />
-                <div style={{ position: 'absolute', top: 0, right: '9%', width: 200, height: 230, background: 'linear-gradient(180deg,rgba(245,222,140,0.22) 0%,rgba(245,222,140,0.06) 50%,transparent 78%)', clipPath: 'polygon(95% 0%, 100% 0%, 70% 100%, 30% 100%)', animation: 'podiumBeam 3.4s ease-in-out infinite', pointerEvents: 'none', zIndex: 1 }} />
-                <div style={{ position: 'absolute', top: -8, left: '50%', transform: 'translateX(-50%)', width: 10, height: 10, borderRadius: '50%', background: 'radial-gradient(circle,#FFFBEA,#F5D060 60%,transparent)', boxShadow: '0 0 12px rgba(255,240,190,0.8)', zIndex: 1 }} />
-                <div style={{ position: 'absolute', top: 0, left: '50%', transform: 'translateX(-50%)', width: 140, height: 215, background: 'linear-gradient(180deg,rgba(255,240,190,0.26) 0%,rgba(245,222,140,0.06) 55%,transparent 80%)', clipPath: 'polygon(40% 0%, 60% 0%, 90% 100%, 10% 100%)', animation: 'podiumBeam 3.4s ease-in-out infinite', pointerEvents: 'none', zIndex: 1 }} />
-
-                {/* 三張卡（中卡略大並上抬，左右略低，呈頒獎台階層）｜正常文檔流 */}
-                <div style={{ position: 'relative', display: 'flex', alignItems: 'flex-end', justifyContent: 'center', gap: 7, zIndex: 2 }}>
-                  {[
-                    { idx: 0, w: '30%', cardW: '90%', cardFont: 15, lift: 0, border: '1.5px solid #E0B868', cardGlow: 'none' },
-                    { idx: 1, w: '34%', cardW: '92%', cardFont: 16, lift: 16, border: '1.5px solid #F5D060', cardGlow: '0 0 16px rgba(245,208,96,0.3)' },
-                    { idx: 2, w: '30%', cardW: '90%', cardFont: 15, lift: 0, border: '1.5px solid #E0B868', cardGlow: 'none' },
-                  ].map(p => {
-                    const slot = showcaseSlots[p.idx]
-                    const rc = slot?.cards ? (RARITY_COLORS[slot.cards.rarity] || RARITY_COLORS.Other) : null
-                    return (
-                      <div key={p.idx} style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', width: p.w, marginBottom: p.lift }}>
-                        <div style={{ position: 'relative', width: p.cardW }}>
-                          <div
-                            onClick={() => { playSound('modal_open'); vibrate(VIBRATE.light); setShowCardPicker(p.idx) }}
-                            className="press-fx-soft"
-                            style={{ aspectRatio: '0.72', width: '100%', borderRadius: 5, overflow: 'hidden', background: slot?.cards ? '#1a1a1a' : 'rgba(255,255,255,0.05)', border: slot?.cards ? p.border : '1.5px dashed rgba(245,208,96,0.4)', boxShadow: slot?.cards ? `0 5px 12px rgba(0,0,0,0.6),${p.cardGlow}` : 'none', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', flexDirection: 'column', position: 'relative' }}>
-                            {slot?.cards?.image_url
-                              ? <img src={slot.cards.image_url} alt="" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
-                              : slot
-                                ? <i className="fa-solid fa-id-card" style={{ fontSize: p.cardFont + 6, color: 'rgba(245,208,96,0.5)' }}></i>
-                                : <>
-                                    <i className="fa-solid fa-plus" style={{ fontSize: 14, color: 'rgba(245,208,96,0.6)', marginBottom: 3 }}></i>
-                                    <span style={{ fontSize: 8, color: 'rgba(245,208,96,0.6)' }}>選擇卡片</span>
-                                  </>
-                            }
-                            {slot?.cards && rc && (
-                              <span style={{ position: 'absolute', top: 4, left: 4, fontSize: 6, fontWeight: 700, padding: '1px 4px', borderRadius: 20, background: rc.bg, color: rc.color }}>{slot.cards.rarity}</span>
-                            )}
-                          </div>
-                          {slot && (
-                            <button
-                              onClick={e => { e.stopPropagation(); handleRemoveShowcase(p.idx) }}
-                              style={{ position: 'absolute', top: 3, right: 3, width: 16, height: 16, borderRadius: '50%', background: 'rgba(0,0,0,0.55)', border: '0.5px solid rgba(245,208,96,0.4)', color: '#F5D060', fontSize: 8, cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 5 }}>
-                              ✕
-                            </button>
-                          )}
-                        </div>
-                      </div>
-                    )
-                  })}
-                </div>
-              </div>
-            ) : (
-              /* ── 原本卡格（精靈球／超級球） ── */
-              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3,1fr)', gap: 10, marginBottom: 20 }}>
-                {showcaseSlots.map((slot, i) => {
-                  const rc = slot?.cards ? (RARITY_COLORS[slot.cards.rarity] || RARITY_COLORS.Other) : null
-                  return (
-                    <div key={i} style={{ position: 'relative' }}>
-                      <div
-                        onClick={() => { playSound('modal_open'); vibrate(VIBRATE.light); setShowCardPicker(i) }}
-                        className="press-fx-soft"
-                        style={{ aspectRatio: '3/4', borderRadius: 14, overflow: 'hidden', background: slot ? '#fff' : '#f5f0e8', border: slot ? 'none' : '2px dashed #F5E8C8', boxShadow: slot ? '0 4px 14px rgba(186,117,23,.12)' : 'none', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', flexDirection: 'column', position: 'relative' }}>
-                        {slot?.cards?.image_url
-                          ? <img src={slot.cards.image_url} alt="" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
-                          : slot
-                            ? <i className="fa-solid fa-id-card" style={{ fontSize: 28, color: '#D4A94A', opacity: 0.4 }}></i>
-                            : <>
-                                <i className="fa-solid fa-plus" style={{ fontSize: 16, color: '#D4A94A', opacity: 0.5, marginBottom: 4 }}></i>
-                                <span style={{ fontSize: 9, color: '#D4A94A', opacity: 0.6 }}>選擇卡片</span>
-                              </>
-                        }
-                        {slot?.cards && (
-                          <span style={{ position: 'absolute', top: 5, left: 5, fontSize: 7, fontWeight: 700, padding: '2px 5px', borderRadius: 20, background: rc.bg, color: rc.color }}>{slot.cards.rarity}</span>
-                        )}
-                      </div>
-                      {slot && (
-                        <button
-                          onClick={e => { e.stopPropagation(); handleRemoveShowcase(i) }}
-                          style={{ position: 'absolute', top: 4, right: 4, width: 18, height: 18, borderRadius: '50%', background: 'rgba(0,0,0,0.45)', border: 'none', color: '#fff', fontSize: 9, cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 2 }}>
-                          ✕
-                        </button>
-                      )}
+            {/* ── 展示卡：三張並排、等大、白底（所有等級統一，無聚光燈、無頒獎台） ── */}
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3,1fr)', gap: 10, marginBottom: 20 }}>
+              {showcaseSlots.map((slot, i) => {
+                const rc = slot?.cards ? (RARITY_COLORS[slot.cards.rarity] || RARITY_COLORS.Other) : null
+                return (
+                  <div key={i} style={{ position: 'relative' }}>
+                    <div
+                      onClick={() => { playSound('modal_open'); vibrate(VIBRATE.light); setShowCardPicker(i) }}
+                      className="press-fx-soft"
+                      style={{ aspectRatio: '3/4', borderRadius: 14, overflow: 'hidden', background: slot ? '#fff' : '#f5f0e8', border: slot ? 'none' : '2px dashed #F5E8C8', boxShadow: slot ? '0 4px 14px rgba(186,117,23,.12)' : 'none', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', flexDirection: 'column', position: 'relative' }}>
+                      {slot?.cards?.image_url
+                        ? <img src={slot.cards.image_url} alt="" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+                        : slot
+                          ? <i className="fa-solid fa-id-card" style={{ fontSize: 28, color: '#D4A94A', opacity: 0.4 }}></i>
+                          : <>
+                              <i className="fa-solid fa-plus" style={{ fontSize: 16, color: '#D4A94A', opacity: 0.5, marginBottom: 4 }}></i>
+                              <span style={{ fontSize: 9, color: '#D4A94A', opacity: 0.6 }}>選擇卡片</span>
+                            </>
+                      }
                       {slot?.cards && (
-                        <div style={{ marginTop: 5, fontSize: 9, color: '#7a5c2e', fontWeight: 600, textAlign: 'center', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
-                          {slot.cards.name}
-                        </div>
+                        <span style={{ position: 'absolute', top: 5, left: 5, fontSize: 7, fontWeight: 700, padding: '2px 5px', borderRadius: 20, background: rc.bg, color: rc.color }}>{slot.cards.rarity}</span>
                       )}
                     </div>
-                  )
-                })}
-              </div>
-            )}
+                    {slot && (
+                      <button
+                        onClick={e => { e.stopPropagation(); handleRemoveShowcase(i) }}
+                        style={{ position: 'absolute', top: 4, right: 4, width: 18, height: 18, borderRadius: '50%', background: 'rgba(0,0,0,0.45)', border: 'none', color: '#fff', fontSize: 9, cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 2 }}>
+                        ✕
+                      </button>
+                    )}
+                    {slot?.cards && (
+                      <div style={{ marginTop: 5, fontSize: 9, color: '#7a5c2e', fontWeight: 600, textAlign: 'center', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                        {slot.cards.name}
+                      </div>
+                    )}
+                  </div>
+                )
+              })}
+            </div>
 
             {/* 等級進度（簡版） */}
             <div style={{ ...S.secTitle, marginBottom: 12 }}>
