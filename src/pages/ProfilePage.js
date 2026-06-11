@@ -91,7 +91,10 @@ export default function ProfilePage() {
   const [saving, setSaving] = useState(false)
   const [uploadingAvatar, setUploadingAvatar] = useState(false)
   const [restoringAvatar, setRestoringAvatar] = useState(false)
+  const [sharingCard, setSharingCard] = useState(false)
   const avatarFileRef = useRef()
+  const memberCardRef = useRef()
+  const cardAnimatedRef = useRef(false)
 
   useEffect(() => { if (member) fetchData() }, [member])
 
@@ -248,6 +251,57 @@ export default function ProfilePage() {
     setRestoringAvatar(false)
   }
 
+  // ── 分享會員卡：用 html2canvas 把會員卡截成 PNG → Web Share 或下載 ──
+  async function handleShareCard() {
+    if (sharingCard) return
+    const node = memberCardRef.current
+    if (!node) return
+    setSharingCard(true)
+    try {
+      const { default: html2canvas } = await import('html2canvas')
+      // 確保華麗字體載入完成，避免截到 fallback 字體
+      if (document.fonts && document.fonts.ready) {
+        try { await document.fonts.ready } catch {}
+      }
+      const canvas = await html2canvas(node, {
+        backgroundColor: null,
+        scale: Math.min(window.devicePixelRatio || 1, 3),
+        useCORS: true,
+      })
+      const blob = await new Promise(resolve => canvas.toBlob(resolve, 'image/png'))
+      if (!blob) throw new Error('截圖失敗')
+      const fileName = `wnaptcg-card-${String(member.member_no || '0').padStart(4, '0')}.png`
+      const file = new File([blob], fileName, { type: 'image/png' })
+
+      // 優先：手機原生分享面板（可傳 LINE/IG、存相簿）
+      if (navigator.canShare && navigator.canShare({ files: [file] }) && navigator.share) {
+        await navigator.share({ files: [file], title: '我的會員卡', text: 'W/NA PTCG 會員卡' })
+      } else {
+        // fallback：直接下載 PNG
+        const url = URL.createObjectURL(blob)
+        const a = document.createElement('a')
+        a.href = url
+        a.download = fileName
+        document.body.appendChild(a)
+        a.click()
+        document.body.removeChild(a)
+        URL.revokeObjectURL(url)
+      }
+      playSound('shop_redeem_success')
+      vibrate(VIBRATE.success)
+    } catch (err) {
+      // 使用者主動取消分享面板不算錯誤，不跳提示
+      if (err && (err.name === 'AbortError' || err.name === 'NotAllowedError')) {
+        setSharingCard(false)
+        return
+      }
+      playSound('error_system')
+      vibrate(VIBRATE.error)
+      toast.error('分享失敗：' + (err?.message || '請稍後再試'))
+    }
+    setSharingCard(false)
+  }
+
   function switchTab(tab) {
     if (profileTab !== tab) { playSound('tab_switch'); vibrate(VIBRATE.light) }
     setProfileTab(tab)
@@ -270,6 +324,10 @@ export default function ProfilePage() {
   const canChangeAvatar = AVATAR_ALLOWED_LEVELS.includes(member.level)
   const theme = levelTheme(member.level)
   const hero = heroTheme(member.level)
+
+  // 會員卡進場動畫只在 home tab 首次載入播一次；播過就標記，切 tab 回來不重播
+  const playCardAnim = profileTab === 'home' && !cardAnimatedRef.current
+  if (playCardAnim) cardAnimatedRef.current = true
 
   const nextLevel = getNextLevel(member.points)
   const currentLevelMin = LEVELS.slice().reverse().find(l => member.points >= l.min)?.min || 0
@@ -305,6 +363,10 @@ export default function ProfilePage() {
         @keyframes memberCardIn{0%{opacity:0;transform:translateY(10px)}100%{opacity:1;transform:translateY(0)}}
         @keyframes cardSoftGlow{0%,100%{box-shadow:0 0 0 1px rgba(250,199,117,0.45),0 0 8px 1px rgba(224,123,0,0.16),0 4px 14px rgba(186,117,23,0.10)}50%{box-shadow:0 0 0 1px rgba(250,199,117,0.6),0 0 14px 3px rgba(224,123,0,0.24),0 5px 16px rgba(186,117,23,0.12)}}
         @keyframes podiumBeam{0%,100%{opacity:0.85}50%{opacity:1}}
+        @keyframes mcLift{0%{opacity:0;transform:translateY(22px) scale(0.96)}50%{opacity:1;transform:translateY(-3px) scale(1.008)}75%{transform:translateY(1px) scale(0.998)}100%{opacity:1;transform:translateY(0) scale(1)}}
+        @keyframes mcItem{0%{opacity:0;transform:translateY(8px)}100%{opacity:1;transform:translateY(0)}}
+        @keyframes mcShimmer{0%{left:-50%;opacity:0}40%{opacity:0.7}70%{opacity:0.7}100%{left:130%;opacity:0}}
+        .mc-anim-item{animation:mcItem 0.5s ease-out both}
       `}</style>
       <div style={{ flex: 1, overflowY: 'auto' }}>
 
@@ -363,8 +425,8 @@ export default function ProfilePage() {
               </span>
             </div>
 
-            {/* 等級會員卡（依等級主題） */}
-            <div style={{ '--mc-glow': theme.glow, position: 'relative', overflow: 'hidden', borderRadius: 18, padding: '16px 18px', background: theme.bg, border: `1.5px solid ${theme.border}`, marginBottom: 16, animation: 'memberCardIn 0.4s ease both, memberCardGlow 3.2s ease-in-out infinite' }}>
+            {/* 等級會員卡（依等級主題）｜memberCardRef 供分享截圖，K+J 進場動畫 */}
+            <div ref={memberCardRef} style={{ '--mc-glow': theme.glow, position: 'relative', overflow: 'hidden', borderRadius: 18, padding: '16px 18px', background: theme.bg, border: `1.5px solid ${theme.border}`, marginBottom: 12, animation: playCardAnim ? 'mcLift 0.8s cubic-bezier(.2,.7,.2,1) both, memberCardGlow 3.2s ease-in-out 0.8s infinite' : 'memberCardGlow 3.2s ease-in-out infinite' }}>
               {/* 角落裝飾光暈 */}
               <div style={{ position: 'absolute', top: -50, right: -40, width: 150, height: 150, borderRadius: '50%', background: `radial-gradient(circle, ${theme.glow} 0%, transparent 68%)`, pointerEvents: 'none' }} />
               {/* 背景大徽章浮水印 */}
@@ -372,17 +434,22 @@ export default function ProfilePage() {
                 <PokeballIcon level={member.level} size={92} />
               </div>
 
+              {/* 絲綢柔光掃過（僅進場時，動畫結束 opacity 歸 0，不影響截圖、不擋點擊） */}
+              {playCardAnim && (
+                <div style={{ position: 'absolute', top: 0, bottom: 0, width: '40%', left: '-50%', background: theme.dark ? 'linear-gradient(100deg,transparent,rgba(255,246,216,0.40),transparent)' : 'linear-gradient(100deg,transparent,rgba(255,255,255,0.55),transparent)', pointerEvents: 'none', zIndex: 4, animation: 'mcShimmer 1.4s ease-in-out 0.95s both' }} />
+              )}
+
               {/* 頂部華麗球種標 */}
-              <div style={{ position: 'relative', fontFamily: FONT_CINZEL, fontWeight: 600, fontSize: 10, letterSpacing: '0.26em', color: theme.accent, opacity: theme.dark ? 0.9 : 0.75, marginBottom: 12 }}>
+              <div className={playCardAnim ? 'mc-anim-item' : ''} style={{ position: 'relative', fontFamily: FONT_CINZEL, fontWeight: 600, fontSize: 10, letterSpacing: '0.26em', color: theme.accent, opacity: theme.dark ? 0.9 : 0.75, marginBottom: 12, animationDelay: playCardAnim ? '0.30s' : undefined }}>
                 {levelEn(member.level)} MEMBER
               </div>
 
-              <div style={{ position: 'relative', display: 'flex', alignItems: 'center', gap: 14 }}>
+              <div className={playCardAnim ? 'mc-anim-item' : ''} style={{ position: 'relative', display: 'flex', alignItems: 'center', gap: 14, animationDelay: playCardAnim ? '0.38s' : undefined }}>
                 {/* 頭像 + 徽章光環 */}
                 <div style={{ position: 'relative', flexShrink: 0 }}>
                   <div style={{ width: 58, height: 58, borderRadius: '50%', overflow: 'hidden', border: `2px solid ${theme.accent}`, display: 'flex', alignItems: 'center', justifyContent: 'center', background: theme.dark ? 'rgba(255,255,255,0.06)' : '#FAEEDA', boxShadow: `0 0 0 4px ${theme.glow}` }}>
                     {member.avatar_url
-                      ? <img src={member.avatar_url} alt="" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+                      ? <img src={member.avatar_url} alt="" crossOrigin="anonymous" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
                       : <span style={{ fontSize: 22, fontWeight: 700, color: theme.dark ? theme.name : '#633806' }}>{member.display_name?.[0]?.toUpperCase()}</span>
                     }
                   </div>
@@ -404,20 +471,29 @@ export default function ProfilePage() {
                   </div>
                 </div>
 
-                {/* 積分 */}
+                {/* 積分（Playfair 華麗數字） */}
                 <div style={{ textAlign: 'right', flexShrink: 0 }}>
-                  <div style={{ fontSize: 20, fontWeight: 900, color: theme.accent, letterSpacing: '-0.5px', lineHeight: 1.1 }}><CountUp value={member.points || 0} separator /></div>
+                  <div style={{ fontFamily: FONT_PLAYFAIR, fontSize: 22, fontWeight: 600, color: theme.accent, letterSpacing: '-0.5px', lineHeight: 1.1 }}><CountUp value={member.points || 0} separator /></div>
                   <div style={{ fontFamily: FONT_CINZEL, fontSize: 9, letterSpacing: '0.15em', color: theme.sub, marginTop: 3 }}>POINTS</div>
                 </div>
               </div>
 
               {/* 分隔線 + 華麗底列：編號 · 加入日期 */}
-              <div style={{ position: 'relative', height: 1, background: theme.dark ? 'rgba(255,255,255,0.12)' : `${theme.accent}33`, margin: '13px 0 10px' }} />
-              <div style={{ position: 'relative', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+              <div className={playCardAnim ? 'mc-anim-item' : ''} style={{ position: 'relative', height: 1, background: theme.dark ? 'rgba(255,255,255,0.12)' : `${theme.accent}33`, margin: '13px 0 10px', animationDelay: playCardAnim ? '0.46s' : undefined }} />
+              <div className={playCardAnim ? 'mc-anim-item' : ''} style={{ position: 'relative', display: 'flex', alignItems: 'center', justifyContent: 'space-between', animationDelay: playCardAnim ? '0.54s' : undefined }}>
                 <span style={{ fontFamily: FONT_CINZEL, fontWeight: 500, fontSize: 11, letterSpacing: '0.1em', color: theme.accent, opacity: theme.dark ? 0.95 : 0.85 }}>NO. {String(member.member_no || '0').padStart(4, '0')}</span>
                 <span style={{ fontFamily: FONT_PLAYFAIR, fontStyle: 'italic', fontSize: 12, color: theme.sub }}>since {new Date(member.created_at).toLocaleDateString('zh-TW')}</span>
               </div>
             </div>
+
+            {/* 分享會員卡按鈕 */}
+            <button onClick={handleShareCard} disabled={sharingCard} className="press-fx"
+              style={{ width: '100%', padding: '11px 12px', background: sharingCard ? '#f0ebe3' : 'linear-gradient(135deg,#FAEEDA,#FFF3D0)', border: '0.5px solid #FAC775', borderRadius: 12, fontSize: 13, fontWeight: 500, color: sharingCard ? '#ccc' : '#8B5A00', cursor: sharingCard ? 'not-allowed' : 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 7, marginBottom: 16 }}>
+              {sharingCard
+                ? <><i className="fa-solid fa-spinner fa-spin" style={{ fontSize: 12 }}></i>產生中...</>
+                : <><i className="fa-solid fa-share-nodes" style={{ fontSize: 13 }}></i>分享會員卡</>
+              }
+            </button>
 
             {/* 展示卡 */}
             <div style={{ ...S.secTitle, marginBottom: 12 }}>
