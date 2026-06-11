@@ -8,6 +8,7 @@ import BottomNav from '../components/BottomNav'
 import { playSound } from '../lib/sounds'
 import { vibrate, VIBRATE } from '../lib/haptics'
 import { SkeletonCardGrid } from '../components/Skeleton'
+import { heroTheme } from '../lib/heroTheme'
 
 const RARITIES = ['UR','HR','SAR','CSR','SSR','SR','AR','CHR','PROMO','Other']
 
@@ -91,9 +92,11 @@ export default function WallPage() {
 
   const availableRarities = RARITIES.filter(r => rarityCount[r] > 0)
 
+  const hero = heroTheme(member?.level)
+
   const S = {
     page: { maxWidth: 390, margin: '0 auto', background: '#FFFBF2', minHeight: '100vh', display: 'flex', flexDirection: 'column' },
-    hero: { background: 'linear-gradient(160deg,#FFFBF2 0%,#FFF5DC 60%,#FFEDBB 100%)', padding: '18px 20px 16px', position: 'relative', overflow: 'hidden', borderBottom: 'none' },
+    hero: { background: hero.bg, padding: '18px 20px 16px', position: 'relative', overflow: 'hidden', borderBottom: 'none' },
     tabBar: { display: 'flex', borderBottom: '0.5px solid #f0e8d0', background: '#FFFBF2' },
     tabBtn: (active) => ({ flex: 1, padding: '10px 0', fontSize: 13, fontWeight: active ? 500 : 400, color: active ? '#E07B00' : '#bbb', textAlign: 'center', cursor: 'pointer', background: 'none', border: 'none', borderBottom: active ? '2px solid #E07B00' : '2px solid transparent' }),
   }
@@ -115,18 +118,18 @@ export default function WallPage() {
         ))}
         <div style={{ position: 'absolute', top: 14, right: 14, display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 2 }}>
           {member && (
-            <div style={{ width: 28, height: 28, borderRadius: '50%', border: '1.5px solid #FAC775', overflow: 'hidden', display: 'flex', alignItems: 'center', justifyContent: 'center', background: '#fff' }}>
+            <div style={{ width: 28, height: 28, borderRadius: '50%', border: `1.5px solid ${hero.avatarBorder}`, overflow: 'hidden', display: 'flex', alignItems: 'center', justifyContent: 'center', background: hero.dark ? 'rgba(255,255,255,0.08)' : '#fff' }}>
               <PokeballIcon level={member.level} size={26} />
             </div>
           )}
-          <span style={{ fontSize: 6, color: '#BA7517', fontWeight: 600 }}>{member?.level}</span>
+          <span style={{ fontSize: 6, color: hero.levelText, fontWeight: 600 }}>{member?.level}</span>
         </div>
-        <div style={{ fontSize: 9, color: '#BA7517', fontWeight: 600, opacity: 0.55, letterSpacing: '0.1em', marginBottom: 8 }}>W/NA PTCG × HUGO COLLECTIONS</div>
-        <div style={{ fontSize: 16, fontWeight: 800, color: '#2D1A00', display: 'flex', alignItems: 'center', gap: 5, marginBottom: 3 }}>
-          <i className="fa-solid fa-trophy" style={{ fontSize: 13, color: '#E07B00' }}></i>
+        <div style={{ fontSize: 9, color: hero.eyebrow, fontWeight: 600, opacity: 0.6, letterSpacing: '0.1em', marginBottom: 8 }}>W/NA PTCG × HUGO COLLECTIONS</div>
+        <div style={{ fontSize: 16, fontWeight: 800, color: hero.name, display: 'flex', alignItems: 'center', gap: 5, marginBottom: 3 }}>
+          <i className="fa-solid fa-trophy" style={{ fontSize: 13, color: hero.accent }}></i>
           戰績牆
         </div>
-        <div style={{ fontSize: 11, color: '#bbb' }}>
+        <div style={{ fontSize: 11, color: hero.sub }}>
           {tab === 'all'
             ? `歷史開箱高光時刻 · 共 ${rarityFilter ? `${displayCards.length}/` : ''}${cards.length} 張`
             : `我的開箱紀錄 · 共 ${rarityFilter ? `${displayCards.length}/` : ''}${myCards.length} 張`}
