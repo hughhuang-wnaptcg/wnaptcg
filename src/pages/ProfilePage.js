@@ -8,6 +8,7 @@ import { playSound, SoundToggle } from '../lib/sounds'
 import { vibrate, VIBRATE } from '../lib/haptics'
 import { useToast } from '../components/Toast'
 import CountUp from '../components/CountUp'
+import { heroTheme } from '../lib/heroTheme'
 
 const CDN = 'https://cdn.jsdelivr.net/gh/duiker101/pokemon-type-svg-icons@master/icons'
 const TYPE_BY_WEEKDAY = {
@@ -249,6 +250,7 @@ export default function ProfilePage() {
 
   const canChangeAvatar = AVATAR_ALLOWED_LEVELS.includes(member.level)
   const theme = levelTheme(member.level)
+  const hero = heroTheme(member.level)
 
   const nextLevel = getNextLevel(member.points)
   const currentLevelMin = LEVELS.slice().reverse().find(l => member.points >= l.min)?.min || 0
@@ -288,7 +290,7 @@ export default function ProfilePage() {
       <div style={{ flex: 1, overflowY: 'auto' }}>
 
         {/* Hero */}
-        <div style={{ background: 'linear-gradient(160deg,#FFFBF2 0%,#FFF5DC 60%,#FFEDBB 100%)', padding: '18px 20px 16px', position: 'relative', overflow: 'hidden' }}>
+        <div style={{ background: hero.bg, padding: '18px 20px 16px', position: 'relative', overflow: 'hidden' }}>
           <div style={{ position: 'absolute', top: -40, right: -40, width: 130, height: 130, borderRadius: '50%', background: 'radial-gradient(circle,rgba(186,117,23,0.07) 0%,transparent 70%)' }} />
           <svg style={{ position: 'absolute', right: -16, bottom: -22, width: 100, height: 100, opacity: 0.07, pointerEvents: 'none' }} viewBox="0 0 100 100" fill="none">
             <circle cx="50" cy="50" r="47" stroke="#BA7517" strokeWidth="4"/>
@@ -300,24 +302,21 @@ export default function ProfilePage() {
             <div key={i} style={{ position:'absolute', top:`${t}%`, left:`${l}%`, width:2, height:2, borderRadius:'50%', background:'#BA7517', opacity:0.4+i*0.1 }} />
           ))}
           <div style={{ position: 'absolute', top: 14, right: 14, display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 5 }}>
-            {member.avatar_url
-              ? <img src={member.avatar_url} alt="" style={{ width: 28, height: 28, borderRadius: '50%', objectFit: 'cover', border: '1.5px solid #FAC775' }} />
-              : <div style={{ width: 28, height: 28, borderRadius: '50%', background: 'linear-gradient(135deg,#FAEEDA,#FFF3D0)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 11, fontWeight: 600, color: '#633806', border: '1.5px solid #FAC775' }}>
-                  {member.display_name?.[0]?.toUpperCase()}
-                </div>
-            }
-            <span style={{ fontSize: 6, color: '#E07B00', fontWeight: 600 }}>{member?.level}</span>
+            <div style={{ width: 28, height: 28, borderRadius: '50%', border: `1.5px solid ${hero.avatarBorder}`, background: hero.dark ? 'rgba(255,255,255,0.08)' : '#fff', display: 'flex', alignItems: 'center', justifyContent: 'center', overflow: 'hidden' }}>
+              <PokeballIcon level={member.level} size={24} />
+            </div>
+            <span style={{ fontSize: 6, color: hero.levelText, fontWeight: 600 }}>{member?.level}</span>
             <button onClick={openSettings} className="press-fx"
               style={{ width: 26, height: 26, borderRadius: '50%', background: 'linear-gradient(135deg,#FAEEDA,#FFF3D0)', border: '0.5px solid #FAC775', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer', marginTop: 2 }}>
               <i className="fa-solid fa-gear" style={{ fontSize: 12, color: '#E07B00' }}></i>
             </button>
           </div>
-          <div style={{ fontSize: 9, color: '#E07B00', fontWeight: 600, opacity: 0.55, letterSpacing: '0.1em', marginBottom: 8 }}>W/NA PTCG × HUGO COLLECTIONS</div>
-          <div style={{ fontSize: 16, fontWeight: 800, color: '#2D1A00', display: 'flex', alignItems: 'center', gap: 5, marginBottom: 3 }}>
-            <i className="fa-solid fa-user" style={{ fontSize: 13, color: '#E07B00' }}></i>
+          <div style={{ fontSize: 9, color: hero.eyebrow, fontWeight: 600, opacity: 0.6, letterSpacing: '0.1em', marginBottom: 8 }}>W/NA PTCG × HUGO COLLECTIONS</div>
+          <div style={{ fontSize: 16, fontWeight: 800, color: hero.name, display: 'flex', alignItems: 'center', gap: 5, marginBottom: 3 }}>
+            <i className="fa-solid fa-user" style={{ fontSize: 13, color: hero.accent }}></i>
             {member.display_name} 的主頁
           </div>
-          <div style={{ fontSize: 11, color: '#bbb', display: 'flex', alignItems: 'center', gap: 4 }}>
+          <div style={{ fontSize: 11, color: hero.sub, display: 'flex', alignItems: 'center', gap: 4 }}>
             <PokeballIcon level={member.level} size={12} />
             {member.level}會員 · #{String(member.member_no || '0').padStart(4, '0')}
           </div>
