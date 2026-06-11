@@ -464,16 +464,16 @@ export default function ProfilePage() {
 
                 {/* 積分（Playfair 華麗數字） */}
                 <div style={{ textAlign: 'right', flexShrink: 0 }}>
-                  <div style={{ fontFamily: FONT_PLAYFAIR, fontSize: 22, fontWeight: 600, color: theme.accent, letterSpacing: '-0.5px', lineHeight: 1.1 }}><CountUp value={member.points || 0} separator /></div>
-                  <div style={{ fontFamily: FONT_CINZEL, fontSize: 9, letterSpacing: '0.15em', color: theme.sub, marginTop: 3 }}>POINTS</div>
+                  <div style={{ fontFamily: FONT_PLAYFAIR, fontSize: 28, fontWeight: 600, color: theme.accent, letterSpacing: '-0.5px', lineHeight: 1.1 }}><CountUp value={member.points || 0} separator /></div>
+                  <div style={{ fontFamily: FONT_CINZEL, fontSize: 10, letterSpacing: '0.15em', color: theme.sub, marginTop: 3 }}>POINTS</div>
                 </div>
               </div>
 
               {/* 分隔線 + 華麗底列：編號 · 加入日期 */}
               <div className={playCardAnim ? 'mc-anim-item' : ''} style={{ position: 'relative', height: 1, background: theme.dark ? 'rgba(255,255,255,0.12)' : `${theme.accent}33`, margin: '13px 0 10px', animationDelay: playCardAnim ? '0.46s' : undefined }} />
               <div className={playCardAnim ? 'mc-anim-item' : ''} style={{ position: 'relative', display: 'flex', alignItems: 'center', justifyContent: 'space-between', animationDelay: playCardAnim ? '0.54s' : undefined }}>
-                <span style={{ fontFamily: FONT_CINZEL, fontWeight: 500, fontSize: 11, letterSpacing: '0.1em', color: theme.accent, opacity: theme.dark ? 0.95 : 0.85 }}>NO. {String(member.member_no || '0').padStart(4, '0')}</span>
-                <span style={{ fontFamily: FONT_PLAYFAIR, fontStyle: 'italic', fontSize: 12, color: theme.sub }}>since {new Date(member.created_at).toLocaleDateString('zh-TW')}</span>
+                <span style={{ fontFamily: FONT_CINZEL, fontWeight: 500, fontSize: 14, letterSpacing: '0.1em', color: theme.accent, opacity: theme.dark ? 0.95 : 0.85 }}>NO. {String(member.member_no || '0').padStart(4, '0')}</span>
+                <span style={{ fontFamily: FONT_PLAYFAIR, fontStyle: 'italic', fontSize: 14, color: theme.sub }}>since {new Date(member.created_at).toLocaleDateString('zh-TW')}</span>
               </div>
             </div>
 
