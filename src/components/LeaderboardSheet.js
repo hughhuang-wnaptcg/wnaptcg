@@ -16,6 +16,22 @@ function levelTheme(level) {
   return LEVEL_THEME[level] || LEVEL_THEME['精靈球']
 }
 
+// ── 會員卡華麗英文（與 ProfilePage 一致）──
+const LEVEL_EN = {
+  精靈球: 'POKE BALL',
+  超級球: 'GREAT BALL',
+  高級球: 'ULTRA BALL',
+  豪華球: 'LUXURY BALL',
+  貴重球: 'PREMIER BALL',
+  究極球: 'BEAST BALL',
+  大師球: 'MASTER BALL',
+}
+function levelEn(level) {
+  return LEVEL_EN[level] || 'POKE BALL'
+}
+const FONT_CINZEL = "'Cinzel', 'Times New Roman', serif"
+const FONT_PLAYFAIR = "'Playfair Display', 'Times New Roman', serif"
+
 // ── 展示卡光暈（與 ProfilePage 一致）──
 // 統一淡暖金柔光，僅高級球以上會員可使用（依被檢視的會員等級判斷）。
 const GLOW_ALLOWED_LEVELS = ['高級球', '豪華球', '貴重球', '究極球', '大師球']
@@ -168,6 +184,11 @@ export default function LeaderboardSheet({ onClose, currentMemberId }) {
                 <PokeballIcon level={selected.level} size={92} />
               </div>
 
+              {/* 頂部華麗球種標 */}
+              <div style={{ position: 'relative', fontFamily: FONT_CINZEL, fontWeight: 600, fontSize: 10, letterSpacing: '0.26em', color: theme.accent, opacity: theme.dark ? 0.9 : 0.75, marginBottom: 12 }}>
+                {levelEn(selected.level)}&nbsp;MEMBER
+              </div>
+
               <div style={{ position: 'relative', display: 'flex', alignItems: 'center', gap: 14 }}>
                 <div style={{ position: 'relative', flexShrink: 0 }}>
                   <div style={{ width: 58, height: 58, borderRadius: '50%', overflow: 'hidden', border: `2px solid ${theme.accent}`, display: 'flex', alignItems: 'center', justifyContent: 'center', background: theme.dark ? 'rgba(255,255,255,0.06)' : '#FAEEDA', boxShadow: `0 0 0 4px ${theme.glow}` }}>
@@ -181,25 +202,29 @@ export default function LeaderboardSheet({ onClose, currentMemberId }) {
                   </div>
                 </div>
 
+                {/* 名稱 + 稱號 */}
                 <div style={{ flex: 1, minWidth: 0 }}>
-                  <div style={{ fontSize: 17, fontWeight: 800, color: theme.name, marginBottom: 5, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{selected.display_name}</div>
-                  <div style={{ display: 'flex', alignItems: 'center', gap: 6, marginBottom: 5 }}>
+                  <div style={{ fontSize: 17, fontWeight: 800, color: theme.name, marginBottom: 6, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{selected.display_name}</div>
+                  {/* ── 稱號預留位（稱號系統未來填入；目前顯示等級膠囊） ── */}
+                  <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
                     <span style={{ display: 'inline-flex', alignItems: 'center', gap: 4, fontSize: 11, fontWeight: 700, color: theme.accent, background: theme.dark ? 'rgba(255,255,255,0.08)' : 'rgba(255,255,255,0.6)', border: `0.5px solid ${theme.accent}55`, borderRadius: 99, padding: '2px 9px 2px 6px' }}>
                       <PokeballIcon level={selected.level} size={14} />
                       {selected.level}
                     </span>
-                    <span style={{ fontSize: 11, color: theme.sub }}>#{String(selected.member_no || '0').padStart(4, '0')}</span>
-                  </div>
-                  <div style={{ fontSize: 10, color: theme.sub, display: 'flex', alignItems: 'center', gap: 3 }}>
-                    <i className="fa-regular fa-clock" style={{ fontSize: 9 }}></i>
-                    加入於 {new Date(selected.created_at).toLocaleDateString('zh-TW')}
                   </div>
                 </div>
 
                 <div style={{ textAlign: 'right', flexShrink: 0 }}>
                   <div style={{ fontSize: 20, fontWeight: 900, color: theme.accent, letterSpacing: '-0.5px', lineHeight: 1.1 }}>{selected.points?.toLocaleString()}</div>
-                  <div style={{ fontSize: 10, color: theme.sub, marginTop: 2 }}>積分</div>
+                  <div style={{ fontFamily: FONT_CINZEL, fontSize: 9, letterSpacing: '0.15em', color: theme.sub, marginTop: 3 }}>POINTS</div>
                 </div>
+              </div>
+
+              {/* 分隔線 + 華麗底列：編號 · 加入日期 */}
+              <div style={{ position: 'relative', height: 1, background: theme.dark ? 'rgba(255,255,255,0.12)' : `${theme.accent}33`, margin: '13px 0 10px' }} />
+              <div style={{ position: 'relative', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+                <span style={{ fontFamily: FONT_CINZEL, fontWeight: 500, fontSize: 11, letterSpacing: '0.1em', color: theme.accent, opacity: theme.dark ? 0.95 : 0.85 }}>NO.&nbsp;{String(selected.member_no || '0').padStart(4, '0')}</span>
+                <span style={{ fontFamily: FONT_PLAYFAIR, fontStyle: 'italic', fontSize: 12, color: theme.sub }}>since {new Date(selected.created_at).toLocaleDateString('zh-TW')}</span>
               </div>
             </div>
 
