@@ -1,6 +1,6 @@
 // src/lib/heroTheme.js
 // ════════════════════════════════════════════════════════════════════
-// 全站 Hero 換膚主題（高級球以上套自己球種色，其餘維持暖黃）
+// 全站 Hero 主題（統一暖白金，不再依球種換膚）
 //
 // 用法：
 //   import { heroTheme } from '../lib/heroTheme'
@@ -20,8 +20,11 @@
 //   avatarBorder 頭像框色
 //   levelText    等級小字色
 //   wave         底部收邊波浪色（填下方頁面底色，維持米白）
+//
+// 註：heroTheme() 現在一律回傳 HERO_DEFAULT（暖白金），全站 Hero 統一風格、
+//     不再依球種變色。HERO_THEME 保留備用，若日後想恢復球種換膚，
+//     將 heroTheme() 改回 `HERO_THEME[level] || HERO_DEFAULT` 即可。
 // ════════════════════════════════════════════════════════════════════
-
 export const HERO_DEFAULT = {
   dark: false,
   bg: 'linear-gradient(160deg,#FFFBF2 0%,#FFF5DC 60%,#FFEDBB 100%)',
@@ -30,6 +33,7 @@ export const HERO_DEFAULT = {
   avatarBorder: '#FAC775', levelText: '#BA7517', wave: '#FFFBF2',
 }
 
+// ── 球種換膚配色（保留備用，目前未啟用）──
 export const HERO_THEME = {
   高級球: {
     dark: false,
@@ -68,6 +72,8 @@ export const HERO_THEME = {
   },
 }
 
-export function heroTheme(level) {
-  return HERO_THEME[level] || HERO_DEFAULT
+// 全站 Hero 統一暖白金：一律回傳 HERO_DEFAULT，不再依球種變色。
+// 註：保留無參數簽名；呼叫端即使傳入 level（如 heroTheme(member.level)）也會被忽略，不影響運作。
+export function heroTheme() {
+  return HERO_DEFAULT
 }
