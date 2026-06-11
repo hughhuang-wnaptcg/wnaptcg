@@ -23,6 +23,14 @@ function canGlow(level) {
   return GLOW_ALLOWED_LEVELS.includes(level)
 }
 
+// 會員主頁背景：高級球以上加一抹球種色漸層底（上方一抹色、往下漸隱到白），
+// 其餘維持白底。用 LEVEL_THEME 的 glow（半透明球種色）疊在白底上，淡而不打架。
+function profileBg(level) {
+  const t = LEVEL_THEME[level] || LEVEL_THEME['精靈球']
+  if (!GLOW_ALLOWED_LEVELS.includes(level)) return '#fff'
+  return `linear-gradient(180deg, ${t.glow} 0%, rgba(255,255,255,0) 38%), #fff`
+}
+
 export default function LeaderboardSheet({ onClose, currentMemberId }) {
   const [members, setMembers] = useState([])
   const [loading, setLoading] = useState(true)
@@ -152,7 +160,7 @@ export default function LeaderboardSheet({ onClose, currentMemberId }) {
             <div style={{ fontSize: 15, fontWeight: 700, color: '#2D1A00' }}>會員主頁</div>
           </div>
 
-          <div style={{ overflowY: 'auto', flex: 1, padding: '20px 20px 32px' }}>
+          <div style={{ overflowY: 'auto', flex: 1, padding: '20px 20px 32px', background: profileBg(selected.level) }}>
             {/* 會員資訊（等級主題卡） */}
             <div style={{ '--mc-glow': theme.glow, position: 'relative', overflow: 'hidden', borderRadius: 16, padding: '16px 18px', background: theme.bg, border: `1.5px solid ${theme.border}`, marginBottom: 20, animation: 'lbMemberCardGlow 3.2s ease-in-out infinite' }}>
               <div style={{ position: 'absolute', top: -50, right: -40, width: 150, height: 150, borderRadius: '50%', background: `radial-gradient(circle, ${theme.glow} 0%, transparent 68%)`, pointerEvents: 'none' }} />
