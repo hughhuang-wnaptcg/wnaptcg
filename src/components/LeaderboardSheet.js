@@ -32,9 +32,9 @@ function levelEn(level) {
 const FONT_CINZEL = "'Cinzel', 'Times New Roman', serif"
 const FONT_PLAYFAIR = "'Playfair Display', 'Times New Roman', serif"
 
-// 會員主頁背景：統一白底（取消球種淡色背景，全站 Hero/主頁視覺統一）。
+// 會員主頁背景：透明，透出最外層的暖白金漸層（整片連續、與 HomePage Hero 一致）。
 function profileBg() {
-  return '#fff'
+  return 'transparent'
 }
 
 export default function LeaderboardSheet({ onClose, currentMemberId }) {
@@ -158,7 +158,7 @@ export default function LeaderboardSheet({ onClose, currentMemberId }) {
 
       {/* 會員主頁 Sheet（疊在排行榜上） */}
       {selected && (
-        <div style={{ position: 'absolute', inset: 0, background: '#fff', borderRadius: '16px 16px 0 0', display: 'flex', flexDirection: 'column', zIndex: 10 }}>
+        <div style={{ position: 'absolute', inset: 0, background: 'linear-gradient(160deg,#FFFBF2 0%,#FFF5DC 60%,#FFEDBB 100%)', borderRadius: '16px 16px 0 0', display: 'flex', flexDirection: 'column', zIndex: 10 }}>
           <div style={{ width: 36, height: 4, borderRadius: 2, background: '#f0e8d0', margin: '12px auto 0', flexShrink: 0 }} />
           <div style={{ padding: '12px 20px 10px', borderBottom: '0.5px solid #f5f0e8', display: 'flex', alignItems: 'center', gap: 10, flexShrink: 0 }}>
             <button onClick={() => setSelected(null)} style={{ width: 28, height: 28, borderRadius: '50%', border: '0.5px solid #f0e8d0', background: '#f8f5f0', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
