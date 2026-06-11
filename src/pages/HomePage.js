@@ -29,9 +29,11 @@ const BOARD_LEVEL_THEME = {
 // 高級球以上（每日 3 則）
 const BOARD_VIP_LEVELS = ['高級球', '豪華球', '貴重球', '究極球', '大師球']
 
-// ── 首頁 Hero 換膚主題（高級球以上套自己球種色，其餘維持暖黃）──
+// ── 首頁 Hero 主題（統一暖白金，不再依球種換膚）──
 // dark: 深色主題（文字翻淺色）。bg=背景漸層, accent=主色, name=主文字, sub=次文字,
 // pill(bg/border/text)=「今日已獲得」膠囊, avatarBorder=頭像框, eyebrow=頂部英文標。
+// 註：heroTheme() 一律回傳 HERO_DEFAULT，全站 Hero 統一暖白金。
+//     球種換膚配色已停用；如日後想恢復，可參考共用檔 src/lib/heroTheme.js 的 HERO_THEME。
 const HERO_DEFAULT = {
   dark: false,
   bg: 'linear-gradient(160deg,#FFFBF2 0%,#FFF5DC 60%,#FFEDBB 100%)',
@@ -39,45 +41,10 @@ const HERO_DEFAULT = {
   pillBg: '#fff', pillBorder: '#FAC775', pillText: '#8B4A00', pillStar: '#E07B00',
   avatarBorder: '#FAC775', levelText: '#BA7517', wave: '#FFFBF2',
 }
-const HERO_THEME = {
-  高級球: {
-    dark: false,
-    bg: 'linear-gradient(160deg,#FFF8E0 0%,#FFEFA8 60%,#F5D04A 100%)',
-    accent: '#5A4A0A', name: '#1A1A1A', sub: '#6B5A12', eyebrow: '#5A4A0A',
-    pillBg: '#fff', pillBorder: '#1A1A1A', pillText: '#5A4A0A', pillStar: '#5A4A0A',
-    avatarBorder: '#1A1A1A', levelText: '#5A4A0A', wave: '#FFFBF2',
-  },
-  豪華球: {
-    dark: true,
-    bg: 'linear-gradient(160deg,#2A1B10 0%,#3A2415 60%,#1A1008 100%)',
-    accent: '#EF9F27', name: '#F7E4C0', sub: '#C9A06A', eyebrow: '#EF9F27',
-    pillBg: 'rgba(239,159,39,0.10)', pillBorder: '#EF9F27', pillText: '#F7E4C0', pillStar: '#EF9F27',
-    avatarBorder: '#EF9F27', levelText: '#C9A06A', wave: '#FFFBF2',
-  },
-  貴重球: {
-    dark: true,
-    bg: 'linear-gradient(160deg,#2A1414 0%,#3B1C1C 60%,#1A0C0C 100%)',
-    accent: '#E24B4A', name: '#F7D6D0', sub: '#C98A82', eyebrow: '#E24B4A',
-    pillBg: 'rgba(226,75,74,0.10)', pillBorder: '#E24B4A', pillText: '#F7D6D0', pillStar: '#E24B4A',
-    avatarBorder: '#E24B4A', levelText: '#C98A82', wave: '#FFFBF2',
-  },
-  究極球: {
-    dark: true,
-    bg: 'linear-gradient(160deg,#10204A 0%,#1B2F66 60%,#0C1838 100%)',
-    accent: '#6E9BFF', name: '#CFE0FF', sub: '#8FA8DD', eyebrow: '#8FA8DD',
-    pillBg: 'rgba(255,255,255,0.08)', pillBorder: '#6E9BFF', pillText: '#CFE0FF', pillStar: '#6E9BFF',
-    avatarBorder: '#6E9BFF', levelText: '#8FA8DD', wave: '#FFFBF2',
-  },
-  大師球: {
-    dark: true,
-    bg: 'linear-gradient(160deg,#1A1A1A 0%,#2A2030 60%,#0E0C0A 100%)',
-    accent: '#F5D060', name: '#FDF0C0', sub: '#B6A06A', eyebrow: '#B8860B',
-    pillBg: 'rgba(245,208,96,0.10)', pillBorder: '#F5D060', pillText: '#F5D060', pillStar: '#F5D060',
-    avatarBorder: '#F5D060', levelText: '#B6A06A', wave: '#FFFBF2',
-  },
-}
-function heroTheme(level) {
-  return HERO_THEME[level] || HERO_DEFAULT
+// 全站 Hero 統一暖白金：一律回傳 HERO_DEFAULT，不再依球種變色。
+// 註：保留無參數簽名；呼叫端即使傳入 level（如 heroTheme(myLevel)）也會被忽略，不影響運作。
+function heroTheme() {
+  return HERO_DEFAULT
 }
 
 function boardLevelTheme(level) {
@@ -203,7 +170,7 @@ export default function HomePage() {
   const dailyLimit = BOARD_VIP_LEVELS.includes(myLevel) ? 3 : 1
   const remainingMsgs = Math.max(0, dailyLimit - todayMsgCount)
 
-  // 首頁 Hero 換膚：依會員等級取主題（高級球以上套球種色，其餘暖黃）
+  // 首頁 Hero：統一暖白金（不再依球種換膚）
   const hero = heroTheme(myLevel)
 
   useEffect(() => {
