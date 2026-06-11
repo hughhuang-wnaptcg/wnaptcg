@@ -9,6 +9,10 @@ import LeaderboardSheet from '../components/LeaderboardSheet'
 import { vibrate, VIBRATE } from '../lib/haptics'
 import { playSound } from '../lib/sounds'
 import CountUp from '../components/CountUp'
+import {
+  BERRY_DAILY_LIMIT, berryKind, BERRY_POSITIONS,
+  getActiveSession, getNextSession, fmtCountdown,
+} from '../lib/berries'
 
 const CDN = 'https://cdn.jsdelivr.net/gh/duiker101/pokemon-type-svg-icons@master/icons'
 
@@ -44,10 +48,8 @@ function boardTimeAgo(iso) {
 // 台灣時間當日 00:00 的 ISO（用於查當日留言數）
 function taiwanTodayStartISO() {
   const now = new Date()
-  // 台灣 UTC+8
   const tw = new Date(now.getTime() + 8 * 3600000)
   const y = tw.getUTCFullYear(), m = tw.getUTCMonth(), d = tw.getUTCDate()
-  // 當日 00:00 (台灣) 轉回 UTC
   const startUTC = Date.UTC(y, m, d, 0, 0, 0) - 8 * 3600000
   return new Date(startUTC).toISOString()
 }
@@ -125,6 +127,14 @@ export default function HomePage() {
   const [boardError, setBoardError] = useState('')
   const [todayMsgCount, setTodayMsgCount] = useState(0)
 
+  // 樹果採集
+  const [berrySession, setBerrySession] = useState(null)   // 目前場次 { hour, dateStr, secondsLeft }
+  const [berries, setBerries] = useState([])               // 這場 3 顆 [{ index, kind, points, claimed }]
+  const [berrySecLeft, setBerrySecLeft] = useState(0)
+  const [berryTodayCount, setBerryTodayCount] = useState(0)
+  const [berryPop, setBerryPop] = useState(null)           // { index, points, kind } 採集後彈分動畫
+  const [berryClaiming, setBerryClaiming] = useState(false)
+
   const [shippingModal, setShippingModal] = useState(false)
   const [cancelModal, setCancelModal] = useState(false)
   const [currentOrder, setCurrentOrder] = useState(null)
@@ -168,6 +178,67 @@ export default function HomePage() {
     setTodayMsgCount(count || 0)
   }
 
+  // ── 樹果：載入目前場次與果況 ──────────────────────────────
+  const loadBerries = useCallback(async () => {
+    if (!member) return
+    const session = getActiveSession()
+    setBerrySession(session)
+    if (!session) { setBerries([]); return }
+    // 今日已採數
+    const { count } = await supabase.from('berry_claims')
+      .select('id', { count: 'exact', head: true })
+      .eq('member_id', member.id).eq('claim_date', session.dateStr)
+    setBerryTodayCount(count || 0)
+    // 向後端要這場 3 顆（所見即所得）
+    const { data, error } = await supabase.rpc('peek_berries', {
+      p_member_id: member.id,
+      p_claim_date: session.dateStr,
+      p_session_hour: session.hour,
+    })
+    if (!error && data?.ok) setBerries(data.berries || [])
+    else setBerries([])
+  }, [member])
+
+  // 採一顆果
+  async function handleClaimBerry(berry) {
+    if (!member || berry.claimed || berryClaiming || !berrySession) return
+    if (berryTodayCount >= BERRY_DAILY_LIMIT) {
+      playSound('error_points'); vibrate(VIBRATE.error); return
+    }
+    setBerryClaiming(true)
+    try {
+      const { data, error } = await supabase.rpc('claim_berry', {
+        p_member_id: member.id,
+        p_claim_date: berrySession.dateStr,
+        p_session_hour: berrySession.hour,
+        p_berry_index: berry.index,
+      })
+      if (error || !data?.ok) {
+        playSound('error_system'); vibrate(VIBRATE.error)
+        setBerryClaiming(false)
+        return
+      }
+      const gained = data.points
+      // 彈分動畫
+      setBerryPop({ index: berry.index, points: gained, kind: data.kind })
+      setTimeout(() => setBerryPop(null), 1100)
+      // 正負分別回饋
+      if (gained >= 0) { playSound('checkin_success'); vibrate(VIBRATE.success) }
+      else { playSound('error_points'); vibrate(VIBRATE.error) }
+      // 標記該果已採
+      setBerries(prev => prev.map(b => b.index === berry.index ? { ...b, claimed: true } : b))
+      setBerryTodayCount(c => c + 1)
+      // 同步會員積分（後端已是扣到 0 後的值）
+      if (typeof data.new_points === 'number') {
+        const newLevel = getLevel(data.new_points)
+        setMember({ ...member, points: data.new_points, level: newLevel })
+      }
+    } catch {
+      playSound('error_system'); vibrate(VIBRATE.error)
+    }
+    setBerryClaiming(false)
+  }
+
   const fetchData = useCallback(async () => {
     const [{ data: bossData }, { data: cardsData }, { data: settingsData }, { count: liveCount }] = await Promise.all([
       supabase.from('boss_challenges').select('*').eq('is_active', true).single(),
@@ -193,8 +264,9 @@ export default function HomePage() {
       await fetchWeekLogins(member.id)
       await fetchShippingStatus(member.id)
       await fetchTodayMsgCount(member.id)
+      await loadBerries()
     }
-  }, [member])
+  }, [member, loadBerries])
 
   async function fetchWeekLogins(memberId) {
     const today = new Date()
@@ -244,6 +316,37 @@ export default function HomePage() {
   }
 
   useEffect(() => { fetchData() }, [fetchData])
+
+  // 樹果倒數計時：每秒更新，歸零時重新載入場次
+  useEffect(() => {
+    if (!berrySession) { setBerrySecLeft(0); return }
+    setBerrySecLeft(berrySession.secondsLeft)
+    const t = setInterval(() => {
+      setBerrySecLeft(prev => {
+        if (prev <= 1) {
+          clearInterval(t)
+          loadBerries()  // 場次結束，重新判斷
+          return 0
+        }
+        return prev - 1
+      })
+    }, 1000)
+    return () => clearInterval(t)
+  }, [berrySession, loadBerries])
+
+  // 每 30 秒輕量檢查是否進入新場次（使用者停在首頁時也能等到整點）
+  useEffect(() => {
+    if (!member) return
+    const t = setInterval(() => {
+      const s = getActiveSession()
+      const active = !!s
+      const wasActive = !!berrySession
+      if (active !== wasActive || (s && berrySession && s.hour !== berrySession.hour)) {
+        loadBerries()
+      }
+    }, 30000)
+    return () => clearInterval(t)
+  }, [member, berrySession, loadBerries])
 
   const { scrollRef, pullDistance, refreshing, onTouchStart, onTouchMove, onTouchEnd, THRESHOLD } = usePullToRefresh(fetchData)
 
@@ -351,6 +454,8 @@ export default function HomePage() {
   const isReadyToRelease = pullDistance >= THRESHOLD
   const blockedDaysLeft = cannotOrderUntil ? Math.ceil((cannotOrderUntil - new Date()) / (1000 * 60 * 60 * 24)) : 0
   const isWeekComplete = weekLogins.length === 7 && weekLogins.every(d => d.done)
+  const nextSession = getNextSession()
+  const berryLimitReached = berryTodayCount >= BERRY_DAILY_LIMIT
 
   const inp = { width: '100%', padding: '10px 12px', border: '0.5px solid #f0e8d0', borderRadius: 8, fontSize: 14, color: '#111', outline: 'none', background: '#fdfaf4', boxSizing: 'border-box' }
 
@@ -425,6 +530,91 @@ export default function HomePage() {
             <path d="M0 22 Q97 2 195 12 Q293 22 390 6 L390 22 Z" fill="#FFFBF2"/>
           </svg>
         </div>
+
+        {/* ── 樹果採集區（只在場次窗內出現）── */}
+        {member && berrySession && berries.length > 0 && (
+          <div style={{ padding: '14px 20px 4px' }}>
+            <style>{`
+              @keyframes berryFloat{0%,100%{transform:translateY(0) rotate(-3deg)}50%{transform:translateY(-12px) rotate(3deg)}}
+              @keyframes berryCollect{0%{transform:scale(1)}40%{transform:scale(1.25)}100%{transform:scale(0);opacity:0}}
+              @keyframes berryPopUp{0%{transform:translateY(0);opacity:0}20%{opacity:1}100%{transform:translateY(-40px);opacity:0}}
+              @keyframes berryGlow{0%,100%{filter:drop-shadow(0 0 4px rgba(245,208,96,.6))}50%{filter:drop-shadow(0 0 14px rgba(245,208,96,1))}}
+            `}</style>
+            <div style={{ position: 'relative', height: 240, background: 'linear-gradient(160deg,#FFFBF2 0%,#FFF5DC 60%,#FFEDBB 100%)', borderRadius: 18, overflow: 'hidden', border: '1px solid #F0E2C0', boxShadow: '0 4px 16px rgba(186,117,23,.08)' }}>
+
+              {/* 頂部：標籤 + 倒數 */}
+              <div style={{ position: 'absolute', top: 12, left: 12, right: 12, display: 'flex', alignItems: 'center', justifyContent: 'space-between', zIndex: 5 }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: 6, background: 'rgba(255,255,255,0.85)', border: '1px solid #FAC775', borderRadius: 99, padding: '5px 11px' }}>
+                  <i className="fa-solid fa-seedling" style={{ fontSize: 12, color: '#3B6D11' }}></i>
+                  <span style={{ fontSize: 11, fontWeight: 700, color: '#BA7517' }}>樹果掉落中</span>
+                </div>
+                <div style={{ display: 'flex', alignItems: 'center', gap: 5, background: 'rgba(255,255,255,0.85)', border: '1px solid #F0E2C0', borderRadius: 99, padding: '5px 11px' }}>
+                  <i className="fa-solid fa-clock" style={{ fontSize: 11, color: '#E07B00' }}></i>
+                  <span style={{ fontSize: 11, fontWeight: 700, color: '#8B5A00' }}>剩 {fmtCountdown(berrySecLeft)}</span>
+                </div>
+              </div>
+
+              {/* 樹果們 */}
+              {berries.map((b, i) => {
+                const k = berryKind(b.kind)
+                const pos = BERRY_POSITIONS[b.index % BERRY_POSITIONS.length]
+                const claimed = b.claimed
+                return (
+                  <div key={b.index}
+                    onClick={() => handleClaimBerry(b)}
+                    style={{
+                      position: 'absolute', left: `${pos.x}%`, top: `${pos.y}%`,
+                      width: 60, height: 60, cursor: claimed || berryLimitReached ? 'default' : 'pointer',
+                      animation: claimed ? 'none' : `berryFloat ${2.6 + i * 0.4}s ease-in-out infinite`,
+                      animationDelay: `${i * 0.3}s`, zIndex: 3,
+                      opacity: claimed ? 0.25 : 1,
+                      pointerEvents: claimed ? 'none' : 'auto',
+                    }}>
+                    {k.img ? (
+                      <img src={k.img} alt={k.label} style={{ width: 52, height: 52, margin: 4, objectFit: 'contain', animation: k.glow ? 'berryGlow 1.4s ease-in-out infinite' : 'none' }} />
+                    ) : (
+                      <div style={{
+                        width: 52, height: 52, margin: 4, borderRadius: '50%',
+                        background: `radial-gradient(circle at 32% 28%, ${k.light}, ${k.hue} 70%)`,
+                        boxShadow: `0 6px 16px ${k.hue}55, inset -3px -4px 8px ${k.dark}66`,
+                        position: 'relative',
+                        animation: k.glow ? 'berryGlow 1.4s ease-in-out infinite' : 'none',
+                      }}>
+                        <div style={{ position: 'absolute', top: -6, left: '50%', transform: 'translateX(-50%)', width: 4, height: 9, background: '#3B6D11', borderRadius: 2 }} />
+                        <div style={{ position: 'absolute', top: -7, left: '58%', width: 10, height: 6, background: '#639922', borderRadius: '0 80% 0 80%', transform: 'rotate(-20deg)' }} />
+                        <div style={{ position: 'absolute', top: 9, left: 11, width: 13, height: 9, background: 'rgba(255,255,255,0.55)', borderRadius: '50%', filter: 'blur(1px)' }} />
+                        {claimed && (
+                          <div style={{ position: 'absolute', inset: 0, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                            <i className="fa-solid fa-check" style={{ fontSize: 18, color: '#fff' }}></i>
+                          </div>
+                        )}
+                      </div>
+                    )}
+                    {/* 彈分動畫 */}
+                    {berryPop && berryPop.index === b.index && (
+                      <div style={{ position: 'absolute', left: '50%', top: 0, transform: 'translateX(-50%)', fontSize: 18, fontWeight: 800, color: berryPop.points >= 0 ? k.dark : '#A32D2D', animation: 'berryPopUp 1.1s ease forwards', whiteSpace: 'nowrap', zIndex: 6, pointerEvents: 'none' }}>
+                        {berryPop.points >= 0 ? '+' : ''}{berryPop.points}
+                      </div>
+                    )}
+                  </div>
+                )
+              })}
+
+              {/* 底部：今日已採 / 上限 */}
+              <div style={{ position: 'absolute', bottom: 12, left: 12, right: 12, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 6, zIndex: 5 }}>
+                {berryLimitReached ? (
+                  <span style={{ fontSize: 11, color: '#A89876', background: 'rgba(255,255,255,0.85)', borderRadius: 99, padding: '4px 12px' }}>
+                    <i className="fa-solid fa-circle-check" style={{ marginRight: 5 }}></i>今日採集已達上限
+                  </span>
+                ) : (
+                  <span style={{ fontSize: 11, color: '#A07040', background: 'rgba(255,255,255,0.85)', borderRadius: 99, padding: '4px 12px' }}>
+                    今日已採 <strong style={{ color: '#E07B00' }}>{berryTodayCount}</strong> / {BERRY_DAILY_LIMIT} 顆
+                  </span>
+                )}
+              </div>
+            </div>
+          </div>
+        )}
 
         {/* ── 公告：沿用原設計 ── */}
         {announcement && (
