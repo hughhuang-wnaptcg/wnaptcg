@@ -32,9 +32,12 @@ function levelEn(level) {
 const FONT_CINZEL = "'Cinzel', 'Times New Roman', serif"
 const FONT_PLAYFAIR = "'Playfair Display', 'Times New Roman', serif"
 
-// ── 會員主頁背景球種色門檻（與 ProfilePage 同門檻）──
-// 高級球以上加一抹球種色漸層底；其餘維持白底。
+// ── 展示卡頒獎台門檻（與 ProfilePage 一致）──
+// 高級球以上會員的展示卡使用黑金頒獎台；其餘走普通卡格。
 const GLOW_ALLOWED_LEVELS = ['高級球', '豪華球', '貴重球', '究極球', '大師球']
+function canGlow(level) {
+  return GLOW_ALLOWED_LEVELS.includes(level)
+}
 
 // 會員主頁背景：高級球以上加一抹球種色漸層底（上方一抹色、往下漸隱到白），
 // 其餘維持白底。用 LEVEL_THEME 的 glow（半透明球種色）疊在白底上，淡而不打架。
@@ -87,11 +90,14 @@ export default function LeaderboardSheet({ onClose, currentMemberId }) {
   }
 
   const theme = selected ? levelTheme(selected.level) : null
+  // 展示卡 slots：固定 3 格（不足補 null），與 ProfilePage 一致
+  const showcaseSlots = [0, 1, 2].map(i => showcaseCards[i] || null)
 
   return (
     <>
       <style>{`
         @keyframes lbMemberCardGlow{0%,100%{box-shadow:0 6px 22px rgba(0,0,0,0.10)}50%{box-shadow:0 8px 30px var(--mc-glow)}}
+        @keyframes lbPodiumBeam{0%,100%{opacity:0.85}50%{opacity:1}}
       `}</style>
 
       {/* 排行榜 Sheet */}
@@ -239,11 +245,51 @@ export default function LeaderboardSheet({ onClose, currentMemberId }) {
                 <i className="fa-solid fa-id-card" style={{ fontSize: 32, display: 'block', marginBottom: 8, opacity: 0.3 }}></i>
                 尚未設置展示卡
               </div>
+            ) : canGlow(selected.level) ? (
+              /* ── 黑金頒獎台（高級球以上，純展示，與 ProfilePage 同源）── */
+              <div style={{ position: 'relative', borderRadius: 18, overflow: 'hidden', background: 'radial-gradient(ellipse 80% 60% at 50% 0%, #2a2218 0%, #1a1510 45%, #0e0c0a 100%)', border: '1.5px solid #B8860B', padding: '20px 14px 18px', boxShadow: '0 6px 26px rgba(0,0,0,0.4)' }}>
+                {/* 交叉掃射聚光燈 */}
+                <div style={{ position: 'absolute', top: -6, left: '8%', width: 8, height: 8, borderRadius: '50%', background: 'radial-gradient(circle,#FFF6D8,#F5D060 60%,transparent)', boxShadow: '0 0 8px rgba(245,208,96,0.7)', zIndex: 1 }} />
+                <div style={{ position: 'absolute', top: 0, left: '9%', width: 200, height: 230, background: 'linear-gradient(180deg,rgba(245,222,140,0.22) 0%,rgba(245,222,140,0.06) 50%,transparent 78%)', clipPath: 'polygon(0% 0%, 5% 0%, 70% 100%, 30% 100%)', animation: 'lbPodiumBeam 3.4s ease-in-out infinite', pointerEvents: 'none', zIndex: 1 }} />
+                <div style={{ position: 'absolute', top: -6, right: '8%', width: 8, height: 8, borderRadius: '50%', background: 'radial-gradient(circle,#FFF6D8,#F5D060 60%,transparent)', boxShadow: '0 0 8px rgba(245,208,96,0.7)', zIndex: 1 }} />
+                <div style={{ position: 'absolute', top: 0, right: '9%', width: 200, height: 230, background: 'linear-gradient(180deg,rgba(245,222,140,0.22) 0%,rgba(245,222,140,0.06) 50%,transparent 78%)', clipPath: 'polygon(95% 0%, 100% 0%, 70% 100%, 30% 100%)', animation: 'lbPodiumBeam 3.4s ease-in-out infinite', pointerEvents: 'none', zIndex: 1 }} />
+                <div style={{ position: 'absolute', top: -8, left: '50%', transform: 'translateX(-50%)', width: 10, height: 10, borderRadius: '50%', background: 'radial-gradient(circle,#FFFBEA,#F5D060 60%,transparent)', boxShadow: '0 0 12px rgba(255,240,190,0.8)', zIndex: 1 }} />
+                <div style={{ position: 'absolute', top: 0, left: '50%', transform: 'translateX(-50%)', width: 140, height: 215, background: 'linear-gradient(180deg,rgba(255,240,190,0.26) 0%,rgba(245,222,140,0.06) 55%,transparent 80%)', clipPath: 'polygon(40% 0%, 60% 0%, 90% 100%, 10% 100%)', animation: 'lbPodiumBeam 3.4s ease-in-out infinite', pointerEvents: 'none', zIndex: 1 }} />
+
+                {/* 三張卡（中卡略大並上抬，左右略低，呈頒獎台階層）｜正常文檔流 */}
+                <div style={{ position: 'relative', display: 'flex', alignItems: 'flex-end', justifyContent: 'center', gap: 7, zIndex: 2 }}>
+                  {[
+                    { idx: 0, w: '30%', cardW: '90%', cardFont: 15, lift: 0, border: '1.5px solid #E0B868', cardGlow: 'none' },
+                    { idx: 1, w: '34%', cardW: '92%', cardFont: 16, lift: 16, border: '1.5px solid #F5D060', cardGlow: '0 0 16px rgba(245,208,96,0.3)' },
+                    { idx: 2, w: '30%', cardW: '90%', cardFont: 15, lift: 0, border: '1.5px solid #E0B868', cardGlow: 'none' },
+                  ].map(p => {
+                    const slot = showcaseSlots[p.idx]
+                    const rc = slot?.cards ? (RARITY_COLORS[slot.cards.rarity] || RARITY_COLORS.Other) : null
+                    return (
+                      <div key={p.idx} style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', width: p.w, marginBottom: p.lift }}>
+                        <div style={{ position: 'relative', width: p.cardW }}>
+                          <div style={{ aspectRatio: '0.72', width: '100%', borderRadius: 5, overflow: 'hidden', background: slot?.cards ? '#1a1a1a' : 'rgba(255,255,255,0.05)', border: slot?.cards ? p.border : '1.5px dashed rgba(245,208,96,0.4)', boxShadow: slot?.cards ? `0 5px 12px rgba(0,0,0,0.6),${p.cardGlow}` : 'none', display: 'flex', alignItems: 'center', justifyContent: 'center', flexDirection: 'column', position: 'relative' }}>
+                            {slot?.cards?.image_url
+                              ? <img src={slot.cards.image_url} alt="" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+                              : slot
+                                ? <i className="fa-solid fa-id-card" style={{ fontSize: p.cardFont + 6, color: 'rgba(245,208,96,0.5)' }}></i>
+                                : <i className="fa-solid fa-minus" style={{ fontSize: 14, color: 'rgba(245,208,96,0.4)' }}></i>
+                            }
+                            {slot?.cards && rc && (
+                              <span style={{ position: 'absolute', top: 4, left: 4, fontSize: 6, fontWeight: 700, padding: '1px 4px', borderRadius: 20, background: rc.bg, color: rc.color }}>{slot.cards.rarity}</span>
+                            )}
+                          </div>
+                        </div>
+                      </div>
+                    )
+                  })}
+                </div>
+              </div>
             ) : (
-              /* ── 普通卡格（與 ProfilePage 一致，所有等級皆同）── 鎖死高度讓三張齊 ── */
+              /* ── 普通卡格（精靈球／超級球，純展示）── 鎖死高度讓三張齊 ── */
               <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3,minmax(0,1fr))', gap: 10, alignItems: 'start' }}>
                 {[0,1,2].map(i => {
-                  const slot = showcaseCards[i]
+                  const slot = showcaseSlots[i]
                   const rc = slot?.cards ? (RARITY_COLORS[slot.cards.rarity] || RARITY_COLORS.Other) : null
                   return (
                     <div key={i} style={{ minWidth: 0, maxWidth: '100%' }}>
@@ -256,15 +302,6 @@ export default function LeaderboardSheet({ onClose, currentMemberId }) {
                         }
                         {slot?.cards && rc && (
                           <span style={{ position: 'absolute', top: 5, left: 5, fontSize: 7, fontWeight: 700, padding: '2px 5px', borderRadius: 20, background: rc.bg, color: rc.color }}>{slot.cards.rarity}</span>
-                        )}
-                      </div>
-                      {/* 文字區固定高度，避免長系列名把欄位撐高造成三張不齊 */}
-                      <div style={{ marginTop: 5, height: 28, overflow: 'hidden' }}>
-                        {slot?.cards && (
-                          <>
-                            <div style={{ fontSize: 9, color: '#7a5c2e', fontWeight: 600, textAlign: 'center', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', maxWidth: '100%' }}>{slot.cards.name}</div>
-                            <div style={{ fontSize: 8, color: '#bbb', textAlign: 'center', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', maxWidth: '100%' }}>{slot.cards.series}</div>
-                          </>
                         )}
                       </div>
                     </div>
