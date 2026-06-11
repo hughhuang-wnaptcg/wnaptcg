@@ -206,16 +206,16 @@ export default function LeaderboardSheet({ onClose, currentMemberId }) {
                 </div>
 
                 <div style={{ textAlign: 'right', flexShrink: 0 }}>
-                  <div style={{ fontFamily: FONT_PLAYFAIR, fontSize: 22, fontWeight: 600, color: theme.accent, letterSpacing: '-0.5px', lineHeight: 1.1 }}>{selected.points?.toLocaleString()}</div>
-                  <div style={{ fontFamily: FONT_CINZEL, fontSize: 9, letterSpacing: '0.15em', color: theme.sub, marginTop: 3 }}>POINTS</div>
+                  <div style={{ fontFamily: FONT_PLAYFAIR, fontSize: 28, fontWeight: 600, color: theme.accent, letterSpacing: '-0.5px', lineHeight: 1.1 }}>{selected.points?.toLocaleString()}</div>
+                  <div style={{ fontFamily: FONT_CINZEL, fontSize: 10, letterSpacing: '0.15em', color: theme.sub, marginTop: 3 }}>POINTS</div>
                 </div>
               </div>
 
               {/* 分隔線 + 華麗底列：編號 · 加入日期 */}
               <div style={{ position: 'relative', height: 1, background: theme.dark ? 'rgba(255,255,255,0.12)' : `${theme.accent}33`, margin: '13px 0 10px' }} />
               <div style={{ position: 'relative', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-                <span style={{ fontFamily: FONT_CINZEL, fontWeight: 500, fontSize: 11, letterSpacing: '0.1em', color: theme.accent, opacity: theme.dark ? 0.95 : 0.85 }}>NO. {String(selected.member_no || '0').padStart(4, '0')}</span>
-                <span style={{ fontFamily: FONT_PLAYFAIR, fontStyle: 'italic', fontSize: 12, color: theme.sub }}>since {new Date(selected.created_at).toLocaleDateString('zh-TW')}</span>
+                <span style={{ fontFamily: FONT_CINZEL, fontWeight: 500, fontSize: 14, letterSpacing: '0.1em', color: theme.accent, opacity: theme.dark ? 0.95 : 0.85 }}>NO. {String(selected.member_no || '0').padStart(4, '0')}</span>
+                <span style={{ fontFamily: FONT_PLAYFAIR, fontStyle: 'italic', fontSize: 14, color: theme.sub }}>since {new Date(selected.created_at).toLocaleDateString('zh-TW')}</span>
               </div>
             </div>
 
