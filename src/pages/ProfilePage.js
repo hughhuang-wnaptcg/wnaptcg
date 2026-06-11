@@ -418,7 +418,6 @@ export default function ProfilePage() {
                 <span style={{ fontFamily: FONT_PLAYFAIR, fontStyle: 'italic', fontSize: 12, color: theme.sub }}>since {new Date(member.created_at).toLocaleDateString('zh-TW')}</span>
               </div>
             </div>
-            </div>
 
             {/* 展示卡 */}
             <div style={{ ...S.secTitle, marginBottom: 12 }}>
