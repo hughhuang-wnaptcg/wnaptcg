@@ -254,16 +254,16 @@ export default function LeaderboardSheet({ onClose, currentMemberId }) {
                 </div>
               </div>
             ) : (
-              /* ── 原本卡格（精靈球／超級球） ── */
-              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3,1fr)', gap: 10 }}>
+              /* ── 原本卡格（精靈球／超級球）── 鎖死高度讓三張齊 ── */
+              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3,minmax(0,1fr))', gap: 10, alignItems: 'start' }}>
                 {[0,1,2].map(i => {
                   const slot = showcaseCards[i]
                   const rc = slot?.cards ? (RARITY_COLORS[slot.cards.rarity] || RARITY_COLORS.Other) : null
                   return (
-                    <div key={i}>
-                      <div style={{ aspectRatio: '3/4', borderRadius: 14, overflow: 'hidden', background: slot ? '#fff' : '#f5f0e8', border: slot ? 'none' : '2px dashed #F5E8C8', boxShadow: slot ? '0 4px 14px rgba(186,117,23,.12)' : 'none', display: 'flex', alignItems: 'center', justifyContent: 'center', position: 'relative' }}>
+                    <div key={i} style={{ minWidth: 0, maxWidth: '100%' }}>
+                      <div style={{ aspectRatio: '3/4', width: '100%', borderRadius: 14, overflow: 'hidden', background: slot ? '#fff' : '#f5f0e8', border: slot ? 'none' : '2px dashed #F5E8C8', boxShadow: slot ? '0 4px 14px rgba(186,117,23,.12)' : 'none', display: 'flex', alignItems: 'center', justifyContent: 'center', position: 'relative' }}>
                         {slot?.cards?.image_url
-                          ? <img src={slot.cards.image_url} alt="" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+                          ? <img src={slot.cards.image_url} alt="" style={{ width: '100%', height: '100%', objectFit: 'cover', display: 'block' }} />
                           : slot
                             ? <i className="fa-solid fa-id-card" style={{ fontSize: 28, color: '#D4A94A', opacity: 0.4 }}></i>
                             : <i className="fa-solid fa-minus" style={{ fontSize: 14, color: '#D4A94A', opacity: 0.3 }}></i>
@@ -272,12 +272,15 @@ export default function LeaderboardSheet({ onClose, currentMemberId }) {
                           <span style={{ position: 'absolute', top: 5, left: 5, fontSize: 7, fontWeight: 700, padding: '2px 5px', borderRadius: 20, background: rc.bg, color: rc.color }}>{slot.cards.rarity}</span>
                         )}
                       </div>
-                      {slot?.cards && (
-                        <div style={{ marginTop: 5 }}>
-                          <div style={{ fontSize: 9, color: '#7a5c2e', fontWeight: 600, textAlign: 'center', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{slot.cards.name}</div>
-                          <div style={{ fontSize: 8, color: '#bbb', textAlign: 'center', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{slot.cards.series}</div>
-                        </div>
-                      )}
+                      {/* 文字區固定高度，避免長系列名把欄位撐高造成三張不齊 */}
+                      <div style={{ marginTop: 5, height: 28, overflow: 'hidden' }}>
+                        {slot?.cards && (
+                          <>
+                            <div style={{ fontSize: 9, color: '#7a5c2e', fontWeight: 600, textAlign: 'center', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', maxWidth: '100%' }}>{slot.cards.name}</div>
+                            <div style={{ fontSize: 8, color: '#bbb', textAlign: 'center', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', maxWidth: '100%' }}>{slot.cards.series}</div>
+                          </>
+                        )}
+                      </div>
                     </div>
                   )
                 })}
