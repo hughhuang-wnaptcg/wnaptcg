@@ -29,6 +29,57 @@ const BOARD_LEVEL_THEME = {
 // 高級球以上（每日 3 則）
 const BOARD_VIP_LEVELS = ['高級球', '豪華球', '貴重球', '究極球', '大師球']
 
+// ── 首頁 Hero 換膚主題（高級球以上套自己球種色，其餘維持暖黃）──
+// dark: 深色主題（文字翻淺色）。bg=背景漸層, accent=主色, name=主文字, sub=次文字,
+// pill(bg/border/text)=「今日已獲得」膠囊, avatarBorder=頭像框, eyebrow=頂部英文標。
+const HERO_DEFAULT = {
+  dark: false,
+  bg: 'linear-gradient(160deg,#FFFBF2 0%,#FFF5DC 60%,#FFEDBB 100%)',
+  accent: '#BA7517', name: '#2D1A00', sub: '#A07040', eyebrow: '#E07B00',
+  pillBg: '#fff', pillBorder: '#FAC775', pillText: '#8B4A00', pillStar: '#E07B00',
+  avatarBorder: '#FAC775', levelText: '#BA7517', wave: '#FFFBF2',
+}
+const HERO_THEME = {
+  高級球: {
+    dark: false,
+    bg: 'linear-gradient(160deg,#FFF8E0 0%,#FFEFA8 60%,#F5D04A 100%)',
+    accent: '#5A4A0A', name: '#1A1A1A', sub: '#6B5A12', eyebrow: '#5A4A0A',
+    pillBg: '#fff', pillBorder: '#1A1A1A', pillText: '#5A4A0A', pillStar: '#5A4A0A',
+    avatarBorder: '#1A1A1A', levelText: '#5A4A0A', wave: '#FFFBF2',
+  },
+  豪華球: {
+    dark: true,
+    bg: 'linear-gradient(160deg,#2A1B10 0%,#3A2415 60%,#1A1008 100%)',
+    accent: '#EF9F27', name: '#F7E4C0', sub: '#C9A06A', eyebrow: '#EF9F27',
+    pillBg: 'rgba(239,159,39,0.10)', pillBorder: '#EF9F27', pillText: '#F7E4C0', pillStar: '#EF9F27',
+    avatarBorder: '#EF9F27', levelText: '#C9A06A', wave: '#FFFBF2',
+  },
+  貴重球: {
+    dark: true,
+    bg: 'linear-gradient(160deg,#2A1414 0%,#3B1C1C 60%,#1A0C0C 100%)',
+    accent: '#E24B4A', name: '#F7D6D0', sub: '#C98A82', eyebrow: '#E24B4A',
+    pillBg: 'rgba(226,75,74,0.10)', pillBorder: '#E24B4A', pillText: '#F7D6D0', pillStar: '#E24B4A',
+    avatarBorder: '#E24B4A', levelText: '#C98A82', wave: '#FFFBF2',
+  },
+  究極球: {
+    dark: true,
+    bg: 'linear-gradient(160deg,#10204A 0%,#1B2F66 60%,#0C1838 100%)',
+    accent: '#6E9BFF', name: '#CFE0FF', sub: '#8FA8DD', eyebrow: '#8FA8DD',
+    pillBg: 'rgba(255,255,255,0.08)', pillBorder: '#6E9BFF', pillText: '#CFE0FF', pillStar: '#6E9BFF',
+    avatarBorder: '#6E9BFF', levelText: '#8FA8DD', wave: '#FFFBF2',
+  },
+  大師球: {
+    dark: true,
+    bg: 'linear-gradient(160deg,#1A1A1A 0%,#2A2030 60%,#0E0C0A 100%)',
+    accent: '#F5D060', name: '#FDF0C0', sub: '#B6A06A', eyebrow: '#B8860B',
+    pillBg: 'rgba(245,208,96,0.10)', pillBorder: '#F5D060', pillText: '#F5D060', pillStar: '#F5D060',
+    avatarBorder: '#F5D060', levelText: '#B6A06A', wave: '#FFFBF2',
+  },
+}
+function heroTheme(level) {
+  return HERO_THEME[level] || HERO_DEFAULT
+}
+
 function boardLevelTheme(level) {
   return BOARD_LEVEL_THEME[level] || BOARD_LEVEL_THEME['精靈球']
 }
@@ -151,6 +202,9 @@ export default function HomePage() {
   const myLevel = member ? getLevel(member.points) : '精靈球'
   const dailyLimit = BOARD_VIP_LEVELS.includes(myLevel) ? 3 : 1
   const remainingMsgs = Math.max(0, dailyLimit - todayMsgCount)
+
+  // 首頁 Hero 換膚：依會員等級取主題（高級球以上套球種色，其餘暖黃）
+  const hero = heroTheme(myLevel)
 
   useEffect(() => {
     if (loginResult?.weekComplete) {
@@ -494,7 +548,7 @@ export default function HomePage() {
         onTouchStart={onTouchStart} onTouchMove={onTouchMove} onTouchEnd={onTouchEnd}>
 
         {/* Hero */}
-        <div style={S.hero}>
+        <div style={{ ...S.hero, background: hero.bg }}>
           <svg style={{ position: 'absolute', right: -16, bottom: -22, width: 110, height: 110, opacity: 0.07, pointerEvents: 'none' }} viewBox="0 0 100 100" fill="none">
             <circle cx="50" cy="50" r="47" stroke="#BA7517" strokeWidth="4"/>
             <path d="M3 50 Q27 37 50 50 Q73 63 97 50" stroke="#BA7517" strokeWidth="4" fill="none"/>
@@ -509,21 +563,21 @@ export default function HomePage() {
           </div>
           <div style={{ position: 'absolute', top: 15, right: 15, display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 3 }}>
             {member && (
-              <div style={{ width: 40, height: 40, borderRadius: '50%', border: '2px solid #FAC775', boxShadow: '0 2px 8px rgba(186,117,23,.2)', overflow: 'hidden', display: 'flex', alignItems: 'center', justifyContent: 'center', background: '#fff', flexShrink: 0 }}>
+              <div style={{ width: 40, height: 40, borderRadius: '50%', border: `2px solid ${hero.avatarBorder}`, boxShadow: '0 2px 8px rgba(0,0,0,.2)', overflow: 'hidden', display: 'flex', alignItems: 'center', justifyContent: 'center', background: hero.dark ? 'rgba(255,255,255,0.08)' : '#fff', flexShrink: 0 }}>
                 <PokeballIcon level={member.level} size={36} />
               </div>
             )}
-            <span style={{ fontSize: 7, color: '#BA7517', fontWeight: 700, letterSpacing: '0.05em' }}>{member?.level}</span>
+            <span style={{ fontSize: 7, color: hero.levelText, fontWeight: 700, letterSpacing: '0.05em' }}>{member?.level}</span>
           </div>
-          <div style={{ fontSize: 9, fontWeight: 700, color: '#E07B00', letterSpacing: '0.12em', opacity: 0.6, marginBottom: 9 }}>W/NA PTCG × HUGO COLLECTIONS</div>
-          <div style={{ fontSize: 19, fontWeight: 800, color: '#2D1A00', lineHeight: 1.3 }}>
-            {greeting.text}，<span style={{ color: '#BA7517' }}>{member?.display_name || 'Trainer'}</span>
+          <div style={{ fontSize: 9, fontWeight: 700, color: hero.eyebrow, letterSpacing: '0.12em', opacity: 0.7, marginBottom: 9 }}>W/NA PTCG × HUGO COLLECTIONS</div>
+          <div style={{ fontSize: 19, fontWeight: 800, color: hero.name, lineHeight: 1.3 }}>
+            {greeting.text}，<span style={{ color: hero.accent }}>{member?.display_name || 'Trainer'}</span>
           </div>
-          <div style={{ fontSize: 13, color: '#A07040', margin: '3px 0 14px', fontWeight: 500 }}>今天要開什麼包？</div>
+          <div style={{ fontSize: 13, color: hero.sub, margin: '3px 0 14px', fontWeight: 500 }}>今天要開什麼包？</div>
           {todayPoints > 0 && (
-            <div style={{ display: 'inline-flex', alignItems: 'center', gap: 6, background: '#fff', border: '2px solid #FAC775', borderRadius: 999, padding: '6px 14px', fontSize: 12, color: '#8B4A00', fontWeight: 700, boxShadow: '0 2px 8px rgba(186,117,23,.12)' }}>
-              <i className="fa-solid fa-star" style={{ color: '#E07B00', fontSize: 12 }}></i>
-              今日已獲得 <strong style={{ color: '#E07B00', margin: '0 1px' }}>+<CountUp value={todayPoints} /></strong> 點
+            <div style={{ display: 'inline-flex', alignItems: 'center', gap: 6, background: hero.pillBg, border: `2px solid ${hero.pillBorder}`, borderRadius: 999, padding: '6px 14px', fontSize: 12, color: hero.pillText, fontWeight: 700, boxShadow: '0 2px 8px rgba(0,0,0,.10)' }}>
+              <i className="fa-solid fa-star" style={{ color: hero.pillStar, fontSize: 12 }}></i>
+              今日已獲得 <strong style={{ color: hero.pillStar, margin: '0 1px' }}>+<CountUp value={todayPoints} /></strong> 點
             </div>
           )}
           <svg style={{ position: 'absolute', bottom: -1, left: 0, right: 0, width: '100%' }} viewBox="0 0 390 22" preserveAspectRatio="none" height="22">
