@@ -49,7 +49,6 @@ function ProductTag({ tag }) {
     </span>
   )
 }
-
 const POKEBALL_SVG = {
   精靈球: `<svg width="16" height="16" viewBox="0 0 52 52"><circle cx="26" cy="26" r="24" fill="#fff" stroke="#ccc" stroke-width="1"/><path d="M2 26 A24 24 0 0 1 50 26 Z" fill="#E24B4A"/><rect x="2" y="23" width="48" height="6" fill="#1a1a1a"/><circle cx="26" cy="26" r="7" fill="#fff" stroke="#1a1a1a" stroke-width="2.5"/><circle cx="26" cy="26" r="3.5" fill="#e8e8e8"/></svg>`,
   超級球: `<svg width="16" height="16" viewBox="0 0 52 52"><circle cx="26" cy="26" r="24" fill="#fff" stroke="#ccc" stroke-width="1"/><path d="M2 26 A24 24 0 0 1 50 26 Z" fill="#378ADD"/><polygon points="15,8 22,14 15,20 8,14" fill="#E24B4A"/><polygon points="37,8 44,14 37,20 30,14" fill="#E24B4A"/><rect x="2" y="23" width="48" height="6" fill="#1a1a1a"/><circle cx="26" cy="26" r="7" fill="#fff" stroke="#1a1a1a" stroke-width="2.5"/><circle cx="26" cy="26" r="3.5" fill="#e8e8e8"/></svg>`,
@@ -587,8 +586,8 @@ export default function ShopPage() {
                   const canAfford = member ? (member.shop_points || 0) >= prod.price : null
                   return (
                     <div key={prod.id} onClick={() => !disabled && openConfirm(prod)} className={disabled ? '' : 'press-fx-soft'}
-                      style={{ background: isVip ? '#222' : '#fff', border: `0.5px solid ${cfg.divider}`, borderRadius: 14, overflow: 'hidden', cursor: disabled ? 'not-allowed' : 'pointer', opacity: disabled ? 0.5 : 1, boxShadow: isVip ? 'none' : '0 2px 10px rgba(186,117,23,.07)' }}>
-                      <div style={{ aspectRatio: '1', background: isVip ? '#1A1A1A' : '#FFF8EE', display: 'flex', alignItems: 'center', justifyContent: 'center', position: 'relative', overflow: 'hidden' }}>
+                      style={{ background: isVip ? '#222' : '#fff', border: `0.5px solid ${cfg.divider}`, borderRadius: 14, overflow: 'hidden', cursor: disabled ? 'not-allowed' : 'pointer', opacity: disabled ? 0.5 : 1, boxShadow: isVip ? 'none' : '0 2px 10px rgba(186,117,23,.07)', display: 'flex', flexDirection: 'column' }}>
+                      <div style={{ aspectRatio: '1', background: isVip ? '#1A1A1A' : '#FFF8EE', display: 'flex', alignItems: 'center', justifyContent: 'center', position: 'relative', overflow: 'hidden', flexShrink: 0 }}>
                         {prod.image_url ? <img src={prod.image_url} alt="" style={{ width: '100%', height: '100%', objectFit: 'cover' }} /> : <i className="fa-solid fa-gift" style={{ fontSize: 36, color: isVip ? '#B8860B' : '#D4A94A', opacity: 0.4 }}></i>}
                         {soldOut && <div style={{ position: 'absolute', inset: 0, background: 'rgba(0,0,0,0.4)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}><span style={{ fontSize: 12, fontWeight: 700, color: '#fff', background: 'rgba(0,0,0,0.6)', padding: '4px 10px', borderRadius: 8 }}>已售完</span></div>}
                         {!soldOut && maxed && <div style={{ position: 'absolute', inset: 0, background: 'rgba(0,0,0,0.4)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}><span style={{ fontSize: 12, fontWeight: 700, color: '#fff', background: 'rgba(0,0,0,0.6)', padding: '4px 10px', borderRadius: 8 }}>已達上限</span></div>}
@@ -604,10 +603,10 @@ export default function ShopPage() {
                           </div>
                         )}
                       </div>
-                      <div style={{ padding: '10px 10px 12px' }}>
+                      <div style={{ padding: '10px 10px 12px', flex: 1, display: 'flex', flexDirection: 'column' }}>
                         <div style={{ fontSize: 12, fontWeight: 600, color: isVip ? '#E8D5A0' : '#2D1A00', marginBottom: 4, lineHeight: 1.35 }}>{prod.name}</div>
                         {prod.description && <div style={{ fontSize: 10, color: isVip ? '#666' : '#bbb', marginBottom: 6, lineHeight: 1.4 }}>{prod.description}</div>}
-                        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginTop: 6 }}>
+                        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginTop: 'auto', paddingTop: 6 }}>
                           <div style={{ fontSize: 13, fontWeight: 800, color: cfg.enterColor }}><i className="fa-solid fa-coins" style={{ fontSize: 10, marginRight: 3 }}></i>{prod.price} 點</div>
                           <div style={{ fontSize: 9, color: isVip ? '#555' : '#bbb' }}>庫存 {prod.stock}</div>
                         </div>
@@ -829,8 +828,8 @@ export default function ShopPage() {
                   const cartQty = cartItem ? cartItem.quantity : 0
                   return (
                     <div key={item.id}
-                      style={{ background: '#fff', border: `1px solid ${soldOut ? '#EEEEEE' : '#E8E8E8'}`, borderRadius: 14, overflow: 'hidden', opacity: soldOut ? 0.55 : 1, boxShadow: soldOut ? 'none' : '0 2px 12px rgba(0,0,0,0.06)', animation: `slideInItem 0.3s ${idx * 0.05}s ease both` }}>
-                      <div style={{ aspectRatio: '1', background: '#F5F5F5', display: 'flex', alignItems: 'center', justifyContent: 'center', position: 'relative', overflow: 'hidden' }}>
+                      style={{ background: '#fff', border: `1px solid ${soldOut ? '#EEEEEE' : '#E8E8E8'}`, borderRadius: 14, overflow: 'hidden', opacity: soldOut ? 0.55 : 1, boxShadow: soldOut ? 'none' : '0 2px 12px rgba(0,0,0,0.06)', animation: `slideInItem 0.3s ${idx * 0.05}s ease both`, display: 'flex', flexDirection: 'column' }}>
+                      <div style={{ aspectRatio: '1', background: '#F5F5F5', display: 'flex', alignItems: 'center', justifyContent: 'center', position: 'relative', overflow: 'hidden', flexShrink: 0 }}>
                         {item.image_url ? <img src={item.image_url} alt="" style={{ width: '100%', height: '100%', objectFit: 'cover' }} onError={e => { e.target.style.display='none'; e.target.nextSibling.style.display='flex' }} /> : null}
                         <i className="fa-solid fa-box-open" style={{ fontSize: 32, color: '#BDBDBD', display: item.image_url ? 'none' : 'block' }}></i>
                         <div style={{ position: 'absolute', top: 7, left: 7 }}><ProductTag tag={item.product_tag} /></div>
@@ -842,10 +841,10 @@ export default function ShopPage() {
                         {!soldOut && item.stock <= 5 && <div style={{ position: 'absolute', top: 7, right: 7, background: '#E24B4A', color: '#fff', fontSize: 9, fontWeight: 700, padding: '2px 7px', borderRadius: 99 }}>僅剩 {item.stock}</div>}
                         {!soldOut && item.stock > 5 && <div style={{ position: 'absolute', top: 7, right: 7, background: 'rgba(0,0,0,0.45)', color: '#fff', fontSize: 9, padding: '2px 7px', borderRadius: 99 }}>剩 {item.stock}</div>}
                       </div>
-                      <div style={{ padding: '10px 10px 12px' }}>
+                      <div style={{ padding: '10px 10px 12px', flex: 1, display: 'flex', flexDirection: 'column' }}>
                         <div style={{ fontSize: 12, fontWeight: 700, color: '#1a1a1a', marginBottom: 2, lineHeight: 1.4 }}>{item.name}</div>
                         {item.description && <div style={{ fontSize: 10, color: '#9E9E9E', marginBottom: 6, lineHeight: 1.4 }}>{item.description}</div>}
-                        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginTop: 8 }}>
+                        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginTop: 'auto', paddingTop: 8 }}>
                           <div style={{ fontSize: 15, fontWeight: 900, color: '#E24B4A', letterSpacing: '-0.3px' }}>$ {item.price}</div>
                           {!soldOut && (
                             cartQty > 0 ? (
