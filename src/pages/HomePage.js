@@ -9,6 +9,7 @@ import LeaderboardSheet from '../components/LeaderboardSheet'
 import { vibrate, VIBRATE } from '../lib/haptics'
 import { playSound } from '../lib/sounds'
 import CountUp from '../components/CountUp'
+import { SkeletonPanel } from '../components/Skeleton'
 import {
   BERRY_DAILY_LIMIT, berryKind, berrySvg, BERRY_POSITIONS,
   getActiveSession, getNextSession, fmtCountdown,
@@ -131,6 +132,7 @@ export default function HomePage() {
   const [boss, setBoss] = useState(null)
   const [recentCards, setRecentCards] = useState([])
   const [liveItemCount, setLiveItemCount] = useState(0)
+  const [loading, setLoading] = useState(true)   // 首頁初次載入骨架
   const [weekLogins, setWeekLogins] = useState([])
   const [announcement, setAnnouncement] = useState('')
   const [todayPoints, setTodayPoints] = useState(0)
@@ -151,6 +153,7 @@ export default function HomePage() {
   const [berrySecLeft, setBerrySecLeft] = useState(0)
   const [berryTodayCount, setBerryTodayCount] = useState(0)
   const [berryPop, setBerryPop] = useState(null)           // { index, points, kind } 採集後彈分動畫
+  const [berryFx, setBerryFx] = useState(null)             // { index, kind: 'plus'|'minus' } 採集回饋特效
   const [berryClaiming, setBerryClaiming] = useState(false)
   const [berryDismissed, setBerryDismissed] = useState(false)  // ✕ 逃生門：本場手動關閉
   const [berryFadeOut, setBerryFadeOut] = useState(false)      // 採完 3 顆自動淡出中
@@ -245,9 +248,11 @@ export default function HomePage() {
         return
       }
       const gained = data.points
-      // 彈分動畫
+      // 彈分動畫 + 正負分特效（金光 / 碎裂）
       setBerryPop({ index: berry.index, points: gained, kind: data.kind })
+      setBerryFx({ index: berry.index, kind: gained >= 0 ? 'plus' : 'minus' })
       setTimeout(() => setBerryPop(null), 1100)
+      setTimeout(() => setBerryFx(null), 1100)
       // 正負分別回饋
       if (gained >= 0) { playSound('checkin_success'); vibrate(VIBRATE.success) }
       else { playSound('error_points'); vibrate(VIBRATE.error) }
@@ -303,6 +308,7 @@ export default function HomePage() {
       await fetchTodayMsgCount(member.id)
       await loadBerries()
     }
+    setLoading(false)
   }, [member, loadBerries])
 
   async function fetchWeekLogins(memberId) {
@@ -649,7 +655,9 @@ export default function HomePage() {
         <div style={{ padding: '16px 20px 0' }}>
 
           {/* ── 直播下單區 + 積分排行榜 並排 ── */}
-          <style>{`@keyframes homeLiveDot{0%,100%{opacity:1;transform:scale(1)}50%{opacity:.45;transform:scale(.72)}}`}</style>
+          <style>{`@keyframes homeLiveDot{0%,100%{opacity:1;transform:scale(1)}50%{opacity:.45;transform:scale(.72)}}
+            @keyframes wnaSkShimmer{0%{background-position:-360px 0}100%{background-position:360px 0}}
+            .wna-sk{background:linear-gradient(90deg,#f3ece0 25%,#faf5ec 50%,#f3ece0 75%);background-size:720px 100%;animation:wnaSkShimmer 1.4s ease infinite}`}</style>
           <div style={{ display: 'grid', gridTemplateColumns: '1fr 80px', gap: 8, marginBottom: 16 }}>
 
             <div
@@ -694,22 +702,50 @@ export default function HomePage() {
             <span style={{ fontSize: 11, color: '#ccc', cursor: 'pointer' }} onClick={() => { playSound('button_tap'); vibrate(VIBRATE.light); navigate('/wall') }}>全部 →</span>
           </div>
           <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3,1fr)', gap: 7, marginBottom: 16 }}>
-            {recentCards.map((card, idx) => (
-              <div key={card.id} onClick={() => { playSound('button_tap'); vibrate(VIBRATE.light); navigate('/wall') }} className="press-fx-soft" style={S.card}>
-                <div style={{ aspectRatio: '3/4', background: '#f8f5f0', display: 'flex', alignItems: 'center', justifyContent: 'center', position: 'relative', overflow: 'hidden' }}>
-                  {card.image_url ? <img src={card.image_url} alt={card.name} style={{ width: '100%', height: '100%', objectFit: 'cover' }} /> : <i className="fa-solid fa-id-card" style={{ fontSize: 28, color: '#D4A94A', opacity: 0.4 }}></i>}
-                  <span style={{ position: 'absolute', top: 5, left: 5, fontSize: 8, fontWeight: 700, padding: '2px 5px', borderRadius: 99, background: '#FCEBEB', color: '#791F1F' }}>{card.rarity}</span>
-                  {idx === 0 && <span style={{ position: 'absolute', top: 5, right: 5, fontSize: 8, fontWeight: 700, padding: '2px 5px', borderRadius: 99, background: '#E24B4A', color: '#fff' }}>NEW</span>}
+            {loading ? (
+              [0, 1, 2].map(i => (
+                <div key={i} style={{ borderRadius: 16, overflow: 'hidden', background: '#fff', boxShadow: '0 4px 14px rgba(186,117,23,.10)' }}>
+                  <div className="wna-sk" style={{ aspectRatio: '3/4', width: '100%' }} />
+                  <div style={{ padding: '6px 7px 8px' }}>
+                    <div className="wna-sk" style={{ width: '75%', height: 8, borderRadius: 4, marginBottom: 4 }} />
+                    <div className="wna-sk" style={{ width: '45%', height: 7, borderRadius: 4 }} />
+                  </div>
                 </div>
-                <div style={{ padding: '6px 7px 8px' }}>
-                  <div style={{ fontSize: 9, fontWeight: 600, color: '#111', marginBottom: 2 }}>{card.name}</div>
-                  <div style={{ fontSize: 8, color: '#BA7517' }}>{card.series}</div>
-                </div>
+              ))
+            ) : recentCards.length === 0 ? (
+              <div style={{ gridColumn: '1 / -1', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: 8, padding: '28px 0', background: '#FFFBF2', border: '0.5px dashed #F0E2C0', borderRadius: 16, color: '#C4A86A' }}>
+                <i className="fa-solid fa-trophy" style={{ fontSize: 26, opacity: 0.4 }}></i>
+                <span style={{ fontSize: 12 }}>還沒有開卡紀錄，快來開第一包！</span>
               </div>
-            ))}
+            ) : (
+              recentCards.map((card, idx) => (
+                <div key={card.id} onClick={() => { playSound('button_tap'); vibrate(VIBRATE.light); navigate('/wall') }} className="press-fx-soft" style={S.card}>
+                  <div style={{ aspectRatio: '3/4', background: '#f8f5f0', display: 'flex', alignItems: 'center', justifyContent: 'center', position: 'relative', overflow: 'hidden' }}>
+                    {card.image_url ? <img src={card.image_url} alt={card.name} style={{ width: '100%', height: '100%', objectFit: 'cover' }} /> : <i className="fa-solid fa-id-card" style={{ fontSize: 28, color: '#D4A94A', opacity: 0.4 }}></i>}
+                    <span style={{ position: 'absolute', top: 5, left: 5, fontSize: 8, fontWeight: 700, padding: '2px 5px', borderRadius: 99, background: '#FCEBEB', color: '#791F1F' }}>{card.rarity}</span>
+                    {idx === 0 && <span style={{ position: 'absolute', top: 5, right: 5, fontSize: 8, fontWeight: 700, padding: '2px 5px', borderRadius: 99, background: '#E24B4A', color: '#fff' }}>NEW</span>}
+                  </div>
+                  <div style={{ padding: '6px 7px 8px' }}>
+                    <div style={{ fontSize: 9, fontWeight: 600, color: '#111', marginBottom: 2 }}>{card.name}</div>
+                    <div style={{ fontSize: 8, color: '#BA7517' }}>{card.series}</div>
+                  </div>
+                </div>
+              ))
+            )}
           </div>
 
           {/* Boss */}
+          {loading && !boss && (
+            <>
+              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 10 }}>
+                <div style={S.secLeft}>
+                  <span style={S.typeBadge('linear-gradient(135deg,#A32D2D,#E24B4A)')}><i className="fa-solid fa-shield"></i></span>
+                  共同挑戰
+                </div>
+              </div>
+              <SkeletonPanel height={92} padding="0" radius={18} />
+            </>
+          )}
           {boss && (
             <>
               <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 10 }}>
@@ -790,14 +826,14 @@ export default function HomePage() {
         </div>
       </div>
 
-      {/* ════════════ 樹果飄落覆蓋層（全螢幕、緩慢飄落、採完自動淡出、✕ 逃生門）════════════ */}
+      {/* ════════════ 樹果飄落覆蓋層（全螢幕、緩慢飄落、不擋操作、採完自動淡出、✕ 逃生門）════════════ */}
       {showBerryOverlay && (
         <div
           style={{
-            position: 'fixed', inset: 0, zIndex: 150, maxWidth: 390, margin: '0 auto',
+            position: 'fixed', inset: 0, zIndex: 80, maxWidth: 390, margin: '0 auto',
             opacity: berryFadeOut ? 0 : 1,
             transition: 'opacity 0.6s ease',
-            pointerEvents: berryFadeOut ? 'none' : 'auto',
+            pointerEvents: 'none',   // 整層不擋；只有果實/按鈕自己開啟點擊
           }}
           onTransitionEnd={() => { if (berryFadeOut) { setBerryDismissed(true); setBerryFadeOut(false) } }}
         >
@@ -807,13 +843,20 @@ export default function HomePage() {
             @keyframes berryGlowPulse{0%,100%{filter:drop-shadow(0 4px 6px rgba(0,0,0,.18))}50%{filter:drop-shadow(0 4px 6px rgba(0,0,0,.18)) drop-shadow(0 0 14px rgba(245,208,96,.95))}}
             @keyframes berryGlowDevil{0%,100%{filter:drop-shadow(0 4px 6px rgba(0,0,0,.2))}50%{filter:drop-shadow(0 4px 6px rgba(0,0,0,.2)) drop-shadow(0 0 14px rgba(190,100,230,.95))}}
             @keyframes berryPopUp{0%{transform:translateX(-50%) translateY(0);opacity:0}20%{opacity:1}100%{transform:translateX(-50%) translateY(-44px);opacity:0}}
+            @keyframes bFxHappy{0%{transform:scale(1)}30%{transform:scale(1.25) rotate(-5deg)}60%{transform:scale(1.1) rotate(5deg)}100%{transform:scale(0);opacity:0}}
+            @keyframes bFxBreak{0%{transform:scale(1);filter:saturate(1)}25%{transform:scale(1.15) translateY(-3px)}40%{transform:scale(.9) translateX(-3px);filter:saturate(.3)}50%{transform:scale(.95) translateX(3px)}100%{transform:scale(.7);opacity:0;filter:saturate(0) brightness(.6)}}
+            @keyframes bFxBurst{0%{transform:translate(-50%,-50%) scale(0);opacity:0}30%{transform:translate(-50%,-50%) scale(1.3);opacity:.9}100%{transform:translate(-50%,-50%) scale(2.2);opacity:0}}
+            @keyframes bFxRay{0%{transform:rotate(var(--rot)) scaleY(0);opacity:0}30%{opacity:1}100%{transform:rotate(var(--rot)) scaleY(1.4);opacity:0}}
+            @keyframes bFxSpark{0%{transform:translate(0,0) scale(0);opacity:0}40%{opacity:1;transform:translate(var(--s2x),var(--s2y)) scale(1)}100%{opacity:0;transform:translate(var(--s3x),var(--s3y)) scale(.3)}}
+            @keyframes bFxShard{0%{transform:translate(-50%,-50%) rotate(0);opacity:0}15%{opacity:1}100%{transform:translate(var(--shx),var(--shy)) rotate(var(--shr));opacity:0}}
+            @keyframes bFxShake{0%,100%{transform:translateX(0)}20%{transform:translateX(-4px)}40%{transform:translateX(4px)}60%{transform:translateX(-3px)}80%{transform:translateX(3px)}}
           `}</style>
 
-          {/* 柔光罩（主頁輕微變淡，果實更跳出） */}
-          <div style={{ position: 'absolute', inset: 0, background: 'rgba(255,251,242,0.42)', backdropFilter: 'blur(0.5px)', pointerEvents: 'none' }} />
+          {/* 柔光罩（主頁輕微變淡，果實更跳出；不擋點擊） */}
+          <div style={{ position: 'absolute', inset: 0, background: 'rgba(255,251,242,0.42)', pointerEvents: 'none' }} />
 
-          {/* 頂部標籤 + 倒數 */}
-          <div style={{ position: 'absolute', top: 14, left: 14, right: 14, display: 'flex', alignItems: 'center', justifyContent: 'space-between', zIndex: 3 }}>
+          {/* 頂部標籤 + 倒數（按鈕可點） */}
+          <div style={{ position: 'absolute', top: 14, left: 14, right: 14, display: 'flex', alignItems: 'center', justifyContent: 'space-between', zIndex: 3, pointerEvents: 'none' }}>
             <div style={{ display: 'flex', alignItems: 'center', gap: 6, background: 'rgba(255,255,255,0.9)', border: '1px solid #FAC775', borderRadius: 99, padding: '5px 12px', boxShadow: '0 2px 8px rgba(186,117,23,.12)' }}>
               <i className="fa-solid fa-seedling" style={{ fontSize: 12, color: '#3B6D11' }}></i>
               <span style={{ fontSize: 11, fontWeight: 700, color: '#BA7517' }}>樹果飄落中</span>
@@ -825,13 +868,13 @@ export default function HomePage() {
               </div>
               {/* ✕ 逃生門 */}
               <button onClick={dismissBerries} aria-label="稍後再採" className="press-fx"
-                style={{ width: 30, height: 30, borderRadius: '50%', border: '1px solid #F0E2C0', background: 'rgba(255,255,255,0.9)', color: '#A07040', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', boxShadow: '0 2px 8px rgba(186,117,23,.1)', padding: 0 }}>
+                style={{ width: 30, height: 30, borderRadius: '50%', border: '1px solid #F0E2C0', background: 'rgba(255,255,255,0.9)', color: '#A07040', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', boxShadow: '0 2px 8px rgba(186,117,23,.1)', padding: 0, pointerEvents: 'auto' }}>
                 <i className="fa-solid fa-xmark" style={{ fontSize: 14 }}></i>
               </button>
             </div>
           </div>
 
-          {/* 樹果們（飄落） */}
+          {/* 樹果們（飄落；只有果實本身可點，其餘穿透到底下主頁） */}
           {berries.map((b) => {
             const k = berryKind(b.kind)
             const pos = BERRY_POSITIONS[b.index % BERRY_POSITIONS.length]
@@ -840,6 +883,7 @@ export default function HomePage() {
             const glowAnim = k.glow
               ? (b.kind === 'super_devil' ? ', berryGlowDevil 1.6s ease-in-out infinite' : ', berryGlowPulse 1.6s ease-in-out infinite')
               : ''
+            const fx = berryFx && berryFx.index === b.index ? berryFx.kind : null
             return (
               <div key={b.index}
                 onClick={() => !claimed && !berryLimitReached && handleClaimBerry(b)}
@@ -847,18 +891,43 @@ export default function HomePage() {
                   position: 'absolute', left: `${pos.x}%`, top: 0,
                   width: 58, cursor: claimed || berryLimitReached ? 'default' : 'pointer',
                   zIndex: 2,
-                  opacity: claimed ? 0 : 1,
+                  opacity: claimed && !fx ? 0 : 1,
                   transition: 'opacity 0.5s ease',
                   pointerEvents: claimed ? 'none' : 'auto',
+                  animation: fx === 'minus' ? 'bFxShake 0.5s ease' : 'none',
                   '--fall': `${pos.fall}px`, '--sway': `${pos.sway}px`,
-                  animation: claimed
-                    ? 'none'
-                    : `berryDrift ${pos.dur}s cubic-bezier(.45,.05,.55,.95) ${pos.delay}s forwards${glowAnim}`,
                 }}>
-                <div dangerouslySetInnerHTML={{ __html: svg }} style={{ filter: 'drop-shadow(0 4px 6px rgba(0,0,0,.15))' }} />
+                {/* 果體（飄落 / 採集後金光彈起或碎裂） */}
+                <div style={{
+                  animation: claimed
+                    ? (fx === 'plus' ? 'bFxHappy 0.9s ease forwards' : fx === 'minus' ? 'bFxBreak 1s ease forwards' : 'none')
+                    : `berryDrift ${pos.dur}s cubic-bezier(.45,.05,.55,.95) ${pos.delay}s forwards${glowAnim}`,
+                  filter: 'drop-shadow(0 4px 6px rgba(0,0,0,.15))',
+                }} dangerouslySetInnerHTML={{ __html: svg }} />
+
+                {/* 正分：金光放射 + 火花 */}
+                {fx === 'plus' && (
+                  <>
+                    <div style={{ position: 'absolute', left: '50%', top: '50%', width: 70, height: 70, borderRadius: '50%', background: 'radial-gradient(circle,rgba(255,230,120,.9),rgba(255,200,80,.3) 60%,transparent 75%)', animation: 'bFxBurst 0.9s ease forwards', pointerEvents: 'none', zIndex: 5 }} />
+                    {[0, 60, 120, 180, 240, 300].map(rot => (
+                      <div key={rot} style={{ position: 'absolute', left: '50%', top: '50%', width: 3, height: 34, marginLeft: -1.5, marginTop: -17, background: 'linear-gradient(rgba(255,230,120,.95),transparent)', transformOrigin: 'center bottom', '--rot': `${rot}deg`, animation: 'bFxRay 0.9s ease forwards', pointerEvents: 'none', zIndex: 5 }} />
+                    ))}
+                    {[['-26px','-20px','-38px','-30px'],['24px','-22px','34px','-34px'],['18px','18px','28px','30px'],['-20px','16px','-30px','26px']].map((s, si) => (
+                      <div key={si} style={{ position: 'absolute', left: '50%', top: '50%', width: 6, height: 6, borderRadius: '50%', background: ['#FFE066','#FFF0A0','#FAC775','#FFE066'][si], '--s2x': s[0], '--s2y': s[1], '--s3x': s[2], '--s3y': s[3], animation: 'bFxSpark 1s ease forwards', pointerEvents: 'none', zIndex: 6 }} />
+                    ))}
+                  </>
+                )}
+
+                {/* 負分：碎片飛散 */}
+                {fx === 'minus' && (
+                  [['-30px','-22px','120deg','#3A3A3E',8],['28px','-26px','-140deg','#5A5A62',7],['32px','18px','90deg','#2A2A2E',6],['-26px','22px','-100deg','#4A4A50',8],['0px','-34px','160deg','#1A1A1C',5]].map((s, si) => (
+                    <div key={si} style={{ position: 'absolute', left: '50%', top: '50%', width: s[4], height: s[4], background: s[3], borderRadius: 2, '--shx': s[0], '--shy': s[1], '--shr': s[2], animation: 'bFxShard 1s ease forwards', pointerEvents: 'none', zIndex: 5 }} />
+                  ))
+                )}
+
                 {/* 彈分動畫 */}
                 {berryPop && berryPop.index === b.index && (
-                  <div style={{ position: 'absolute', left: '50%', top: 0, fontSize: 20, fontWeight: 800, color: berryPop.points >= 0 ? '#3B6D11' : '#A32D2D', animation: 'berryPopUp 1.1s ease forwards', whiteSpace: 'nowrap', zIndex: 6, pointerEvents: 'none', textShadow: '0 1px 3px rgba(255,255,255,.9)' }}>
+                  <div style={{ position: 'absolute', left: '50%', top: 0, fontSize: 20, fontWeight: 800, color: berryPop.points >= 0 ? '#3B6D11' : '#A32D2D', animation: 'berryPopUp 1.1s ease forwards', whiteSpace: 'nowrap', zIndex: 7, pointerEvents: 'none', textShadow: '0 1px 3px rgba(255,255,255,.9)' }}>
                     {berryPop.points >= 0 ? '+' : ''}{berryPop.points}
                   </div>
                 )}
@@ -866,8 +935,8 @@ export default function HomePage() {
             )
           })}
 
-          {/* 底部：今日已採 / 上限 */}
-          <div style={{ position: 'absolute', bottom: 90, left: 0, right: 0, display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 3, pointerEvents: 'none' }}>
+          {/* 底部：今日已採 / 上限（不擋點擊） */}
+          <div style={{ position: 'absolute', bottom: 130, left: 0, right: 0, display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 3, pointerEvents: 'none' }}>
             {berryLimitReached ? (
               <span style={{ fontSize: 12, color: '#A89876', background: 'rgba(255,255,255,0.92)', borderRadius: 99, padding: '6px 16px', boxShadow: '0 2px 10px rgba(186,117,23,.12)' }}>
                 <i className="fa-solid fa-circle-check" style={{ marginRight: 5 }}></i>今日採集已達上限
@@ -964,19 +1033,21 @@ export default function HomePage() {
               {boardError && <div style={{ background: '#FCEBEB', color: '#A32D2D', padding: '8px 12px', borderRadius: 8, fontSize: 13, marginBottom: 12 }}>{boardError}</div>}
               <input
                 value={boardInput}
-                onChange={e => setBoardInput(e.target.value.slice(0, 15))}
-                maxLength={15}
+                onChange={e => setBoardInput(e.target.value)}
                 placeholder="說點什麼…（最多 15 字）"
-                style={inp}
+                style={{ ...inp, borderColor: boardInput.length > 15 ? '#E24B4A' : '#f0e8d0' }}
                 autoFocus
               />
-              <div style={{ display: 'flex', justifyContent: 'flex-end', marginTop: 6, marginBottom: 16 }}>
-                <span style={{ fontSize: 11, color: boardInput.length >= 15 ? '#E24B4A' : '#bbb' }}>{boardInput.length} / 15</span>
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginTop: 6, marginBottom: 16 }}>
+                <span style={{ fontSize: 11, color: '#E24B4A', opacity: boardInput.length > 15 ? 1 : 0, transition: 'opacity 0.15s' }}>
+                  <i className="fa-solid fa-circle-exclamation" style={{ marginRight: 4 }}></i>超過 15 字了，請刪減
+                </span>
+                <span style={{ fontSize: 11, color: boardInput.length > 15 ? '#E24B4A' : boardInput.length >= 15 ? '#E07B00' : '#bbb', fontWeight: boardInput.length > 15 ? 700 : 400 }}>{boardInput.length} / 15</span>
               </div>
               <div style={{ display: 'flex', gap: 8 }}>
                 <button onClick={closeBoardModal} className="press-fx" style={{ flex: 1, padding: 12, border: '1px solid #f0e8d0', borderRadius: 10, fontSize: 14, color: '#888', background: '#fdfaf4', cursor: 'pointer' }}>取消</button>
-                <button onClick={handleSendMessage} disabled={boardSending || !boardInput.trim()} className="press-fx"
-                  style={{ flex: 2, padding: 12, background: boardSending || !boardInput.trim() ? '#ccc' : 'linear-gradient(135deg,#BA7517,#E07B00)', border: 'none', borderRadius: 10, fontSize: 14, fontWeight: 700, color: '#fff', cursor: 'pointer' }}>
+                <button onClick={handleSendMessage} disabled={boardSending || !boardInput.trim() || boardInput.length > 15} className="press-fx"
+                  style={{ flex: 2, padding: 12, background: boardSending || !boardInput.trim() || boardInput.length > 15 ? '#ccc' : 'linear-gradient(135deg,#BA7517,#E07B00)', border: 'none', borderRadius: 10, fontSize: 14, fontWeight: 700, color: '#fff', cursor: boardSending || !boardInput.trim() || boardInput.length > 15 ? 'not-allowed' : 'pointer' }}>
                   {boardSending ? '送出中...' : '送出留言'}
                 </button>
               </div>
