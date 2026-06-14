@@ -1,0 +1,7 @@
+<svg width="64" height="64" viewBox="0 0 64 64" xmlns="http://www.w3.org/2000/svg">
+  <rect width="64" height="64" fill="#0A0A0C"/>
+  <circle cx="32" cy="32" r="23" fill="none" stroke="#FAC775" stroke-width="3"/>
+  <path d="M9 32 H55" stroke="#FAC775" stroke-width="3"/>
+  <circle cx="32" cy="32" r="10" fill="#0A0A0C" stroke="#FAC775" stroke-width="3"/>
+  <text x="32" y="37" text-anchor="middle" font-family="Georgia,'Times New Roman',serif" font-weight="bold" font-size="13" fill="#FFE9BE">W</text>
+</svg>
