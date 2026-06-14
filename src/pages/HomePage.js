@@ -10,7 +10,7 @@ import { vibrate, VIBRATE } from '../lib/haptics'
 import { playSound } from '../lib/sounds'
 import CountUp from '../components/CountUp'
 import {
-  BERRY_DAILY_LIMIT, berryKind, BERRY_POSITIONS,
+  BERRY_DAILY_LIMIT, berryKind, berrySvg, BERRY_POSITIONS,
   getActiveSession, getNextSession, fmtCountdown,
 } from '../lib/berries'
 
@@ -152,6 +152,8 @@ export default function HomePage() {
   const [berryTodayCount, setBerryTodayCount] = useState(0)
   const [berryPop, setBerryPop] = useState(null)           // { index, points, kind } 採集後彈分動畫
   const [berryClaiming, setBerryClaiming] = useState(false)
+  const [berryDismissed, setBerryDismissed] = useState(false)  // ✕ 逃生門：本場手動關閉
+  const [berryFadeOut, setBerryFadeOut] = useState(false)      // 採完 3 顆自動淡出中
 
   const [shippingModal, setShippingModal] = useState(false)
   const [cancelModal, setCancelModal] = useState(false)
@@ -205,6 +207,9 @@ export default function HomePage() {
     const session = getActiveSession()
     setBerrySession(session)
     if (!session) { setBerries([]); return }
+    // 新場次重置「手動關閉 / 淡出」狀態
+    setBerryDismissed(false)
+    setBerryFadeOut(false)
     // 今日已採數
     const { count } = await supabase.from('berry_claims')
       .select('id', { count: 'exact', head: true })
@@ -247,17 +252,28 @@ export default function HomePage() {
       if (gained >= 0) { playSound('checkin_success'); vibrate(VIBRATE.success) }
       else { playSound('error_points'); vibrate(VIBRATE.error) }
       // 標記該果已採
-      setBerries(prev => prev.map(b => b.index === berry.index ? { ...b, claimed: true } : b))
+      const nextBerries = berries.map(b => b.index === berry.index ? { ...b, claimed: true } : b)
+      setBerries(nextBerries)
       setBerryTodayCount(c => c + 1)
       // 同步會員積分（後端已是扣到 0 後的值）
       if (typeof data.new_points === 'number') {
         const newLevel = getLevel(data.new_points)
         setMember({ ...member, points: data.new_points, level: newLevel })
       }
+      // 採完當場全部 → 自動淡出消失
+      if (nextBerries.length > 0 && nextBerries.every(b => b.claimed)) {
+        setTimeout(() => setBerryFadeOut(true), 700)
+      }
     } catch {
       playSound('error_system'); vibrate(VIBRATE.error)
     }
     setBerryClaiming(false)
+  }
+
+  // ✕ 逃生門：手動關閉本場覆蓋層
+  function dismissBerries() {
+    playSound('modal_close'); vibrate(VIBRATE.light)
+    setBerryFadeOut(true)
   }
 
   const fetchData = useCallback(async () => {
@@ -477,6 +493,8 @@ export default function HomePage() {
   const isWeekComplete = weekLogins.length === 7 && weekLogins.every(d => d.done)
   const nextSession = getNextSession()
   const berryLimitReached = berryTodayCount >= BERRY_DAILY_LIMIT
+  // 樹果覆蓋層是否顯示：有場次、有果、未手動關閉、未淡出完成
+  const showBerryOverlay = !!(member && berrySession && berries.length > 0 && !berryDismissed)
 
   const inp = { width: '100%', padding: '10px 12px', border: '0.5px solid #f0e8d0', borderRadius: 8, fontSize: 14, color: '#111', outline: 'none', background: '#fdfaf4', boxSizing: 'border-box' }
 
@@ -551,91 +569,6 @@ export default function HomePage() {
             <path d="M0 22 Q97 2 195 12 Q293 22 390 6 L390 22 Z" fill="#FFFBF2"/>
           </svg>
         </div>
-
-        {/* ── 樹果採集區（只在場次窗內出現）── */}
-        {member && berrySession && berries.length > 0 && (
-          <div style={{ padding: '14px 20px 4px' }}>
-            <style>{`
-              @keyframes berryFloat{0%,100%{transform:translateY(0) rotate(-3deg)}50%{transform:translateY(-12px) rotate(3deg)}}
-              @keyframes berryCollect{0%{transform:scale(1)}40%{transform:scale(1.25)}100%{transform:scale(0);opacity:0}}
-              @keyframes berryPopUp{0%{transform:translateY(0);opacity:0}20%{opacity:1}100%{transform:translateY(-40px);opacity:0}}
-              @keyframes berryGlow{0%,100%{filter:drop-shadow(0 0 4px rgba(245,208,96,.6))}50%{filter:drop-shadow(0 0 14px rgba(245,208,96,1))}}
-            `}</style>
-            <div style={{ position: 'relative', height: 240, background: 'linear-gradient(160deg,#FFFBF2 0%,#FFF5DC 60%,#FFEDBB 100%)', borderRadius: 18, overflow: 'hidden', border: '1px solid #F0E2C0', boxShadow: '0 4px 16px rgba(186,117,23,.08)' }}>
-
-              {/* 頂部：標籤 + 倒數 */}
-              <div style={{ position: 'absolute', top: 12, left: 12, right: 12, display: 'flex', alignItems: 'center', justifyContent: 'space-between', zIndex: 5 }}>
-                <div style={{ display: 'flex', alignItems: 'center', gap: 6, background: 'rgba(255,255,255,0.85)', border: '1px solid #FAC775', borderRadius: 99, padding: '5px 11px' }}>
-                  <i className="fa-solid fa-seedling" style={{ fontSize: 12, color: '#3B6D11' }}></i>
-                  <span style={{ fontSize: 11, fontWeight: 700, color: '#BA7517' }}>樹果掉落中</span>
-                </div>
-                <div style={{ display: 'flex', alignItems: 'center', gap: 5, background: 'rgba(255,255,255,0.85)', border: '1px solid #F0E2C0', borderRadius: 99, padding: '5px 11px' }}>
-                  <i className="fa-solid fa-clock" style={{ fontSize: 11, color: '#E07B00' }}></i>
-                  <span style={{ fontSize: 11, fontWeight: 700, color: '#8B5A00' }}>剩 {fmtCountdown(berrySecLeft)}</span>
-                </div>
-              </div>
-
-              {/* 樹果們 */}
-              {berries.map((b, i) => {
-                const k = berryKind(b.kind)
-                const pos = BERRY_POSITIONS[b.index % BERRY_POSITIONS.length]
-                const claimed = b.claimed
-                return (
-                  <div key={b.index}
-                    onClick={() => handleClaimBerry(b)}
-                    style={{
-                      position: 'absolute', left: `${pos.x}%`, top: `${pos.y}%`,
-                      width: 60, height: 60, cursor: claimed || berryLimitReached ? 'default' : 'pointer',
-                      animation: claimed ? 'none' : `berryFloat ${2.6 + i * 0.4}s ease-in-out infinite`,
-                      animationDelay: `${i * 0.3}s`, zIndex: 3,
-                      opacity: claimed ? 0.25 : 1,
-                      pointerEvents: claimed ? 'none' : 'auto',
-                    }}>
-                    {k.img ? (
-                      <img src={k.img} alt={k.label} style={{ width: 52, height: 52, margin: 4, objectFit: 'contain', animation: k.glow ? 'berryGlow 1.4s ease-in-out infinite' : 'none' }} />
-                    ) : (
-                      <div style={{
-                        width: 52, height: 52, margin: 4, borderRadius: '50%',
-                        background: `radial-gradient(circle at 32% 28%, ${k.light}, ${k.hue} 70%)`,
-                        boxShadow: `0 6px 16px ${k.hue}55, inset -3px -4px 8px ${k.dark}66`,
-                        position: 'relative',
-                        animation: k.glow ? 'berryGlow 1.4s ease-in-out infinite' : 'none',
-                      }}>
-                        <div style={{ position: 'absolute', top: -6, left: '50%', transform: 'translateX(-50%)', width: 4, height: 9, background: '#3B6D11', borderRadius: 2 }} />
-                        <div style={{ position: 'absolute', top: -7, left: '58%', width: 10, height: 6, background: '#639922', borderRadius: '0 80% 0 80%', transform: 'rotate(-20deg)' }} />
-                        <div style={{ position: 'absolute', top: 9, left: 11, width: 13, height: 9, background: 'rgba(255,255,255,0.55)', borderRadius: '50%', filter: 'blur(1px)' }} />
-                        {claimed && (
-                          <div style={{ position: 'absolute', inset: 0, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                            <i className="fa-solid fa-check" style={{ fontSize: 18, color: '#fff' }}></i>
-                          </div>
-                        )}
-                      </div>
-                    )}
-                    {/* 彈分動畫 */}
-                    {berryPop && berryPop.index === b.index && (
-                      <div style={{ position: 'absolute', left: '50%', top: 0, transform: 'translateX(-50%)', fontSize: 18, fontWeight: 800, color: berryPop.points >= 0 ? k.dark : '#A32D2D', animation: 'berryPopUp 1.1s ease forwards', whiteSpace: 'nowrap', zIndex: 6, pointerEvents: 'none' }}>
-                        {berryPop.points >= 0 ? '+' : ''}{berryPop.points}
-                      </div>
-                    )}
-                  </div>
-                )
-              })}
-
-              {/* 底部：今日已採 / 上限 */}
-              <div style={{ position: 'absolute', bottom: 12, left: 12, right: 12, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 6, zIndex: 5 }}>
-                {berryLimitReached ? (
-                  <span style={{ fontSize: 11, color: '#A89876', background: 'rgba(255,255,255,0.85)', borderRadius: 99, padding: '4px 12px' }}>
-                    <i className="fa-solid fa-circle-check" style={{ marginRight: 5 }}></i>今日採集已達上限
-                  </span>
-                ) : (
-                  <span style={{ fontSize: 11, color: '#A07040', background: 'rgba(255,255,255,0.85)', borderRadius: 99, padding: '4px 12px' }}>
-                    今日已採 <strong style={{ color: '#E07B00' }}>{berryTodayCount}</strong> / {BERRY_DAILY_LIMIT} 顆
-                  </span>
-                )}
-              </div>
-            </div>
-          </div>
-        )}
 
         {/* ── 公告：沿用原設計 ── */}
         {announcement && (
@@ -856,6 +789,97 @@ export default function HomePage() {
           )}
         </div>
       </div>
+
+      {/* ════════════ 樹果飄落覆蓋層（全螢幕、緩慢飄落、採完自動淡出、✕ 逃生門）════════════ */}
+      {showBerryOverlay && (
+        <div
+          style={{
+            position: 'fixed', inset: 0, zIndex: 150, maxWidth: 390, margin: '0 auto',
+            opacity: berryFadeOut ? 0 : 1,
+            transition: 'opacity 0.6s ease',
+            pointerEvents: berryFadeOut ? 'none' : 'auto',
+          }}
+          onTransitionEnd={() => { if (berryFadeOut) { setBerryDismissed(true); setBerryFadeOut(false) } }}
+        >
+          <style>{`
+            @keyframes berryDrift{0%{transform:translateY(-90px) translateX(0) rotate(-8deg);opacity:0}8%{opacity:1}100%{transform:translateY(var(--fall)) translateX(var(--sway)) rotate(8deg);opacity:1}}
+            @keyframes berryBob{0%,100%{transform:translateY(0) rotate(-3deg)}50%{transform:translateY(-7px) rotate(3deg)}}
+            @keyframes berryGlowPulse{0%,100%{filter:drop-shadow(0 4px 6px rgba(0,0,0,.18))}50%{filter:drop-shadow(0 4px 6px rgba(0,0,0,.18)) drop-shadow(0 0 14px rgba(245,208,96,.95))}}
+            @keyframes berryGlowDevil{0%,100%{filter:drop-shadow(0 4px 6px rgba(0,0,0,.2))}50%{filter:drop-shadow(0 4px 6px rgba(0,0,0,.2)) drop-shadow(0 0 14px rgba(190,100,230,.95))}}
+            @keyframes berryPopUp{0%{transform:translateX(-50%) translateY(0);opacity:0}20%{opacity:1}100%{transform:translateX(-50%) translateY(-44px);opacity:0}}
+          `}</style>
+
+          {/* 柔光罩（主頁輕微變淡，果實更跳出） */}
+          <div style={{ position: 'absolute', inset: 0, background: 'rgba(255,251,242,0.42)', backdropFilter: 'blur(0.5px)', pointerEvents: 'none' }} />
+
+          {/* 頂部標籤 + 倒數 */}
+          <div style={{ position: 'absolute', top: 14, left: 14, right: 14, display: 'flex', alignItems: 'center', justifyContent: 'space-between', zIndex: 3 }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: 6, background: 'rgba(255,255,255,0.9)', border: '1px solid #FAC775', borderRadius: 99, padding: '5px 12px', boxShadow: '0 2px 8px rgba(186,117,23,.12)' }}>
+              <i className="fa-solid fa-seedling" style={{ fontSize: 12, color: '#3B6D11' }}></i>
+              <span style={{ fontSize: 11, fontWeight: 700, color: '#BA7517' }}>樹果飄落中</span>
+            </div>
+            <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: 5, background: 'rgba(255,255,255,0.9)', border: '1px solid #F0E2C0', borderRadius: 99, padding: '5px 11px', boxShadow: '0 2px 8px rgba(186,117,23,.1)' }}>
+                <i className="fa-solid fa-clock" style={{ fontSize: 11, color: '#E07B00' }}></i>
+                <span style={{ fontSize: 11, fontWeight: 700, color: '#8B5A00' }}>剩 {fmtCountdown(berrySecLeft)}</span>
+              </div>
+              {/* ✕ 逃生門 */}
+              <button onClick={dismissBerries} aria-label="稍後再採" className="press-fx"
+                style={{ width: 30, height: 30, borderRadius: '50%', border: '1px solid #F0E2C0', background: 'rgba(255,255,255,0.9)', color: '#A07040', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', boxShadow: '0 2px 8px rgba(186,117,23,.1)', padding: 0 }}>
+                <i className="fa-solid fa-xmark" style={{ fontSize: 14 }}></i>
+              </button>
+            </div>
+          </div>
+
+          {/* 樹果們（飄落） */}
+          {berries.map((b) => {
+            const k = berryKind(b.kind)
+            const pos = BERRY_POSITIONS[b.index % BERRY_POSITIONS.length]
+            const claimed = b.claimed
+            const svg = berrySvg(b.kind, 58, `hp${b.index}`)
+            const glowAnim = k.glow
+              ? (b.kind === 'super_devil' ? ', berryGlowDevil 1.6s ease-in-out infinite' : ', berryGlowPulse 1.6s ease-in-out infinite')
+              : ''
+            return (
+              <div key={b.index}
+                onClick={() => !claimed && !berryLimitReached && handleClaimBerry(b)}
+                style={{
+                  position: 'absolute', left: `${pos.x}%`, top: 0,
+                  width: 58, cursor: claimed || berryLimitReached ? 'default' : 'pointer',
+                  zIndex: 2,
+                  opacity: claimed ? 0 : 1,
+                  transition: 'opacity 0.5s ease',
+                  pointerEvents: claimed ? 'none' : 'auto',
+                  '--fall': `${pos.fall}px`, '--sway': `${pos.sway}px`,
+                  animation: claimed
+                    ? 'none'
+                    : `berryDrift ${pos.dur}s cubic-bezier(.45,.05,.55,.95) ${pos.delay}s forwards${glowAnim}`,
+                }}>
+                <div dangerouslySetInnerHTML={{ __html: svg }} style={{ filter: 'drop-shadow(0 4px 6px rgba(0,0,0,.15))' }} />
+                {/* 彈分動畫 */}
+                {berryPop && berryPop.index === b.index && (
+                  <div style={{ position: 'absolute', left: '50%', top: 0, fontSize: 20, fontWeight: 800, color: berryPop.points >= 0 ? '#3B6D11' : '#A32D2D', animation: 'berryPopUp 1.1s ease forwards', whiteSpace: 'nowrap', zIndex: 6, pointerEvents: 'none', textShadow: '0 1px 3px rgba(255,255,255,.9)' }}>
+                    {berryPop.points >= 0 ? '+' : ''}{berryPop.points}
+                  </div>
+                )}
+              </div>
+            )
+          })}
+
+          {/* 底部：今日已採 / 上限 */}
+          <div style={{ position: 'absolute', bottom: 90, left: 0, right: 0, display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 3, pointerEvents: 'none' }}>
+            {berryLimitReached ? (
+              <span style={{ fontSize: 12, color: '#A89876', background: 'rgba(255,255,255,0.92)', borderRadius: 99, padding: '6px 16px', boxShadow: '0 2px 10px rgba(186,117,23,.12)' }}>
+                <i className="fa-solid fa-circle-check" style={{ marginRight: 5 }}></i>今日採集已達上限
+              </span>
+            ) : (
+              <span style={{ fontSize: 12, color: '#8B5A00', background: 'rgba(255,255,255,0.92)', borderRadius: 99, padding: '6px 16px', boxShadow: '0 2px 10px rgba(186,117,23,.12)' }}>
+                點擊樹果採集　·　今日已採 <strong style={{ color: '#E07B00' }}>{berryTodayCount}</strong> / {BERRY_DAILY_LIMIT} 顆
+              </span>
+            )}
+          </div>
+        </div>
+      )}
 
       {/* 我要出貨 固定按鈕（浮動橫幅） */}
       <style>{`
